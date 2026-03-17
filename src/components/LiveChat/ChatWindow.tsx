@@ -12,7 +12,13 @@ import {
   ThumbsDown, 
   ThumbsUp, 
   Zap, 
-  Brain 
+  Brain,
+  ArrowLeft,
+  Paperclip,
+  Mic,
+  Moon,
+  Smile,
+  MoreVertical
 } from 'lucide-react';
 
 interface Message {
@@ -138,75 +144,79 @@ export default function ChatWindow({ sessionId }: { sessionId: string }) {
   };
 
   return (
-    <div className="flex flex-col h-full bg-[#030711] relative overflow-hidden font-sans">
-      <header className="px-6 pt-10 pb-5 flex flex-col items-center bg-slate-900/10 border-b border-white/[0.03]">
-        <div className="relative mb-2 group">
-          <div className="w-10 h-10 rounded-full bg-primary/20 border border-primary/30 flex items-center justify-center shadow-[0_0_20px_rgba(59,130,246,0.1)] transition-all group-hover:bg-primary/30">
-            <Bot className="w-5 h-5 text-primary" />
+    <div className="flex flex-col h-full bg-[#0d0d0d] relative overflow-hidden font-sans">
+      {/* Telegram-style Background Pattern Overlay */}
+      <div className="absolute inset-0 opacity-[0.07] pointer-events-none mix-blend-overlay" 
+           style={{ backgroundImage: 'url("https://www.transparenttextures.com/patterns/carbon-fibre.png")' }} />
+      
+      {/* Header Match */}
+      <header className="px-4 pt-10 pb-3 flex items-center justify-between bg-[#1c1c1e]/90 backdrop-blur-xl border-b border-white/[0.05] z-10 shrink-0">
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-1 bg-white/5 hover:bg-white/10 p-1.5 rounded-full transition-colors cursor-pointer group">
+            <ArrowLeft className="w-5 h-5 text-sky-500" />
+            <span className="text-sm font-bold text-sky-500 pr-1 group-active:scale-95">24</span>
           </div>
-          <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-[#030711] bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
         </div>
-        <div className="text-center space-y-1">
-          <div className="flex items-center justify-center gap-1.5 cursor-pointer hover:opacity-80 transition-opacity">
-            <h3 className="text-[11px] font-bold text-white tracking-tight">
-              {sessionId.split('@')[0]}
-            </h3>
-            <ChevronDown className="w-2.5 h-2.5 text-slate-500" />
-          </div>
-          <p className="text-[8px] uppercase tracking-[0.2em] font-bold text-primary/80">
-            AI Agent Handling
+
+        <div className="flex flex-col items-center flex-1 min-w-0 px-2 cursor-pointer hover:opacity-80 transition-opacity">
+          <h3 className="text-[15px] font-bold text-white truncate max-w-[140px] tracking-tight">
+            {sessionId.split('@')[0]}
+          </h3>
+          <p className="text-[11px] text-slate-500 font-medium">
+            últ. vez hoy a las 19:16
           </p>
+        </div>
+
+        <div className="w-9 h-9 rounded-full bg-gradient-to-br from-rose-400 to-rose-600 flex items-center justify-center text-white font-black text-sm shadow-lg border border-white/10 shrink-0">
+          {sessionId.substring(0, 2).toUpperCase()}
         </div>
       </header>
 
-      <div className="flex-1 overflow-y-auto px-5 py-6 space-y-7 custom-scrollbar bg-gradient-to-b from-[#030711] to-[#0a0c10]">
+      {/* Messages Scroll Area with Date Separator */}
+      <div className="flex-1 overflow-y-auto px-4 py-6 space-y-6 custom-scrollbar relative z-0">
+        <div className="flex justify-center mb-8">
+          <span className="bg-black/30 backdrop-blur-md text-white/90 px-4 py-1 rounded-full text-[11px] font-bold tracking-tight">
+            25 de enero
+          </span>
+        </div>
+
         {loading ? (
           <div className="flex items-center justify-center h-full">
-            <Loader2 className="w-6 h-6 text-primary animate-spin opacity-50" />
+            <Loader2 className="w-6 h-6 text-sky-500 animate-spin opacity-50" />
           </div>
         ) : (
           <>
+            <div className="flex justify-center mb-6">
+              <span className="bg-black/20 text-white/60 px-5 py-1.5 rounded-2xl text-[12px] font-medium text-center max-w-[80%] leading-relaxed">
+                Estableciendo conexión segura con <span className="text-sky-400 font-bold">Alpha AI</span>...
+              </span>
+            </div>
+
             {messages.map((message) => (
               <div 
                 key={message.id} 
-                className={`flex flex-col ${message.role === 'user' ? 'items-end' : 'items-start'} max-w-full animate-in slide-in-from-bottom-3`}
+                className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'} animate-in slide-in-from-bottom-2 duration-300`}
               >
-                {message.role === 'assistant' && (
-                  <span className="text-[9px] font-bold text-primary uppercase tracking-widest mb-1.5 ml-1">Alpha Agent</span>
-                )}
-                
-                <div className={`flex gap-3 max-w-[90%] ${message.role === 'user' ? 'flex-row-reverse' : 'flex-row'}`}>
-                  <div className={`w-7 h-7 rounded-full shrink-0 flex items-center justify-center border ${
-                    message.role === 'user' 
-                      ? 'bg-slate-800/80 border-slate-700/50' 
-                      : 'bg-primary/20 border-primary/30'
-                  }`}>
-                    {message.role === 'user' ? <User className="w-3.5 h-3.5 text-slate-400" /> : <Bot className="w-3.5 h-3.5 text-primary" />}
-                  </div>
-                  
-                  <div className={`flex flex-col ${message.role === 'user' ? 'items-end' : 'items-start'} gap-1.5`}>
-                    <div className={`p-3.5 rounded-2xl text-[12px] leading-[1.6] shadow-sm tracking-tight ${
-                      message.role === 'user'
-                        ? 'bg-[#1e1b4b] text-white rounded-tr-none border border-primary/10'
-                        : 'bg-[#171923] text-slate-200 border border-white/[0.03] rounded-tl-none'
-                    }`}>
-                      {message.role === 'user' && (
-                        <span className="text-[9px] block font-bold text-slate-500 mb-1 uppercase tracking-wider">Mensaje_Cliente:</span>
-                      )}
-                      {message.content}
-                    </div>
-                    <span className="text-[8px] text-slate-600 font-medium px-1 uppercase tracking-widest">Now</span>
+                <div className={`relative max-w-[85%] px-4 py-2.5 rounded-2xl text-[14px] leading-[1.6] shadow-md tracking-tight ${
+                  message.role === 'user'
+                    ? 'bg-[#2b5278] text-white rounded-br-none'
+                    : 'bg-[#212121] text-slate-100 rounded-bl-none border border-white/5'
+                }`}>
+                  {message.content}
+                  <div className={`flex items-center justify-end gap-1 mt-1 ${message.role === 'user' ? 'text-white/50' : 'text-slate-500'}`}>
+                    <span className="text-[9px] font-medium uppercase tracking-tighter">19:16</span>
+                    {message.role === 'user' && <div className="flex -space-x-1"><span className="text-[10px] text-sky-400">✓</span><span className="text-[10px] text-sky-400">✓</span></div>}
                   </div>
                 </div>
               </div>
             ))}
             
             {isTyping && (
-              <div className="flex justify-start items-center gap-2 animate-pulse pl-1">
-                <div className="bg-primary/10 px-3 py-2 rounded-2xl flex gap-1.5 items-center border border-primary/5">
-                    <div className="w-1 h-1 bg-primary/40 rounded-full animate-bounce [animation-delay:-0.3s]" />
-                    <div className="w-1 h-1 bg-primary/40 rounded-full animate-bounce [animation-delay:-0.15s]" />
-                    <div className="w-1 h-1 bg-primary/40 rounded-full animate-bounce" />
+              <div className="flex justify-start px-1 animate-pulse">
+                <div className="bg-[#212121] px-4 py-2.5 rounded-2xl rounded-bl-none flex gap-1.5 items-center border border-white/5">
+                    <div className="w-1.5 h-1.5 bg-slate-500 rounded-full animate-bounce [animation-delay:-0.3s]" />
+                    <div className="w-1.5 h-1.5 bg-slate-500 rounded-full animate-bounce [animation-delay:-0.15s]" />
+                    <div className="w-1.5 h-1.5 bg-slate-500 rounded-full animate-bounce" />
                 </div>
               </div>
             )}
@@ -215,50 +225,75 @@ export default function ChatWindow({ sessionId }: { sessionId: string }) {
         )}
       </div>
 
-      <footer className="p-5 bg-slate-900/10 border-t border-white/[0.03] space-y-3">
+      {/* Footer Match */}
+      <footer className="px-4 py-5 bg-[#0d0d0d]/80 backdrop-blur-xl border-t border-white/[0.03] space-y-3 z-10">
         {!isManualMode ? (
-          <button 
-            onClick={() => setIsManualMode(true)}
-            className="w-full group relative overflow-hidden bg-rose-600 hover:bg-rose-700 text-white rounded-xl py-3.5 px-4 transition-all active:scale-[0.98] shadow-lg shadow-rose-950/20 border border-rose-500/50"
-          >
-            <div className="relative z-10 flex items-center justify-center gap-2.5">
-              <AlertTriangle className="w-4 h-4 animate-pulse" />
-              <span className="text-[11px] font-black uppercase tracking-[0.15em]">Panic Button</span>
-            </div>
-            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:animate-shimmer" />
-          </button>
+          <div className="flex items-center gap-3">
+             <button 
+                onClick={() => setIsManualMode(true)}
+                className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center hover:bg-white/10 transition-all shrink-0 active:scale-95"
+              >
+                <Paperclip className="w-5 h-5 text-slate-400" />
+              </button>
+
+              <div className="flex-1 bg-[#212121] border border-white/5 rounded-[1.8rem] px-5 py-2.5 flex items-center gap-3 group focus-within:border-sky-500/30 transition-all shadow-inner">
+                <input 
+                  type="text" 
+                  value={inputValue}
+                  readOnly
+                  placeholder="Mensaje"
+                  className="flex-1 bg-transparent text-white text-[15px] focus:outline-none placeholder:text-slate-600 font-medium"
+                />
+                <button className="text-slate-600 hover:text-sky-500 transition-colors">
+                  <Moon className="w-5 h-5" />
+                </button>
+              </div>
+
+              <button className="w-11 h-11 rounded-full bg-sky-500 flex items-center justify-center text-white shadow-lg shadow-sky-500/20 active:scale-90 transition-all shrink-0">
+                <Mic className="w-5 h-5" />
+              </button>
+          </div>
         ) : (
           <div className="space-y-3 animate-in fade-in slide-in-from-bottom-2 duration-300">
             <div className="flex justify-between items-center px-1">
-              <span className="text-[8px] text-rose-500 font-black uppercase tracking-[0.2em]">Manual Override Enabled</span>
+              <span className="text-[10px] text-rose-500 font-black uppercase tracking-[0.2em] flex items-center gap-1.5">
+                <div className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-ping" /> Manual Override
+              </span>
               <button 
                 onClick={() => setIsManualMode(false)}
-                className="text-[8px] text-slate-500 hover:text-white font-black uppercase tracking-widest transition-colors flex items-center gap-1"
+                className="text-[9px] text-slate-500 hover:text-white font-black uppercase tracking-widest transition-colors flex items-center gap-1.5 bg-white/5 px-2 py-1 rounded-md"
               >
-                Resume AI <Bot className="w-2.5 h-2.5" />
+                Resume AI <Brain className="w-3 h-3 text-sky-400" />
               </button>
             </div>
-            <form onSubmit={handleSendMessage} className="relative flex items-center bg-[#0a0c10] border border-rose-500/20 rounded-[1.2rem] px-4 py-2 shadow-xl focus-within:border-rose-500/50 transition-all">
-              <input 
-                type="text" 
-                value={inputValue}
-                onChange={(e) => setInputValue(e.target.value)}
-                placeholder="Type manual message..."
-                className="flex-1 bg-transparent text-white py-2 px-1 text-sm focus:outline-none placeholder:text-rose-900/50 font-medium"
-              />
+            
+            <form onSubmit={handleSendMessage} className="flex items-center gap-3">
+              <button type="button" className="w-10 h-10 rounded-full bg-rose-500/10 flex items-center justify-center border border-rose-500/20">
+                <Paperclip className="w-5 h-5 text-rose-500" />
+              </button>
+              
+              <div className="flex-1 bg-[#1a1111] border border-rose-500/20 rounded-[1.8rem] px-5 py-2.5 flex items-center gap-3 focus-within:border-rose-500 transition-all shadow-lg">
+                <input 
+                  type="text" 
+                  value={inputValue}
+                  onChange={(e) => setInputValue(e.target.value)}
+                  placeholder="Escribe un mensaje..."
+                  className="flex-1 bg-transparent text-white text-[15px] focus:outline-none placeholder:text-rose-900/40"
+                  autoFocus
+                />
+                <Smile className="w-5 h-5 text-rose-900/60" />
+              </div>
+
               <button 
                 type="submit"
                 disabled={!inputValue.trim() || sending}
-                className="p-2 rounded-xl bg-rose-600 text-white hover:bg-rose-500 active:scale-90 disabled:opacity-20 transition-all shadow-lg shadow-rose-600/20"
+                className="w-11 h-11 rounded-full bg-rose-600 flex items-center justify-center text-white shadow-lg shadow-rose-600/20 active:scale-90 transition-all disabled:opacity-30 disabled:grayscale"
               >
-                {sending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
+                {sending ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send className="w-5 h-5" />}
               </button>
             </form>
           </div>
         )}
-        <p className="text-[8px] text-center text-slate-700 uppercase tracking-widest font-bold">
-            Alpha Control - Realtime Manual Intervention Enabled
-        </p>
       </footer>
     </div>
   );
