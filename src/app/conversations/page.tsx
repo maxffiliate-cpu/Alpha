@@ -64,7 +64,7 @@ export default function ConversationsPage() {
   );
 
   return (
-    <div className="h-[calc(100vh-6rem)] grid grid-cols-[300px_1fr_320px] gap-4 animate-in fade-in duration-500 overflow-hidden -mt-4">
+    <div className="h-[calc(100vh-6rem)] grid grid-cols-[300px_1fr_320px] gap-4 animate-in fade-in duration-500 overflow-hidden pt-4">
       {/* Column 1: Session List */}
       <aside className="glass-panel rounded-2xl overflow-hidden flex flex-col border border-slate-800/50 shadow-xl">
         <div className="p-4 border-b border-slate-800/50 space-y-3">

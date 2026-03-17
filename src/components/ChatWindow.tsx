@@ -240,20 +240,6 @@ export default function ChatWindow({ sessionId }: { sessionId: string }) {
     <div className={`flex flex-col h-full transition-colors duration-500 ${
       panicMode ? 'bg-rose-950/20' : 'bg-transparent'
     }`}>
-      {/* Panic Button - Positioned consistently */}
-      <div className="fixed top-6 right-6 z-[100]">
-        <button 
-          onClick={togglePanicMode}
-          className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-[11px] font-black transition-all shadow-xl ${
-            panicMode 
-              ? 'bg-emerald-500 text-white hover:bg-emerald-600 scale-105 border-none' 
-              : 'bg-rose-600 text-white hover:bg-rose-700 active:scale-95 shadow-rose-900/40'
-          }`}
-        >
-          {panicMode ? 'RESUME AI' : <><AlertTriangle className="w-3.5 h-3.5" /> PANIC BUTTON</>}
-        </button>
-      </div>
-
       {/* Chat Header inside Mockup */}
       <header className={`px-4 pt-8 pb-3 border-b transition-colors duration-500 flex flex-col items-center text-center ${
         panicMode ? 'border-rose-500/30 bg-rose-500/10' : 'border-slate-800 bg-slate-900/40'
@@ -354,32 +340,50 @@ export default function ChatWindow({ sessionId }: { sessionId: string }) {
         )}
       </div>
 
-      {/* Input Area */}
-      <footer className={`p-3 pb-6 border-t transition-colors duration-500 ${
-        panicMode ? 'bg-rose-500/5 border-rose-500/20' : 'bg-slate-900/40 border-slate-800'
+      {/* Input Area / Panic Button Toggle */}
+      <footer className={`p-3 pb-6 border-t transition-all duration-500 ${
+        panicMode ? 'bg-rose-500/10 border-rose-500/30' : 'bg-slate-900/40 border-slate-800'
       }`}>
-        <form onSubmit={handleSendMessage} className="relative flex items-center gap-1.5">
-            <input 
-              type="text" 
-              value={inputValue}
-              onChange={(e) => setInputValue(e.target.value)}
-              placeholder={panicMode ? "Manual message..." : "Ask AI..."}
-              className={`w-full border text-white rounded-lg py-2.5 px-3 text-[11px] focus:outline-none transition-all ${
-                panicMode 
-                  ? 'bg-rose-950/40 border-rose-500/30 focus:border-rose-500'
-                  : 'bg-slate-900 border-slate-800 focus:border-primary/50'
-              }`}
-            />
+        {panicMode ? (
+          <div className="space-y-2">
+            <div className="flex justify-between items-center px-1">
+              <span className="text-[7px] text-rose-400 font-black uppercase tracking-[0.2em]">Manual Entry</span>
+              <button 
+                onClick={togglePanicMode}
+                className="text-[7px] text-slate-500 hover:text-white font-black uppercase tracking-widest transition-colors flex items-center gap-1"
+              >
+                Resume AI <Bot className="w-2 h-2" />
+              </button>
+            </div>
+            <form onSubmit={handleSendMessage} className="relative flex items-center gap-1.5">
+                <input 
+                  type="text" 
+                  value={inputValue}
+                  onChange={(e) => setInputValue(e.target.value)}
+                  placeholder="Type manual message..."
+                  className="w-full bg-rose-950/40 border border-rose-500/30 text-white rounded-lg py-2.5 px-3 text-[11px] focus:outline-none focus:border-rose-500 transition-all placeholder:text-rose-900"
+                />
+              <button 
+                type="submit"
+                disabled={!inputValue.trim() || sending}
+                className="p-2.5 rounded-lg bg-rose-600 text-white active:scale-95 disabled:opacity-50 transition-all shadow-lg shadow-rose-950/50"
+              >
+                {sending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
+              </button>
+            </form>
+          </div>
+        ) : (
           <button 
-            type="submit"
-            disabled={!inputValue.trim() || sending}
-            className={`p-2.5 rounded-lg text-white active:scale-95 disabled:opacity-50 transition-all ${
-              panicMode ? 'bg-rose-600' : 'bg-primary'
-            }`}
+            onClick={togglePanicMode}
+            className="w-full group relative overflow-hidden bg-rose-600 hover:bg-rose-700 text-white rounded-xl py-3 px-4 transition-all active:scale-[0.98] shadow-lg shadow-rose-900/20 border border-rose-500/50"
           >
-            {sending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
+            <div className="relative z-10 flex items-center justify-center gap-2">
+              <AlertTriangle className="w-3.5 h-3.5 animate-pulse" />
+              <span className="text-[10px] font-black uppercase tracking-widest">Manual Intervention</span>
+            </div>
+            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:animate-shimmer" />
           </button>
-        </form>
+        )}
       </footer>
     </div>
   );
