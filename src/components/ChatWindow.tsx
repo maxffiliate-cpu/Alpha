@@ -38,14 +38,14 @@ export default function ChatWindow({ sessionId }: { sessionId: string }) {
         .from('n8n_chat_clientes_historial')
         .select('*')
         .eq('session_id', sessionId)
-        .order('created_at', { ascending: true });
+        .order('id', { ascending: true });
 
       if (!error && data) {
         setMessages(data.map(m => ({
-          id: m.id,
-          role: m.sender_type === 'bot' ? 'assistant' : 'user',
-          content: m.message_text,
-          created_at: m.created_at
+          id: m.id.toString(),
+          role: m.message?.type === 'human' ? 'user' : 'assistant',
+          content: m.message?.content || '',
+          created_at: new Date().toISOString() // Placeholder as created_at is missing
         })));
       }
       setLoading(false);
@@ -64,10 +64,10 @@ export default function ChatWindow({ sessionId }: { sessionId: string }) {
         filter: `session_id=eq.${sessionId}`
       }, (payload) => {
         setMessages(prev => [...prev, {
-          id: payload.new.id,
-          role: payload.new.sender_type === 'bot' ? 'assistant' : 'user',
-          content: payload.new.message_text,
-          created_at: payload.new.created_at
+          id: payload.new.id.toString(),
+          role: payload.new.message?.type === 'human' ? 'user' : 'assistant',
+          content: payload.new.message?.content || '',
+          created_at: new Date().toISOString()
         }]);
       })
       .subscribe();
@@ -89,9 +89,12 @@ export default function ChatWindow({ sessionId }: { sessionId: string }) {
       .from('n8n_chat_clientes_historial')
       .insert({
         session_id: sessionId,
-        message_text: inputValue,
-        sender_type: 'human', // When using manual intervention
-        created_at: new Date().toISOString()
+        message: {
+          type: 'human',
+          content: inputValue,
+          additional_kwargs: {},
+          response_metadata: {}
+        }
       });
 
     if (!error) setInputValue('');
@@ -99,11 +102,11 @@ export default function ChatWindow({ sessionId }: { sessionId: string }) {
   };
 
   const togglePanicMode = async () => {
-    // Logic to tell n8n to stop AI for this session
-    setPanicMode(!panicMode);
-    await supabase
-      .from('sessions_status')
-      .upsert({ session_id: sessionId, manual_intervention: !panicMode });
+    const { error } = await supabase
+      .from('session_control')
+      .upsert({ session_id: sessionId, is_manual: !panicMode });
+    
+    if (!error) setPanicMode(!panicMode);
   };
 
   return (

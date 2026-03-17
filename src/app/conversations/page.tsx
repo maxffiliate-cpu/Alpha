@@ -14,8 +14,8 @@ export default function ConversationsPage() {
     async function fetchSessions() {
       const { data, error } = await supabase
         .from('n8n_chat_clientes_historial')
-        .select('session_id, created_at')
-        .order('created_at', { ascending: false });
+        .select('session_id, id')
+        .order('id', { ascending: false });
 
       if (!error && data) {
         // Group by session_id to get unique chats
@@ -23,7 +23,7 @@ export default function ConversationsPage() {
           .map(id => {
             return {
               id,
-              lastMessage: data.find(s => s.session_id === id)?.created_at
+              lastMessage: data.find(s => s.session_id === id)?.id
             };
           });
         setSessions(uniqueSessions);
@@ -41,11 +41,11 @@ export default function ConversationsPage() {
           const exists = prev.find(s => s.id === payload.new.session_id);
           if (exists) {
             return [
-              { ...exists, lastMessage: payload.new.created_at },
+              { ...exists, lastMessage: payload.new.id },
               ...prev.filter(s => s.id !== payload.new.session_id)
             ];
           }
-          return [{ id: payload.new.session_id, lastMessage: payload.new.created_at }, ...prev];
+          return [{ id: payload.new.session_id, lastMessage: payload.new.id }, ...prev];
         });
       })
       .subscribe();
