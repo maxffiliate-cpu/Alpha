@@ -1,4 +1,8 @@
-import { Suspense } from 'react';
+'use client';
+
+import { Suspense, useState, useEffect } from 'react';
+import { supabase } from '@/lib/supabase';
+import Skeleton from '@/components/ui/Skeleton';
 import { 
   Users, 
   MessageSquare, 
@@ -9,6 +13,42 @@ import {
 } from 'lucide-react';
 
 export default function DashboardPage() {
+  const [stats, setStats] = useState({
+    totalMessages: 0,
+    totalSessions: 0,
+    avgSentiment: 0,
+    responseTime: "1.2s"
+  });
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function fetchStats() {
+      const { data: historyData } = await supabase
+        .from('n8n_chat_clientes_historial')
+        .select('session_id', { count: 'exact', head: false });
+
+      const { data: analysisData } = await supabase
+        .from('lead_analysis')
+        .select('score');
+
+      const totalMessages = historyData?.length || 0;
+      const totalSessions = new Set(historyData?.map(h => h.session_id)).size;
+      const avgSentiment = analysisData?.length 
+        ? (analysisData.reduce((acc, curr) => acc + (curr.score || 0), 0) / analysisData.length / 10).toFixed(1)
+        : 0;
+
+      setStats({
+        totalMessages,
+        totalSessions,
+        avgSentiment: Number(avgSentiment),
+        responseTime: "1.2s" // Placeholder for now
+      });
+      setLoading(false);
+    }
+
+    fetchStats();
+  }, []);
+
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
       <header className="flex flex-col gap-2">
@@ -19,27 +59,31 @@ export default function DashboardPage() {
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard 
-          title="Total Conversations" 
-          value="1,284" 
+          title="Total Messages" 
+          value={stats.totalMessages.toLocaleString()} 
           change="+12%" 
+          loading={loading}
           icon={<MessageSquare className="w-5 h-5" />}
         />
         <StatCard 
           title="Active Sessions" 
-          value="24" 
+          value={stats.totalSessions.toLocaleString()} 
           change="+4" 
+          loading={loading}
           icon={<Users className="w-5 h-5" />}
         />
         <StatCard 
           title="Avg. Sentiment" 
-          value="8.4" 
+          value={stats.avgSentiment.toString()} 
           change="+0.2" 
+          loading={loading}
           icon={<TrendingUp className="w-5 h-5" />}
         />
         <StatCard 
           title="Response Time" 
-          value="1.2s" 
+          value={stats.responseTime} 
           change="-0.3s" 
+          loading={loading}
           icon={<Clock className="w-5 h-5" />}
         />
       </div>
@@ -94,8 +138,13 @@ export default function DashboardPage() {
   );
 }
 
-function StatCard({ title, value, change, icon }: { title: string; value: string; change: string; icon: React.ReactNode }) {
-  const isPositive = change.startsWith('+') || change.startsWith('-');
+function StatCard({ title, value, change, icon, loading }: { 
+  title: string; 
+  value: string; 
+  change: string; 
+  icon: React.ReactNode;
+  loading?: boolean;
+}) {
   return (
     <div className="glass-panel p-6 rounded-2xl hover:bg-slate-800/20 transition-colors group">
       <div className="flex justify-between items-start mb-4">
@@ -110,7 +159,11 @@ function StatCard({ title, value, change, icon }: { title: string; value: string
       </div>
       <div className="space-y-1">
         <h3 className="text-sm font-medium text-slate-400">{title}</h3>
-        <p className="text-2xl font-bold text-white">{value}</p>
+        {loading ? (
+          <Skeleton className="h-8 w-24" />
+        ) : (
+          <p className="text-2xl font-bold text-white">{value}</p>
+        )}
       </div>
     </div>
   );

@@ -3,11 +3,13 @@
 import { useState, useEffect } from 'react';
 import ChatWindow from '@/components/ChatWindow';
 import { supabase } from '@/lib/supabase';
+import Skeleton from '@/components/ui/Skeleton';
 import { Search, Filter, MessageSquare, User } from 'lucide-react';
 
 export default function ConversationsPage() {
   const [selectedSession, setSelectedSession] = useState<string | null>(null);
   const [sessions, setSessions] = useState<any[]>([]);
+  const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -55,6 +57,10 @@ export default function ConversationsPage() {
     };
   }, []);
 
+  const filteredSessions = sessions.filter(s => 
+    s.id.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
   return (
     <div className="h-[calc(100vh-8rem)] flex gap-6 animate-in fade-in duration-500">
       {/* Session List */}
@@ -66,6 +72,8 @@ export default function ConversationsPage() {
             <input 
               type="text" 
               placeholder="Search conversations..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full bg-slate-900/50 border border-slate-800 rounded-lg py-2 pl-10 pr-4 text-sm focus:outline-none focus:ring-1 focus:ring-primary/50 transition-all text-slate-200"
             />
           </div>
@@ -73,11 +81,23 @@ export default function ConversationsPage() {
 
         <div className="flex-1 overflow-y-auto p-2 space-y-1">
           {loading ? (
-            <div className="p-4 text-center text-slate-500">Loading...</div>
-          ) : sessions.length === 0 ? (
-            <div className="p-4 text-center text-slate-500">No conversations found.</div>
+            <div className="p-4 space-y-3">
+              {[1, 2, 3, 4, 5].map(i => (
+                <div key={i} className="flex gap-3 p-3">
+                  <Skeleton className="w-10 h-10 rounded-full shrink-0" />
+                  <div className="flex-1 space-y-2">
+                    <Skeleton className="h-4 w-3/4" />
+                    <Skeleton className="h-3 w-1/2" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : filteredSessions.length === 0 ? (
+            <div className="p-4 text-center text-slate-500 italic">
+              {searchTerm ? 'No matches found' : 'No conversations found'}
+            </div>
           ) : (
-            sessions.map((session) => (
+            filteredSessions.map((session) => (
               <button
                 key={session.id}
                 onClick={() => setSelectedSession(session.id)}
