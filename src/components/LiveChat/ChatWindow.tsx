@@ -165,7 +165,7 @@ export default function ChatWindow({ sessionId }: { sessionId: string }) {
         </button>
       </header>
 
-      <div className="flex-1 overflow-y-auto px-5 py-6 space-y-7 custom-scrollbar bg-gradient-to-b from-[#030711] to-[#0a0c10]">
+      <div className="flex-1 overflow-y-auto overflow-x-hidden px-5 py-6 space-y-7 custom-scrollbar bg-gradient-to-b from-[#030711] to-[#0a0c10]">
         {loading ? (
           <div className="flex items-center justify-center h-full">
             <Loader2 className="w-6 h-6 text-primary animate-spin opacity-50" />
@@ -225,7 +225,7 @@ export default function ChatWindow({ sessionId }: { sessionId: string }) {
         {!isManualMode ? (
           <button 
             onClick={() => setIsManualMode(true)}
-            className="w-full group relative overflow-hidden bg-rose-600 hover:bg-rose-700 text-white rounded-xl py-3.5 px-4 transition-all active:scale-[0.98] shadow-lg shadow-rose-950/20 border border-rose-500/50"
+            className="w-full group relative overflow-hidden bg-rose-600 hover:bg-rose-700 text-white rounded-xl py-2.5 px-4 transition-all active:scale-[0.98] shadow-lg shadow-rose-950/20 border border-rose-500/50"
           >
             <div className="relative z-10 flex items-center justify-center gap-2.5">
               <AlertTriangle className="w-4 h-4 animate-pulse" />
