@@ -12,7 +12,8 @@ import {
   ThumbsDown, 
   ThumbsUp, 
   Zap, 
-  Brain 
+  Brain,
+  Menu 
 } from 'lucide-react';
 
 interface Message {
@@ -139,24 +140,29 @@ export default function ChatWindow({ sessionId }: { sessionId: string }) {
 
   return (
     <div className="flex flex-col h-full bg-[#030711] relative overflow-hidden font-sans">
-      <header className="px-6 pt-10 pb-5 flex flex-col items-center bg-slate-900/10 border-b border-white/[0.03]">
-        <div className="relative mb-2 group">
-          <div className="w-10 h-10 rounded-full bg-primary/20 border border-primary/30 flex items-center justify-center shadow-[0_0_20px_rgba(59,130,246,0.1)] transition-all group-hover:bg-primary/30">
-            <Bot className="w-5 h-5 text-primary" />
+      <header className="px-5 pt-10 pb-3 flex items-center justify-between bg-slate-900/10 border-b border-white/[0.03] z-10 shrink-0">
+        {/* Left: Bot Icon Avatar */}
+        <div className="relative group shrink-0">
+          <div className="w-8 h-8 rounded-full bg-primary/20 border border-primary/30 flex items-center justify-center transition-all group-hover:bg-primary/30">
+            <Bot className="w-4 h-4 text-primary" />
           </div>
-          <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-[#030711] bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
+          <div className="absolute top-5 left-6 w-2.5 h-2.5 rounded-full border-2 border-[#030711] bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
         </div>
-        <div className="text-center space-y-1">
-          <div className="flex items-center justify-center gap-1.5 cursor-pointer hover:opacity-80 transition-opacity">
-            <h3 className="text-[11px] font-bold text-white tracking-tight">
-              {sessionId.split('@')[0]}
-            </h3>
-            <ChevronDown className="w-2.5 h-2.5 text-slate-500" />
-          </div>
-          <p className="text-[8px] uppercase tracking-[0.2em] font-bold text-primary/80">
+
+        {/* Center: Session ID */}
+        <div className="flex-1 flex flex-col items-center min-w-0 px-2 cursor-pointer hover:opacity-80 transition-opacity">
+          <h3 className="text-[11px] font-bold text-white truncate max-w-[140px] tracking-tight">
+            {sessionId.split('@')[0]}
+          </h3>
+          <p className="text-[7px] uppercase tracking-[0.1em] font-medium text-slate-500">
             AI Agent Handling
           </p>
         </div>
+
+        {/* Right: Hamburger Menu */}
+        <button className="p-1 px-2 text-slate-500 hover:text-white transition-colors shrink-0">
+          <Menu className="w-4 h-4" />
+        </button>
       </header>
 
       <div className="flex-1 overflow-y-auto px-5 py-6 space-y-7 custom-scrollbar bg-gradient-to-b from-[#030711] to-[#0a0c10]">
