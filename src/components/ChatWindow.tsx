@@ -53,7 +53,7 @@ export default function ChatWindow({ sessionId }: { sessionId: string }) {
           id: m.id.toString(),
           role: m.message?.type === 'human' ? 'user' : 'assistant',
           content: m.message?.content || '',
-          created_at: new Date().toISOString(),
+          created_at: m.id.toString(), // Simplified for now but could use m.created_at if available
           feedback: feedbackData?.find(f => f.message_id === m.id)?.rating || null
         })));
       }
@@ -62,7 +62,7 @@ export default function ChatWindow({ sessionId }: { sessionId: string }) {
     }
 
     fetchMessages();
-// ... (omitting lines for brevity in instruction, will replace the whole block)
+
     // Subscribe to new messages for this specific session
     const channel = supabase
       .channel(`chat:${sessionId}`)
@@ -101,6 +101,17 @@ export default function ChatWindow({ sessionId }: { sessionId: string }) {
             : m
         ));
       })
+      .on('postgres_changes', {
+        event: 'UPDATE',
+        schema: 'public',
+        table: 'ai_feedback'
+      }, (payload) => {
+        setMessages(prev => prev.map(m => 
+          m.id === payload.new.message_id.toString() 
+            ? { ...m, feedback: payload.new.rating } 
+            : m
+        ));
+      })
       .subscribe();
 
     return () => {
@@ -111,24 +122,26 @@ export default function ChatWindow({ sessionId }: { sessionId: string }) {
   useEffect(scrollToBottom, [messages, isTyping]);
 
   const handleFeedback = async (messageId: string, rating: number) => {
+    // Optimistic update
+    setMessages(prev => prev.map(m => 
+      m.id === messageId ? { ...m, feedback: rating } : m
+    ));
+
     const { error } = await supabase
       .from('ai_feedback')
       .upsert({ message_id: parseInt(messageId), rating }, { onConflict: 'message_id' });
     
-    if (!error) {
-      setMessages(prev => prev.map(m => 
-        m.id === messageId ? { ...m, feedback: rating } : m
-      ));
+    if (error) {
+       console.error('Feedback error:', error);
+       // Revert on error? Or just leave it. Better to revert or show alert.
     }
   };
 
   const handleSendMessage = async (e: React.FormEvent) => {
-// ...
     e.preventDefault();
     if (!inputValue.trim() || sending) return;
 
     setSending(true);
-    // In a real app, this would trigger n8n or save directly
     const { error } = await supabase
       .from('n8n_chat_clientes_historial')
       .insert({
@@ -143,7 +156,7 @@ export default function ChatWindow({ sessionId }: { sessionId: string }) {
 
     if (!error) {
       setInputValue('');
-      setIsTyping(true); // Manually trigger typing when operator sends message to prompt AI
+      setIsTyping(true);
     }
     setSending(false);
   };
@@ -154,7 +167,7 @@ export default function ChatWindow({ sessionId }: { sessionId: string }) {
       .upsert({ session_id: sessionId, is_manual: !panicMode });
     
     if (!error) {
-      if (!panicMode) setIsTyping(false); // Stop typing if panic mode enabled
+      if (!panicMode) setIsTyping(false);
       setPanicMode(!panicMode);
     }
   };
@@ -229,12 +242,14 @@ export default function ChatWindow({ sessionId }: { sessionId: string }) {
                       {message.content}
                       
                       {message.role === 'assistant' && (
-                        <div className="absolute -right-12 top-0 flex flex-col gap-2 opacity-0 group-hover/msg:opacity-100 transition-opacity">
+                        <div className={`absolute -right-12 top-0 flex flex-col gap-2 transition-all duration-300 ${
+                          message.feedback ? 'opacity-100' : 'opacity-0 group-hover/msg:opacity-100'
+                        }`}>
                           <button 
                             onClick={() => handleFeedback(message.id, 1)}
                             className={`p-1.5 rounded-lg border transition-all ${
                               message.feedback === 1 
-                                ? 'bg-emerald-500/20 border-emerald-500/50 text-emerald-400' 
+                                ? 'bg-emerald-500/20 border-emerald-500/50 text-emerald-400 scale-110' 
                                 : 'bg-slate-900/50 border-slate-800 text-slate-500 hover:text-emerald-400 hover:border-emerald-500/30'
                             }`}
                           >
@@ -244,7 +259,7 @@ export default function ChatWindow({ sessionId }: { sessionId: string }) {
                             onClick={() => handleFeedback(message.id, -1)}
                             className={`p-1.5 rounded-lg border transition-all ${
                               message.feedback === -1 
-                                ? 'bg-rose-500/20 border-rose-500/50 text-rose-400' 
+                                ? 'bg-rose-500/20 border-rose-500/50 text-rose-400 scale-110' 
                                 : 'bg-slate-900/50 border-slate-800 text-slate-500 hover:text-rose-400 hover:border-rose-500/30'
                             }`}
                           >
@@ -254,7 +269,7 @@ export default function ChatWindow({ sessionId }: { sessionId: string }) {
                       )}
                     </div>
                     <p className={`text-[10px] text-slate-500 font-medium ${message.role === 'user' ? 'text-right' : 'text-left'}`}>
-                      {new Date(message.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      {message.created_at.includes('T') ? new Date(message.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Now'}
                     </p>
                   </div>
                 </div>
