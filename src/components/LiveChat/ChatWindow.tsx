@@ -138,6 +138,18 @@ export default function ChatWindow({ sessionId }: { sessionId: string }) {
     setSending(false);
   };
 
+  const handleFeedback = async (messageId: string, rating: number) => {
+    if (messageId.startsWith('temp-')) return;
+    
+    await supabase
+      .from('ai_feedback')
+      .upsert({ 
+        message_id: parseInt(messageId), 
+        rating,
+        processed: false
+      }, { onConflict: 'message_id' });
+  };
+
   return (
     <div className="flex flex-col h-full bg-[#030711] relative overflow-hidden font-sans">
       <header className="px-5 pt-10 pb-3 flex items-center justify-between bg-slate-900/10 border-b border-white/[0.03] z-10 shrink-0">
@@ -175,7 +187,7 @@ export default function ChatWindow({ sessionId }: { sessionId: string }) {
             {messages.map((message) => (
               <div 
                 key={message.id} 
-                className={`flex flex-col ${message.role === 'user' ? 'items-end' : 'items-start'} max-w-full animate-in slide-in-from-bottom-3`}
+                className={`flex flex-col ${message.role === 'user' ? 'items-end' : 'items-start'} max-w-full animate-in slide-in-from-bottom-3 group`}
               >
                 {message.role === 'assistant' && (
                   <span className="text-[9px] font-bold text-primary uppercase tracking-widest mb-1.5 ml-1">Agente Alpha</span>
@@ -201,7 +213,25 @@ export default function ChatWindow({ sessionId }: { sessionId: string }) {
                       )}
                       {message.content}
                     </div>
-                    <span className="text-[8px] text-slate-600 font-medium px-1 uppercase tracking-widest">Ahora</span>
+                    <div className="flex items-center justify-between gap-3 px-1">
+                      <span className="text-[8px] text-slate-600 font-medium uppercase tracking-widest">Ahora</span>
+                      {message.role === 'assistant' && !message.id.startsWith('temp-') && (
+                        <div className="flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <button 
+                            onClick={() => handleFeedback(message.id, 1)}
+                            className="p-1 hover:bg-emerald-500/10 rounded-md transition-all active:scale-90 group/thumb"
+                          >
+                            <ThumbsUp className="w-2.5 h-2.5 text-slate-600 group-hover/thumb:text-emerald-500" />
+                          </button>
+                          <button 
+                            onClick={() => handleFeedback(message.id, -1)}
+                            className="p-1 hover:bg-rose-500/10 rounded-md transition-all active:scale-90 group/thumb"
+                          >
+                            <ThumbsDown className="w-2.5 h-2.5 text-slate-600 group-hover/thumb:text-rose-500" />
+                          </button>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>
