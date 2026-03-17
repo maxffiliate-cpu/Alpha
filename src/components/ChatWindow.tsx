@@ -238,185 +238,123 @@ export default function ChatWindow({ sessionId }: { sessionId: string }) {
 
   return (
     <div className={`flex flex-col h-full transition-colors duration-500 ${
-      panicMode ? 'bg-rose-950/5' : 'bg-slate-900/10'
-    } backdrop-blur-xl`}>
-      {/* Chat Header */}
-      <header className={`p-4 border-b transition-colors duration-500 flex items-center justify-between ${
-        panicMode ? 'border-rose-500/30 bg-rose-500/5' : 'border-slate-800 bg-slate-900/40'
-      }`}>
-        <div className="flex items-center gap-3">
-          <div className="relative">
-            <div className={`w-10 h-10 rounded-full flex items-center justify-center border transition-all duration-500 ${
-              panicMode ? 'bg-rose-500/20 border-rose-500/40' : 'bg-primary/20 border-primary/30'
-            }`}>
-              <Bot className={`w-5 h-5 ${panicMode ? 'text-rose-400' : 'text-primary'}`} />
-            </div>
-            <div className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-slate-900 ${panicMode ? 'bg-rose-500 animate-pulse' : 'bg-emerald-500'}`} />
-          </div>
-          <div>
-            <h3 className="text-sm font-bold text-white flex items-center gap-2">
-              {sessionId}
-              <ChevronDown className="w-3 h-3 text-slate-500" />
-            </h3>
-            <p className={`text-[10px] uppercase tracking-widest font-bold transition-colors ${
-              panicMode ? 'text-rose-400' : 'text-slate-400'
-            }`}>
-              {panicMode ? 'Intervention Active' : 'AI Agent Handling'}
-            </p>
-          </div>
-        </div>
-
+      panicMode ? 'bg-rose-950/20' : 'bg-transparent'
+    }`}>
+      {/* Panic Button - Positioned outside the mockup visually but technically inside the component */}
+      <div className="fixed top-8 right-8 z-[100] flex items-center gap-4">
         <button 
           onClick={togglePanicMode}
-          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+          className={`flex items-center gap-2 px-6 py-3 rounded-2xl text-xs font-black transition-all shadow-2xl ${
             panicMode 
-              ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/20' 
-              : 'bg-rose-500/10 text-rose-400 border border-rose-500/20 hover:bg-rose-500/20 active:scale-95'
+              ? 'bg-emerald-500 text-white hover:bg-emerald-600 scale-105 border-none' 
+              : 'bg-rose-600 text-white hover:bg-rose-700 active:scale-95 shadow-rose-900/40'
           }`}
         >
-          {panicMode ? 'Resume AI' : <><AlertTriangle className="w-3.5 h-3.5" /> PANIC BUTTON</>}
+          {panicMode ? 'RESUME AI CONTROL' : <><AlertTriangle className="w-4 h-4" /> PANIC BUTTON</>}
         </button>
+      </div>
+
+      {/* Chat Header inside Mockup */}
+      <header className={`px-4 pt-10 pb-4 border-b transition-colors duration-500 flex flex-col items-center text-center ${
+        panicMode ? 'border-rose-500/30 bg-rose-500/10' : 'border-slate-800 bg-slate-900/40'
+      }`}>
+        <div className="relative mb-2">
+          <div className={`w-12 h-12 rounded-full flex items-center justify-center border transition-all duration-500 ${
+            panicMode ? 'bg-rose-500/20 border-rose-500/40' : 'bg-primary/20 border-primary/30'
+          }`}>
+            <Bot className={`w-6 h-6 ${panicMode ? 'text-rose-400' : 'text-primary'}`} />
+          </div>
+          <div className={`absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full border-2 border-slate-900 ${panicMode ? 'bg-rose-500 animate-pulse' : 'bg-emerald-500'}`} />
+        </div>
+        <div>
+          <h3 className="text-sm font-black text-white flex items-center justify-center gap-1 uppercase tracking-tight">
+            {sessionId.split('@')[0]}
+          </h3>
+          <p className={`text-[9px] uppercase tracking-[0.2em] font-black transition-colors ${
+            panicMode ? 'text-rose-400' : 'text-slate-500'
+          }`}>
+            {panicMode ? 'Intervention Active' : 'AI Agent Handling'}
+          </p>
+        </div>
       </header>
 
       {/* Messages Area */}
-      <div className="flex-1 overflow-y-auto p-6 space-y-6 scroll-smooth">
+      <div className="flex-1 overflow-y-auto px-4 py-6 space-y-4 custom-scrollbar">
         {loading ? (
           <div className="flex items-center justify-center h-full">
             <Loader2 className="w-8 h-8 text-primary animate-spin opacity-50" />
           </div>
         ) : (
           <>
-            <div className="flex justify-center">
-              <span className="text-[10px] py-1 px-3 rounded-full bg-slate-800/50 text-slate-500 uppercase tracking-widest font-bold border border-slate-700/50">
-                Encrypted Session Started
-              </span>
-            </div>
             {messages.map((message) => (
               <div 
                 key={message.id} 
                 className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'} group animate-in slide-in-from-bottom-2`}
               >
-                <div className={`flex gap-3 max-w-[80%] ${message.role === 'user' ? 'flex-row-reverse' : 'flex-row'}`}>
-                  <div className={`w-8 h-8 rounded-full shrink-0 flex items-center justify-center border ${
+                <div className={`flex gap-2 max-w-[90%] ${message.role === 'user' ? 'flex-row-reverse' : 'flex-row'}`}>
+                  <div className={`w-6 h-6 rounded-full shrink-0 flex items-center justify-center border mt-auto mb-1 ${
                     message.role === 'user' 
                       ? 'bg-slate-800 border-slate-700' 
                       : 'bg-primary/10 border-primary/20'
                   }`}>
-                    {message.role === 'user' ? <User className="w-4 h-4 text-slate-400" /> : <Bot className="w-4 h-4 text-primary" />}
+                    {message.role === 'user' ? <User className="w-3 h-3 text-slate-400" /> : <Bot className="w-3 h-3 text-primary" />}
                   </div>
                   <div className="space-y-1">
-                    <div className="flex items-center gap-2">
-                      <span className={`text-[10px] font-bold uppercase tracking-tight ${message.role === 'user' ? 'text-slate-500 text-right w-full' : 'text-primary'}`}>
-                        {message.role === 'user' ? 'Client' : 'Alpha Agent'}
-                      </span>
-                      {message.is_manual && (
-                        <span className="text-[9px] bg-rose-500/20 text-rose-400 px-1.5 py-0.5 rounded-md border border-rose-500/30 font-black animate-pulse whitespace-nowrap">
-                          HUMAN INTERVENTION
-                        </span>
-                      )}
-                    </div>
-                    <div className={`p-4 rounded-2xl text-sm leading-relaxed relative group/msg shadow-sm ${
+                    <div className={`p-3 rounded-2xl text-xs leading-relaxed relative shadow-md ${
                       message.role === 'user'
-                        ? 'bg-slate-800/80 text-white rounded-tr-none'
-                        : 'bg-primary/20 text-white border border-primary/10 rounded-tl-none'
+                        ? 'bg-slate-800 text-white rounded-br-none'
+                        : 'bg-primary/20 text-white border border-primary/10 rounded-bl-none'
                     }`}>
                       {message.content}
-                      
-                      {message.role === 'assistant' && (
-                        <div className={`absolute -right-12 top-0 flex flex-col gap-2 transition-all duration-300 ${
-                          message.feedback ? 'opacity-100' : 'opacity-0 group-hover/msg:opacity-100'
-                        }`}>
-                          <button 
-                            onClick={() => handleFeedback(message.id, 1)}
-                            className={`p-1.5 rounded-lg border transition-all ${
-                              message.feedback === 1 
-                                ? 'bg-emerald-500/20 border-emerald-500/50 text-emerald-400 scale-110' 
-                                : 'bg-slate-900/50 border-slate-800 text-slate-500 hover:text-emerald-400 hover:border-emerald-500/30'
-                            }`}
-                          >
-                            <ThumbsUp className="w-3.5 h-3.5" />
-                          </button>
-                          <button 
-                            onClick={() => handleFeedback(message.id, -1)}
-                            className={`p-1.5 rounded-lg border transition-all ${
-                              message.feedback === -1 
-                                ? 'bg-rose-500/20 border-rose-500/50 text-rose-400 scale-110' 
-                                : 'bg-slate-900/50 border-slate-800 text-slate-500 hover:text-rose-400 hover:border-rose-500/30'
-                            }`}
-                          >
-                            <ThumbsDown className="w-3.5 h-3.5" />
-                          </button>
-                        </div>
-                      )}
                     </div>
-                    <p className={`text-[10px] text-slate-500 font-medium ${message.role === 'user' ? 'text-right' : 'text-left'}`}>
-                      {message.created_at.includes('T') ? new Date(message.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Now'}
-                    </p>
+                    {message.is_manual && (
+                        <p className="text-[8px] text-rose-400 font-black uppercase tracking-widest text-right">Human Intervention</p>
+                    )}
                   </div>
                 </div>
               </div>
             ))}
             
             {isTyping && !panicMode && (
-              <div className="flex justify-start group animate-in slide-in-from-bottom-2">
-                <div className="flex gap-3 items-center">
-                  <div className="w-8 h-8 rounded-full shrink-0 flex items-center justify-center border bg-primary/10 border-primary/20">
-                    <Bot className="w-4 h-4 text-primary" />
-                  </div>
-                  <div className="bg-primary/10 px-4 py-3 rounded-full flex gap-1 items-center">
-                    <div className="w-1.5 h-1.5 bg-primary/60 rounded-full animate-bounce [animation-delay:-0.3s]" />
-                    <div className="w-1.5 h-1.5 bg-primary/60 rounded-full animate-bounce [animation-delay:-0.15s]" />
-                    <div className="w-1.5 h-1.5 bg-primary/60 rounded-full animate-bounce" />
-                    <span className="text-[10px] text-primary/60 font-bold uppercase tracking-wider ml-2">AI Analyzing...</span>
-                  </div>
+              <div className="flex justify-start animate-in slide-in-from-bottom-1">
+                <div className="bg-primary/10 px-3 py-2 rounded-2xl flex gap-1 items-center">
+                    <div className="w-1 h-1 bg-primary/60 rounded-full animate-bounce [animation-delay:-0.3s]" />
+                    <div className="w-1 h-1 bg-primary/60 rounded-full animate-bounce [animation-delay:-0.15s]" />
+                    <div className="w-1 h-1 bg-primary/60 rounded-full animate-bounce" />
                 </div>
               </div>
             )}
-            
             <div ref={messagesEndRef} />
           </>
         )}
       </div>
 
       {/* Input Area */}
-      <footer className={`p-4 border-t transition-colors duration-500 ${
-        panicMode ? 'bg-rose-500/5 border-rose-500/20' : 'bg-slate-900/40 border-slate-800'
+      <footer className={`p-4 pb-8 border-t transition-colors duration-500 ${
+        panicMode ? 'bg-rose-500/10 border-rose-500/20' : 'bg-slate-900/40 border-slate-800'
       }`}>
-        <form onSubmit={handleSendMessage} className="relative flex items-center gap-2 max-w-5xl mx-auto">
-          <div className="relative flex-1 group">
+        <form onSubmit={handleSendMessage} className="relative flex items-center gap-2">
             <input 
               type="text" 
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
-              placeholder={panicMode ? "Type manual message to client..." : "Suggest a response to AI..."}
-              className={`w-full border text-white rounded-2xl py-4 pl-5 pr-12 text-sm focus:outline-none focus:ring-4 transition-all shadow-inner ${
+              placeholder={panicMode ? "Manual message..." : "Ask AI..."}
+              className={`w-full border text-white rounded-xl py-3 px-4 text-xs focus:outline-none transition-all ${
                 panicMode 
-                  ? 'bg-rose-950/20 border-rose-500/30 hover:border-rose-500/50 focus:border-rose-500 focus:ring-rose-500/10'
-                  : 'bg-slate-900/80 border-slate-800 hover:border-slate-700 focus:border-primary/50 focus:ring-primary/5'
+                  ? 'bg-rose-950/40 border-rose-500/30 focus:border-rose-500'
+                  : 'bg-slate-900 border-slate-800 focus:border-primary/50'
               }`}
             />
-            {!panicMode && (
-              <Brain className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-600 group-hover:text-primary/50 transition-colors pointer-events-none" />
-            )}
-            {panicMode && (
-              <ShieldAlert className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-rose-500/50 animate-pulse pointer-events-none" />
-            )}
-          </div>
           <button 
             type="submit"
             disabled={!inputValue.trim() || sending}
-            className={`p-4 rounded-2xl text-white active:scale-95 disabled:opacity-50 disabled:active:scale-100 transition-all shadow-lg ${
-              panicMode
-                ? 'bg-rose-600 hover:bg-rose-700 shadow-rose-900/20'
-                : 'bg-primary hover:bg-blue-600 shadow-primary/20'
+            className={`p-3 rounded-xl text-white active:scale-95 disabled:opacity-50 transition-all ${
+              panicMode ? 'bg-rose-600' : 'bg-primary'
             }`}
           >
-            {sending ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send className="w-5 h-5" />}
+            {sending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
           </button>
         </form>
-        <p className="text-center text-[10px] text-slate-600 mt-3 font-medium tracking-tight">
-          Alpha Control - Realtime Manual Intervention Enabled
-        </p>
       </footer>
     </div>
   );
