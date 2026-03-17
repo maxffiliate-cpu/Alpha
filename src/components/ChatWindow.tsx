@@ -26,6 +26,7 @@ export default function ChatWindow({ sessionId }: { sessionId: string }) {
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [panicMode, setPanicMode] = useState(false);
+  const [isTyping, setIsTyping] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
@@ -45,7 +46,7 @@ export default function ChatWindow({ sessionId }: { sessionId: string }) {
           id: m.id.toString(),
           role: m.message?.type === 'human' ? 'user' : 'assistant',
           content: m.message?.content || '',
-          created_at: new Date().toISOString() // Placeholder as created_at is missing
+          created_at: new Date().toISOString()
         })));
       }
       setLoading(false);
@@ -63,12 +64,22 @@ export default function ChatWindow({ sessionId }: { sessionId: string }) {
         table: 'n8n_chat_clientes_historial',
         filter: `session_id=eq.${sessionId}`
       }, (payload) => {
-        setMessages(prev => [...prev, {
+        const type = payload.new.message?.type;
+        
+        if (type === 'human') {
+          setIsTyping(true);
+        } else if (type === 'ai') {
+          setIsTyping(false);
+        }
+
+        const newMessage: Message = {
           id: payload.new.id.toString(),
-          role: payload.new.message?.type === 'human' ? 'user' : 'assistant',
+          role: type === 'human' ? 'user' : 'assistant',
           content: payload.new.message?.content || '',
           created_at: new Date().toISOString()
-        }]);
+        };
+
+        setMessages(prev => [...prev, newMessage]);
       })
       .subscribe();
 
@@ -77,7 +88,7 @@ export default function ChatWindow({ sessionId }: { sessionId: string }) {
     };
   }, [sessionId]);
 
-  useEffect(scrollToBottom, [messages]);
+  useEffect(scrollToBottom, [messages, isTyping]);
 
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -97,7 +108,10 @@ export default function ChatWindow({ sessionId }: { sessionId: string }) {
         }
       });
 
-    if (!error) setInputValue('');
+    if (!error) {
+      setInputValue('');
+      setIsTyping(true); // Manually trigger typing when operator sends message to prompt AI
+    }
     setSending(false);
   };
 
@@ -106,7 +120,10 @@ export default function ChatWindow({ sessionId }: { sessionId: string }) {
       .from('session_control')
       .upsert({ session_id: sessionId, is_manual: !panicMode });
     
-    if (!error) setPanicMode(!panicMode);
+    if (!error) {
+      if (!panicMode) setIsTyping(false); // Stop typing if panic mode enabled
+      setPanicMode(!panicMode);
+    }
   };
 
   return (
@@ -185,6 +202,23 @@ export default function ChatWindow({ sessionId }: { sessionId: string }) {
                 </div>
               </div>
             ))}
+            
+            {isTyping && !panicMode && (
+              <div className="flex justify-start group animate-in slide-in-from-bottom-2">
+                <div className="flex gap-3 items-center">
+                  <div className="w-8 h-8 rounded-full shrink-0 flex items-center justify-center border bg-primary/10 border-primary/20">
+                    <Bot className="w-4 h-4 text-primary" />
+                  </div>
+                  <div className="bg-primary/10 px-4 py-3 rounded-full flex gap-1 items-center">
+                    <div className="w-1.5 h-1.5 bg-primary/60 rounded-full animate-bounce [animation-delay:-0.3s]" />
+                    <div className="w-1.5 h-1.5 bg-primary/60 rounded-full animate-bounce [animation-delay:-0.15s]" />
+                    <div className="w-1.5 h-1.5 bg-primary/60 rounded-full animate-bounce" />
+                    <span className="text-[10px] text-primary/60 font-bold uppercase tracking-wider ml-2">AI Analyzing...</span>
+                  </div>
+                </div>
+              </div>
+            )}
+            
             <div ref={messagesEndRef} />
           </>
         )}
