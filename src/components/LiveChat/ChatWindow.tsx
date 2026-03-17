@@ -139,21 +139,21 @@ export default function ChatWindow({ sessionId }: { sessionId: string }) {
 
   return (
     <div className="flex flex-col h-full bg-[#030711] relative overflow-hidden font-sans">
-      <header className="px-6 pt-12 pb-6 flex flex-col items-center bg-slate-900/10 border-b border-white/[0.03]">
-        <div className="relative mb-3 group">
-          <div className="w-12 h-12 rounded-full bg-primary/20 border border-primary/30 flex items-center justify-center shadow-[0_0_20px_rgba(59,130,246,0.1)] transition-all group-hover:bg-primary/30">
-            <Bot className="w-6 h-6 text-primary" />
+      <header className="px-6 pt-10 pb-5 flex flex-col items-center bg-slate-900/10 border-b border-white/[0.03]">
+        <div className="relative mb-2 group">
+          <div className="w-10 h-10 rounded-full bg-primary/20 border border-primary/30 flex items-center justify-center shadow-[0_0_20px_rgba(59,130,246,0.1)] transition-all group-hover:bg-primary/30">
+            <Bot className="w-5 h-5 text-primary" />
           </div>
-          <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full border-2 border-[#030711] bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
+          <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-[#030711] bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
         </div>
         <div className="text-center space-y-1">
           <div className="flex items-center justify-center gap-1.5 cursor-pointer hover:opacity-80 transition-opacity">
-            <h3 className="text-[13px] font-bold text-white tracking-tight">
+            <h3 className="text-[11px] font-bold text-white tracking-tight">
               {sessionId.split('@')[0]}
             </h3>
-            <ChevronDown className="w-3 h-3 text-slate-500" />
+            <ChevronDown className="w-2.5 h-2.5 text-slate-500" />
           </div>
-          <p className="text-[9px] uppercase tracking-[0.2em] font-bold text-primary/80">
+          <p className="text-[8px] uppercase tracking-[0.2em] font-bold text-primary/80">
             AI Agent Handling
           </p>
         </div>
@@ -223,7 +223,7 @@ export default function ChatWindow({ sessionId }: { sessionId: string }) {
           >
             <div className="relative z-10 flex items-center justify-center gap-2.5">
               <AlertTriangle className="w-4 h-4 animate-pulse" />
-              <span className="text-[11px] font-black uppercase tracking-[0.15em]">Panic Button - Manual Intervention</span>
+              <span className="text-[11px] font-black uppercase tracking-[0.15em]">Panic Button</span>
             </div>
             <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:animate-shimmer" />
           </button>

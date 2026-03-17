@@ -147,7 +147,7 @@ export default function ConversationsPage() {
       <main className="flex-1 flex flex-col bg-[#030711] relative overflow-hidden">
         {selectedSession ? (
           <>
-            <div className="flex-1 flex flex-col items-center pt-16 pb-12 px-8 overflow-y-auto custom-scrollbar">
+            <div className="flex-1 flex flex-col items-center pt-8 pb-8 px-8 overflow-y-auto custom-scrollbar">
               <div className="w-full max-w-[340px] relative">
                 <PhoneMockup>
                   <ChatWindow sessionId={selectedSession} />
