@@ -158,7 +158,26 @@ export default function ChatWindow({ sessionId }: { sessionId: string }) {
 
     if (!error) {
       setInputValue('');
-      if (!panicMode) setIsTyping(true);
+      
+      if (panicMode) {
+        // Trigger n8n manual intervention webhook
+        try {
+          fetch('https://n8n.srv941923.hstgr.cloud/webhook/polaris-intervencion-manual', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              chat_id: sessionId,
+              type: 'human_manual',
+              content: inputValue,
+              metadata: { is_panic_intervention: true }
+            })
+          });
+        } catch (webhookError) {
+          console.error('Webhook error:', webhookError);
+        }
+      } else {
+        setIsTyping(true);
+      }
     }
     setSending(false);
   };
