@@ -9,6 +9,8 @@ import {
   AlertTriangle, 
   Loader2, 
   ChevronDown,
+  ThumbsDown,
+  ThumbsUp,
   Brain,
   ShieldAlert
 } from 'lucide-react';
@@ -18,6 +20,7 @@ interface Message {
   role: 'user' | 'assistant';
   content: string;
   created_at: string;
+  feedback?: number | null;
 }
 
 export default function ChatWindow({ sessionId }: { sessionId: string }) {
@@ -35,18 +38,23 @@ export default function ChatWindow({ sessionId }: { sessionId: string }) {
 
   useEffect(() => {
     async function fetchMessages() {
-      const { data, error } = await supabase
+      const { data: messagesData, error: messagesError } = await supabase
         .from('n8n_chat_clientes_historial')
         .select('*')
         .eq('session_id', sessionId)
         .order('id', { ascending: true });
 
-      if (!error && data) {
-        setMessages(data.map(m => ({
+      const { data: feedbackData } = await supabase
+        .from('ai_feedback')
+        .select('message_id, rating');
+
+      if (!messagesError && messagesData) {
+        setMessages(messagesData.map(m => ({
           id: m.id.toString(),
           role: m.message?.type === 'human' ? 'user' : 'assistant',
           content: m.message?.content || '',
-          created_at: new Date().toISOString()
+          created_at: new Date().toISOString(),
+          feedback: feedbackData?.find(f => f.message_id === m.id)?.rating || null
         })));
       }
       setLoading(false);
@@ -54,7 +62,7 @@ export default function ChatWindow({ sessionId }: { sessionId: string }) {
     }
 
     fetchMessages();
-
+// ... (omitting lines for brevity in instruction, will replace the whole block)
     // Subscribe to new messages for this specific session
     const channel = supabase
       .channel(`chat:${sessionId}`)
@@ -76,10 +84,22 @@ export default function ChatWindow({ sessionId }: { sessionId: string }) {
           id: payload.new.id.toString(),
           role: type === 'human' ? 'user' : 'assistant',
           content: payload.new.message?.content || '',
-          created_at: new Date().toISOString()
+          created_at: new Date().toISOString(),
+          feedback: null
         };
 
         setMessages(prev => [...prev, newMessage]);
+      })
+      .on('postgres_changes', {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'ai_feedback'
+      }, (payload) => {
+        setMessages(prev => prev.map(m => 
+          m.id === payload.new.message_id.toString() 
+            ? { ...m, feedback: payload.new.rating } 
+            : m
+        ));
       })
       .subscribe();
 
@@ -90,7 +110,20 @@ export default function ChatWindow({ sessionId }: { sessionId: string }) {
 
   useEffect(scrollToBottom, [messages, isTyping]);
 
+  const handleFeedback = async (messageId: string, rating: number) => {
+    const { error } = await supabase
+      .from('ai_feedback')
+      .upsert({ message_id: parseInt(messageId), rating }, { onConflict: 'message_id' });
+    
+    if (!error) {
+      setMessages(prev => prev.map(m => 
+        m.id === messageId ? { ...m, feedback: rating } : m
+      ));
+    }
+  };
+
   const handleSendMessage = async (e: React.FormEvent) => {
+// ...
     e.preventDefault();
     if (!inputValue.trim() || sending) return;
 
@@ -188,12 +221,37 @@ export default function ChatWindow({ sessionId }: { sessionId: string }) {
                     {message.role === 'user' ? <User className="w-4 h-4 text-slate-400" /> : <Bot className="w-4 h-4 text-primary" />}
                   </div>
                   <div className="space-y-1">
-                    <div className={`p-4 rounded-2xl text-sm leading-relaxed ${
+                    <div className={`p-4 rounded-2xl text-sm leading-relaxed relative group/msg ${
                       message.role === 'user'
                         ? 'bg-slate-800/80 text-white rounded-tr-none'
                         : 'bg-primary/20 text-white border border-primary/10 rounded-tl-none'
                     }`}>
                       {message.content}
+                      
+                      {message.role === 'assistant' && (
+                        <div className="absolute -right-12 top-0 flex flex-col gap-2 opacity-0 group-hover/msg:opacity-100 transition-opacity">
+                          <button 
+                            onClick={() => handleFeedback(message.id, 1)}
+                            className={`p-1.5 rounded-lg border transition-all ${
+                              message.feedback === 1 
+                                ? 'bg-emerald-500/20 border-emerald-500/50 text-emerald-400' 
+                                : 'bg-slate-900/50 border-slate-800 text-slate-500 hover:text-emerald-400 hover:border-emerald-500/30'
+                            }`}
+                          >
+                            <ThumbsUp className="w-3.5 h-3.5" />
+                          </button>
+                          <button 
+                            onClick={() => handleFeedback(message.id, -1)}
+                            className={`p-1.5 rounded-lg border transition-all ${
+                              message.feedback === -1 
+                                ? 'bg-rose-500/20 border-rose-500/50 text-rose-400' 
+                                : 'bg-slate-900/50 border-slate-800 text-slate-500 hover:text-rose-400 hover:border-rose-500/30'
+                            }`}
+                          >
+                            <ThumbsDown className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      )}
                     </div>
                     <p className={`text-[10px] text-slate-500 font-medium ${message.role === 'user' ? 'text-right' : 'text-left'}`}>
                       {new Date(message.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
