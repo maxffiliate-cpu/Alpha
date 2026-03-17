@@ -147,16 +147,18 @@ export default function ChatWindow({ sessionId }: { sessionId: string }) {
       .insert({
         session_id: sessionId,
         message: {
-          type: 'human',
+          type: panicMode ? 'human_manual' : 'human',
           content: inputValue,
-          additional_kwargs: {},
+          additional_kwargs: {
+            is_panic_intervention: panicMode
+          },
           response_metadata: {}
         }
       });
 
     if (!error) {
       setInputValue('');
-      setIsTyping(true);
+      if (!panicMode) setIsTyping(true);
     }
     setSending(false);
   };
@@ -173,23 +175,31 @@ export default function ChatWindow({ sessionId }: { sessionId: string }) {
   };
 
   return (
-    <div className="flex flex-col h-full bg-slate-900/10 backdrop-blur-xl">
+    <div className={`flex flex-col h-full transition-colors duration-500 ${
+      panicMode ? 'bg-rose-950/5' : 'bg-slate-900/10'
+    } backdrop-blur-xl`}>
       {/* Chat Header */}
-      <header className="p-4 border-b border-slate-800 flex items-center justify-between bg-slate-900/40">
+      <header className={`p-4 border-b transition-colors duration-500 flex items-center justify-between ${
+        panicMode ? 'border-rose-500/30 bg-rose-500/5' : 'border-slate-800 bg-slate-900/40'
+      }`}>
         <div className="flex items-center gap-3">
           <div className="relative">
-            <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center border border-primary/30">
-              <Bot className={`w-5 h-5 ${panicMode ? 'text-slate-400' : 'text-primary'}`} />
+            <div className={`w-10 h-10 rounded-full flex items-center justify-center border transition-all duration-500 ${
+              panicMode ? 'bg-rose-500/20 border-rose-500/40' : 'bg-primary/20 border-primary/30'
+            }`}>
+              <Bot className={`w-5 h-5 ${panicMode ? 'text-rose-400' : 'text-primary'}`} />
             </div>
-            <div className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-slate-900 ${panicMode ? 'bg-amber-500' : 'bg-emerald-500'}`} />
+            <div className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-slate-900 ${panicMode ? 'bg-rose-500 animate-pulse' : 'bg-emerald-500'}`} />
           </div>
           <div>
             <h3 className="text-sm font-bold text-white flex items-center gap-2">
               {sessionId}
               <ChevronDown className="w-3 h-3 text-slate-500" />
             </h3>
-            <p className="text-[10px] text-slate-400 uppercase tracking-widest font-bold">
-              {panicMode ? 'Manual Intervention Active' : 'AI Agent Handling'}
+            <p className={`text-[10px] uppercase tracking-widest font-bold transition-colors ${
+              panicMode ? 'text-rose-400' : 'text-slate-400'
+            }`}>
+              {panicMode ? 'Intervention Active' : 'AI Agent Handling'}
             </p>
           </div>
         </div>
@@ -198,12 +208,11 @@ export default function ChatWindow({ sessionId }: { sessionId: string }) {
           onClick={togglePanicMode}
           className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all ${
             panicMode 
-              ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' 
-              : 'bg-rose-500/10 text-rose-400 border border-rose-500/20 hover:bg-rose-500/20'
+              ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/20' 
+              : 'bg-rose-500/10 text-rose-400 border border-rose-500/20 hover:bg-rose-500/20 active:scale-95'
           }`}
         >
-          <AlertTriangle className="w-3.5 h-3.5" />
-          {panicMode ? 'Resume AI' : 'PANIC BUTTON'}
+          {panicMode ? 'Resume AI' : <><AlertTriangle className="w-3.5 h-3.5" /> PANIC BUTTON</>}
         </button>
       </header>
 
@@ -298,27 +307,37 @@ export default function ChatWindow({ sessionId }: { sessionId: string }) {
       </div>
 
       {/* Input Area */}
-      <footer className="p-4 bg-slate-900/40 border-t border-slate-800">
+      <footer className={`p-4 border-t transition-colors duration-500 ${
+        panicMode ? 'bg-rose-500/5 border-rose-500/20' : 'bg-slate-900/40 border-slate-800'
+      }`}>
         <form onSubmit={handleSendMessage} className="relative flex items-center gap-2 max-w-5xl mx-auto">
           <div className="relative flex-1 group">
             <input 
               type="text" 
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
-              placeholder={panicMode ? "Type manual response..." : "Suggest a response to AI..."}
-              className="w-full bg-slate-900/80 border border-slate-800 hover:border-slate-700 focus:border-primary/50 text-white rounded-2xl py-4 pl-5 pr-12 text-sm focus:outline-none focus:ring-4 focus:ring-primary/5 transition-all shadow-inner"
+              placeholder={panicMode ? "Type manual message to client..." : "Suggest a response to AI..."}
+              className={`w-full border text-white rounded-2xl py-4 pl-5 pr-12 text-sm focus:outline-none focus:ring-4 transition-all shadow-inner ${
+                panicMode 
+                  ? 'bg-rose-950/20 border-rose-500/30 hover:border-rose-500/50 focus:border-rose-500 focus:ring-rose-500/10'
+                  : 'bg-slate-900/80 border-slate-800 hover:border-slate-700 focus:border-primary/50 focus:ring-primary/5'
+              }`}
             />
             {!panicMode && (
               <Brain className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-600 group-hover:text-primary/50 transition-colors pointer-events-none" />
             )}
             {panicMode && (
-              <ShieldAlert className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-amber-500/50 animate-pulse pointer-events-none" />
+              <ShieldAlert className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-rose-500/50 animate-pulse pointer-events-none" />
             )}
           </div>
           <button 
             type="submit"
             disabled={!inputValue.trim() || sending}
-            className="p-4 rounded-2xl bg-primary text-white hover:bg-blue-600 active:scale-95 disabled:opacity-50 disabled:active:scale-100 transition-all shadow-lg shadow-primary/20"
+            className={`p-4 rounded-2xl text-white active:scale-95 disabled:opacity-50 disabled:active:scale-100 transition-all shadow-lg ${
+              panicMode
+                ? 'bg-rose-600 hover:bg-rose-700 shadow-rose-900/20'
+                : 'bg-primary hover:bg-blue-600 shadow-primary/20'
+            }`}
           >
             {sending ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send className="w-5 h-5" />}
           </button>
