@@ -1,9 +1,9 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import ChatWindow from '@/components/ChatWindow';
-import PhoneMockup from '@/components/PhoneMockup';
-import ChatInsights from '@/components/ChatInsights';
+import ChatWindow from '@/components/LiveChat/ChatWindow';
+import PhoneMockup from '@/components/LiveChat/PhoneMockup';
+import ChatInsights from '@/components/LiveChat/ChatInsights';
 import { supabase } from '@/lib/supabase';
 import Skeleton from '@/components/ui/Skeleton';
 import { Search, Filter, MessageSquare, User, Activity } from 'lucide-react';
@@ -64,7 +64,8 @@ export default function ConversationsPage() {
   );
 
   return (
-    <div className="h-[calc(100vh-6rem)] grid grid-cols-[300px_1fr_320px] gap-4 animate-in fade-in duration-500 overflow-hidden pt-4">
+    <div className="h-screen w-full flex flex-col px-8 pt-44 pb-32 overflow-hidden">
+      <div className="flex-1 grid grid-cols-[280px_1fr_300px] gap-6 animate-in fade-in duration-500 overflow-hidden">
       {/* Column 1: Session List */}
       <aside className="glass-panel rounded-2xl overflow-hidden flex flex-col border border-slate-800/50 shadow-xl">
         <div className="p-4 border-b border-slate-800/50 space-y-3">
@@ -158,6 +159,7 @@ export default function ConversationsPage() {
       <aside className="glass-panel rounded-2xl p-5 border border-slate-800/50 shadow-xl overflow-hidden">
         <ChatInsights sessionId={selectedSession} />
       </aside>
+    </div>
     </div>
   );
 }
