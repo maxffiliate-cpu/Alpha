@@ -1,5 +1,4 @@
 import { Suspense } from 'react';
-import { Card } from '@/components/ui/card';
 import { 
   Users, 
   MessageSquare, 
