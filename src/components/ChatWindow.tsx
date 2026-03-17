@@ -21,6 +21,7 @@ interface Message {
   content: string;
   created_at: string;
   feedback?: number | null;
+  is_manual?: boolean;
 }
 
 export default function ChatWindow({ sessionId }: { sessionId: string }) {
@@ -49,13 +50,19 @@ export default function ChatWindow({ sessionId }: { sessionId: string }) {
         .select('message_id, rating');
 
       if (!messagesError && messagesData) {
-        setMessages(messagesData.map(m => ({
-          id: m.id.toString(),
-          role: m.message?.type === 'human' ? 'user' : 'assistant',
-          content: m.message?.content || '',
-          created_at: m.id.toString(), // Simplified for now but could use m.created_at if available
-          feedback: feedbackData?.find(f => f.message_id === m.id)?.rating || null
-        })));
+        setMessages(messagesData.map(m => {
+          const mType = m.message?.type;
+          const isHumanIntervention = mType === 'human_manual' || m.message?.additional_kwargs?.is_panic_intervention;
+          
+          return {
+            id: m.id.toString(),
+            role: mType === 'human' ? 'user' : 'assistant',
+            content: m.message?.content || '',
+            created_at: m.created_at || m.id.toString(),
+            feedback: feedbackData?.find(f => f.message_id === m.id)?.rating || null,
+            is_manual: isHumanIntervention
+          };
+        }));
       }
       setLoading(false);
       scrollToBottom();
@@ -72,23 +79,29 @@ export default function ChatWindow({ sessionId }: { sessionId: string }) {
         table: 'n8n_chat_clientes_historial',
         filter: `session_id=eq.${sessionId}`
       }, (payload) => {
-        const type = payload.new.message?.type;
+        const message = payload.new.message;
+        const type = message?.type;
+        const isHumanIntervention = type === 'human_manual' || message?.additional_kwargs?.is_panic_intervention;
         
         if (type === 'human') {
           setIsTyping(true);
-        } else if (type === 'ai') {
+        } else {
           setIsTyping(false);
         }
 
         const newMessage: Message = {
           id: payload.new.id.toString(),
           role: type === 'human' ? 'user' : 'assistant',
-          content: payload.new.message?.content || '',
-          created_at: new Date().toISOString(),
-          feedback: null
+          content: message?.content || '',
+          created_at: payload.new.created_at || new Date().toISOString(),
+          feedback: null,
+          is_manual: isHumanIntervention
         };
 
-        setMessages(prev => [...prev, newMessage]);
+        setMessages(prev => {
+          if (prev.find(m => m.id === newMessage.id)) return prev;
+          return [...prev, newMessage];
+        });
       })
       .on('postgres_changes', {
         event: 'INSERT',
@@ -141,23 +154,47 @@ export default function ChatWindow({ sessionId }: { sessionId: string }) {
     e.preventDefault();
     if (!inputValue.trim() || sending) return;
 
+    const messageContent = inputValue;
+    setInputValue('');
     setSending(true);
-    const { error } = await supabase
+
+    // Optimistic Update
+    const tempId = `temp-${Date.now()}`;
+    const optimisticMessage: Message = {
+      id: tempId,
+      role: panicMode ? 'assistant' : 'user', // Manual intervention is 'assistant' (outbound)
+      content: messageContent,
+      created_at: new Date().toISOString(),
+      feedback: null
+    };
+    setMessages(prev => [...prev, optimisticMessage]);
+
+    const { error, data } = await supabase
       .from('n8n_chat_clientes_historial')
       .insert({
         session_id: sessionId,
         message: {
           type: panicMode ? 'human_manual' : 'human',
-          content: inputValue,
+          content: messageContent,
           additional_kwargs: {
-            is_panic_intervention: panicMode
+            is_panic_intervention: panicMode,
+            source: 'alpha_frontend'
           },
           response_metadata: {}
         }
-      });
+      })
+      .select();
 
-    if (!error) {
-      setInputValue('');
+    if (error) {
+      console.error('Error sending message:', error);
+      // Remove optimistic message on error
+      setMessages(prev => prev.filter(m => m.id !== tempId));
+      setInputValue(messageContent); // Restore input
+    } else if (data && data[0]) {
+      // Replace optimistic message with real one
+      setMessages(prev => prev.map(m => 
+        m.id === tempId ? { ...m, id: data[0].id.toString() } : m
+      ));
       
       if (panicMode) {
         // Trigger n8n manual intervention webhook
@@ -168,7 +205,7 @@ export default function ChatWindow({ sessionId }: { sessionId: string }) {
             body: JSON.stringify({
               chat_id: sessionId,
               type: 'human_manual',
-              content: inputValue,
+              content: messageContent,
               metadata: { is_panic_intervention: true }
             })
           });
@@ -262,7 +299,17 @@ export default function ChatWindow({ sessionId }: { sessionId: string }) {
                     {message.role === 'user' ? <User className="w-4 h-4 text-slate-400" /> : <Bot className="w-4 h-4 text-primary" />}
                   </div>
                   <div className="space-y-1">
-                    <div className={`p-4 rounded-2xl text-sm leading-relaxed relative group/msg ${
+                    <div className="flex items-center gap-2">
+                      <span className={`text-[10px] font-bold uppercase tracking-tight ${message.role === 'user' ? 'text-slate-500 text-right w-full' : 'text-primary'}`}>
+                        {message.role === 'user' ? 'Client' : 'Alpha Agent'}
+                      </span>
+                      {message.is_manual && (
+                        <span className="text-[9px] bg-rose-500/20 text-rose-400 px-1.5 py-0.5 rounded-md border border-rose-500/30 font-black animate-pulse whitespace-nowrap">
+                          HUMAN INTERVENTION
+                        </span>
+                      )}
+                    </div>
+                    <div className={`p-4 rounded-2xl text-sm leading-relaxed relative group/msg shadow-sm ${
                       message.role === 'user'
                         ? 'bg-slate-800/80 text-white rounded-tr-none'
                         : 'bg-primary/20 text-white border border-primary/10 rounded-tl-none'
