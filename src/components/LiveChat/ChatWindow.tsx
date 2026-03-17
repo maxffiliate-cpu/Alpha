@@ -155,7 +155,7 @@ export default function ChatWindow({ sessionId }: { sessionId: string }) {
             {sessionId.split('@')[0]}
           </h3>
           <p className="text-[7px] uppercase tracking-[0.1em] font-medium text-slate-500">
-            AI Agent Handling
+            Gestionado por Agente IA
           </p>
         </div>
 
@@ -178,7 +178,7 @@ export default function ChatWindow({ sessionId }: { sessionId: string }) {
                 className={`flex flex-col ${message.role === 'user' ? 'items-end' : 'items-start'} max-w-full animate-in slide-in-from-bottom-3`}
               >
                 {message.role === 'assistant' && (
-                  <span className="text-[9px] font-bold text-primary uppercase tracking-widest mb-1.5 ml-1">Alpha Agent</span>
+                  <span className="text-[9px] font-bold text-primary uppercase tracking-widest mb-1.5 ml-1">Agente Alpha</span>
                 )}
                 
                 <div className={`flex gap-3 max-w-[90%] ${message.role === 'user' ? 'flex-row-reverse' : 'flex-row'}`}>
@@ -201,7 +201,7 @@ export default function ChatWindow({ sessionId }: { sessionId: string }) {
                       )}
                       {message.content}
                     </div>
-                    <span className="text-[8px] text-slate-600 font-medium px-1 uppercase tracking-widest">Now</span>
+                    <span className="text-[8px] text-slate-600 font-medium px-1 uppercase tracking-widest">Ahora</span>
                   </div>
                 </div>
               </div>
@@ -229,19 +229,19 @@ export default function ChatWindow({ sessionId }: { sessionId: string }) {
           >
             <div className="relative z-10 flex items-center justify-center gap-2.5">
               <AlertTriangle className="w-4 h-4 animate-pulse" />
-              <span className="text-[11px] font-black uppercase tracking-[0.15em]">Panic Button</span>
+              <span className="text-[11px] font-black uppercase tracking-[0.15em]">Botón de Pánico</span>
             </div>
             <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:animate-shimmer" />
           </button>
         ) : (
           <div className="space-y-3 animate-in fade-in slide-in-from-bottom-2 duration-300">
             <div className="flex justify-between items-center px-1">
-              <span className="text-[8px] text-rose-500 font-black uppercase tracking-[0.2em]">Manual Override Enabled</span>
+              <span className="text-[8px] text-rose-500 font-black uppercase tracking-[0.2em]">Intervención Manual Activada</span>
               <button 
                 onClick={() => setIsManualMode(false)}
                 className="text-[8px] text-slate-500 hover:text-white font-black uppercase tracking-widest transition-colors flex items-center gap-1"
               >
-                Resume AI <Bot className="w-2.5 h-2.5" />
+                Reanudar IA <Bot className="w-2.5 h-2.5" />
               </button>
             </div>
             <form onSubmit={handleSendMessage} className="relative flex items-center bg-[#0a0c10] border border-rose-500/20 rounded-[1.2rem] px-4 py-2 shadow-xl focus-within:border-rose-500/50 transition-all">
@@ -249,7 +249,7 @@ export default function ChatWindow({ sessionId }: { sessionId: string }) {
                 type="text" 
                 value={inputValue}
                 onChange={(e) => setInputValue(e.target.value)}
-                placeholder="Type manual message..."
+                placeholder="Escribe un mensaje manual..."
                 className="flex-1 bg-transparent text-white py-2 px-1 text-sm focus:outline-none placeholder:text-rose-900/50 font-medium"
               />
               <button 
@@ -263,7 +263,7 @@ export default function ChatWindow({ sessionId }: { sessionId: string }) {
           </div>
         )}
         <p className="text-[8px] text-center text-slate-700 uppercase tracking-widest font-bold">
-            Alpha Control - Realtime Manual Intervention Enabled
+            Control Alpha - Intervención Manual en Tiempo Real Activada
         </p>
       </footer>
     </div>

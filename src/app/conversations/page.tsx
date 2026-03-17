@@ -77,7 +77,7 @@ export default function ConversationsPage() {
             <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 group-focus-within:text-primary transition-colors" />
             <input 
               type="text" 
-              placeholder="Search conversations..."
+              placeholder="Buscar conversaciones..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full bg-slate-900/40 border border-slate-800/80 rounded-xl py-2.5 pl-10 pr-4 text-sm focus:outline-none focus:ring-1 focus:ring-primary/40 transition-all text-slate-200 placeholder:text-slate-600"
@@ -101,7 +101,7 @@ export default function ConversationsPage() {
           ) : filteredSessions.length === 0 ? (
             <div className="p-12 text-center text-slate-600 italic flex flex-col items-center gap-4">
               <MessageSquare className="w-8 h-8 opacity-10" />
-              <p className="text-sm">{searchTerm ? 'No results found' : 'No active chats'}</p>
+              <p className="text-sm">{searchTerm ? 'No se encontraron resultados' : 'No hay chats activos'}</p>
             </div>
           ) : (
             filteredSessions.map((session) => (
@@ -126,11 +126,11 @@ export default function ConversationsPage() {
                     <p className={`text-sm font-semibold truncate ${selectedSession === session.id ? 'text-white' : 'text-slate-300'}`}>
                       {(session.id as string)?.split('@')[0] || session.id}
                     </p>
-                    <span className="text-[10px] text-slate-500 font-medium">Now</span>
+                    <span className="text-[10px] text-slate-500 font-medium">Ahora</span>
                   </div>
                   <div className="flex items-center gap-1.5 mt-0.5">
                     <p className={`text-xs truncate ${selectedSession === session.id ? 'text-slate-300' : 'text-slate-500'}`}>
-                      Active now
+                      Activo ahora
                     </p>
                   </div>
                 </div>
@@ -161,9 +161,9 @@ export default function ConversationsPage() {
               <Activity className="w-12 h-12 text-primary/20" />
             </div>
             <div className="text-center space-y-2">
-              <h3 className="text-2xl font-bold text-white tracking-tight">Spectator Mode</h3>
+              <h3 className="text-2xl font-bold text-white tracking-tight">Modo Espectador</h3>
               <p className="text-sm text-slate-500 max-w-xs">
-                Select an active conversation to monitor in real-time and access AI insights.
+                Selecciona una conversación activa para monitorear en tiempo real y acceder a insights de IA.
               </p>
             </div>
           </div>

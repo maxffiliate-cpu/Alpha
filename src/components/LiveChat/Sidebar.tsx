@@ -13,10 +13,10 @@ import {
 } from 'lucide-react';
 
 const navItems = [
-  { href: '/', label: 'Overview', icon: LayoutDashboard },
-  { href: '/conversations', label: 'Live Chats', icon: MessageSquare },
-  { href: '/analytics', label: 'Analytics', icon: BarChart3 },
-  { href: '/settings', label: 'Agent Settings', icon: Settings2 },
+  { href: '/', label: 'Resumen', icon: LayoutDashboard },
+  { href: '/conversations', label: 'Chats en Vivo', icon: MessageSquare },
+  { href: '/analytics', label: 'Analíticas', icon: BarChart3 },
+  { href: '/settings', label: 'Ajustes del Agente', icon: Settings2 },
 ];
 
 export default function Sidebar() {
@@ -61,10 +61,10 @@ export default function Sidebar() {
             <div className="w-full h-full bg-slate-700 animate-pulse" />
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-xs font-bold text-white truncate">Administrator</p>
+            <p className="text-xs font-bold text-white truncate">Administrador</p>
             <div className="flex items-center gap-1.5">
               <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-              <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Active System</p>
+              <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Sistema Activo</p>
             </div>
           </div>
         </div>

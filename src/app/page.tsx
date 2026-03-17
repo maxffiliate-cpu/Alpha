@@ -52,35 +52,35 @@ export default function DashboardPage() {
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
       <header className="flex flex-col gap-2">
-        <h1 className="text-3xl font-bold tracking-tight text-white">Dashboard</h1>
-        <p className="text-slate-400">Welcome back, Alpha. Here's what's happening today.</p>
+        <h1 className="text-3xl font-bold tracking-tight text-white">Panel de Control</h1>
+        <p className="text-slate-400">Bienvenido de nuevo, Alpha. Esto es lo que está pasando hoy.</p>
       </header>
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard 
-          title="Total Messages" 
+          title="Mensajes Totales" 
           value={stats.totalMessages.toLocaleString()} 
           change="+12%" 
           loading={loading}
           icon={<MessageSquare className="w-5 h-5" />}
         />
         <StatCard 
-          title="Active Sessions" 
+          title="Sesiones Activas" 
           value={stats.totalSessions.toLocaleString()} 
           change="+4" 
           loading={loading}
           icon={<Users className="w-5 h-5" />}
         />
         <StatCard 
-          title="Avg. Sentiment" 
+          title="Sentimiento Promedio" 
           value={stats.avgSentiment.toString()} 
           change="+0.2" 
           loading={loading}
           icon={<TrendingUp className="w-5 h-5" />}
         />
         <StatCard 
-          title="Response Time" 
+          title="Tiempo de Respuesta" 
           value={stats.responseTime} 
           change="-0.3s" 
           loading={loading}
@@ -92,25 +92,25 @@ export default function DashboardPage() {
         {/* Main Feed */}
         <div className="lg:col-span-2 space-y-6">
           <section className="glass-panel p-6 rounded-2xl">
-            <h2 className="text-xl font-semibold text-white mb-6">Recent Activity</h2>
+            <h2 className="text-xl font-semibold text-white mb-6">Actividad Reciente</h2>
             <div className="space-y-4">
               <ActivityItem 
                 user="John Doe" 
-                action="New lead identified" 
+                action="Nuevo prospecto identificado" 
                 detail="Score: 92/100" 
-                time="2m ago"
+                time="hace 2m"
               />
               <ActivityItem 
-                user="AI Agent" 
-                action="Handled inquiry" 
-                detail="Product: Premium Plan" 
-                time="15m ago"
+                user="Agente IA" 
+                action="Consulta gestionada" 
+                detail="Producto: Plan Premium" 
+                time="hace 15m"
               />
               <ActivityItem 
-                user="System" 
-                action="Panic Button triggered" 
-                detail="Session #4829 - Human required" 
-                time="1h ago"
+                user="Sistema" 
+                action="Botón de Pánico activado" 
+                detail="Sesión #4829 - Requiere humano" 
+                time="hace 1h"
                 urgent
               />
             </div>
@@ -120,14 +120,14 @@ export default function DashboardPage() {
         {/* Sidebar Actions */}
         <div className="space-y-6">
           <section className="glass-panel p-6 rounded-2xl">
-            <h2 className="text-xl font-semibold text-white mb-4">Quick Actions</h2>
+            <h2 className="text-xl font-semibold text-white mb-4">Acciones Rápidas</h2>
             <div className="grid grid-cols-1 gap-3">
               <button className="flex items-center justify-between p-3 rounded-lg bg-primary/20 hover:bg-primary/30 text-primary-foreground border border-primary/20 transition-all">
-                <span>View All Leads</span>
+                <span>Ver Todos los Prospectos</span>
                 <ArrowUpRight className="w-4 h-4" />
               </button>
               <button className="flex items-center justify-between p-3 rounded-lg bg-slate-800/50 hover:bg-slate-800 text-slate-300 border border-slate-700 transition-all">
-                <span>Export Reports</span>
+                <span>Exportar Reportes</span>
                 <ArrowUpRight className="w-4 h-4" />
               </button>
             </div>

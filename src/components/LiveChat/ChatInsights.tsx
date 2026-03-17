@@ -26,8 +26,8 @@ export default function ChatInsights({ sessionId }: ChatInsightsProps) {
           <Activity className="w-12 h-12 text-slate-800" />
         </div>
         <div className="space-y-2">
-          <p className="text-lg font-bold text-slate-400">No Session Selected</p>
-          <p className="text-xs max-w-[200px] leading-relaxed">Select a chat to view live AI insights and lead scoring analysis.</p>
+          <p className="text-lg font-bold text-slate-400">Sin Sesión Seleccionada</p>
+          <p className="text-xs max-w-[200px] leading-relaxed">Selecciona un chat para ver insights de IA en vivo y análisis de puntuación de prospectos.</p>
         </div>
       </div>
     );
@@ -43,13 +43,13 @@ export default function ChatInsights({ sessionId }: ChatInsightsProps) {
     <div className="h-full flex flex-col bg-[#030711] animate-in slide-in-from-right-8 duration-700">
       <div className="p-8 space-y-8 overflow-y-auto custom-scrollbar flex-1 pb-12">
         <h2 className="text-xl font-bold text-white tracking-tight flex items-center gap-2.5">
-          <Activity className="text-primary w-5 h-5 pulse-icon" /> Chat Insights
+          <Activity className="text-primary w-5 h-5 pulse-icon" /> Insights del Chat
         </h2>
 
         {/* Sentiment Card */}
         <section className="bg-slate-900/30 border border-slate-800/50 rounded-2xl p-6 space-y-6">
           <div className="flex justify-between items-center">
-            <span className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em]">Sentiment Analysis</span>
+            <span className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em]">Análisis de Sentimiento</span>
             <div className="w-5 h-5 rounded-full bg-emerald-500/10 flex items-center justify-center">
               <Smile className="w-3.5 h-3.5 text-emerald-500" />
             </div>
@@ -78,8 +78,8 @@ export default function ChatInsights({ sessionId }: ChatInsightsProps) {
                 </svg>
             </div>
             <div className="text-center">
-                <p className="text-3xl font-black text-white tracking-tight uppercase italic underline-offset-4 decoration-primary/30">Positive</p>
-                <p className="text-[11px] text-slate-500 font-medium mt-1">Highly cooperative customer</p>
+                <p className="text-3xl font-black text-white tracking-tight uppercase italic underline-offset-4 decoration-primary/30">Positivo</p>
+                <p className="text-[11px] text-slate-500 font-medium mt-1">Cliente altamente cooperativo</p>
             </div>
           </div>
         </section>
@@ -87,15 +87,15 @@ export default function ChatInsights({ sessionId }: ChatInsightsProps) {
         <div className="grid grid-cols-2 gap-5">
           {/* User Intent */}
           <div className="bg-slate-900/30 border border-slate-800/50 rounded-2xl p-5 space-y-3">
-              <span className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.15em] block">User Intent</span>
-              <p className="text-xl font-bold text-white tracking-tight">Inquiry</p>
+              <span className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.15em] block">Intención del Usuario</span>
+              <p className="text-xl font-bold text-white tracking-tight">Consulta</p>
               <div className="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden mt-2">
                   <div className="h-full bg-primary w-4/5 rounded-full" />
               </div>
           </div>
           {/* CSAT Score */}
           <div className="bg-slate-900/30 border border-slate-800/50 rounded-2xl p-5 space-y-3">
-              <span className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.15em] block">CSAT Score</span>
+              <span className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.15em] block">Puntuación CSAT</span>
               <div className="flex items-end gap-1.5">
                   <p className="text-xl font-bold text-white tracking-tight">{score}</p>
                   <Star className="w-3.5 h-3.5 text-amber-500 fill-amber-500 mb-1" />
@@ -109,8 +109,8 @@ export default function ChatInsights({ sessionId }: ChatInsightsProps) {
         {/* Response Dynamics */}
         <section className="bg-slate-900/30 border border-slate-800/50 rounded-2xl p-6 space-y-6">
             <div className="flex justify-between items-center">
-                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em]">Response Dynamics</span>
-                <span className="text-[9px] bg-emerald-500/10 text-emerald-400 px-2 py-0.5 rounded border border-emerald-500/20 font-bold tracking-wider uppercase">LIVE</span>
+                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em]">Dinámica de Respuesta</span>
+                <span className="text-[9px] bg-emerald-500/10 text-emerald-400 px-2 py-0.5 rounded border border-emerald-500/20 font-bold tracking-wider uppercase">EN VIVO</span>
             </div>
             <div className="grid grid-cols-2 gap-6">
                 <div className="flex flex-col items-center gap-3">
@@ -121,7 +121,7 @@ export default function ChatInsights({ sessionId }: ChatInsightsProps) {
                         </svg>
                         <span className="absolute text-xs font-black text-white">96%</span>
                     </div>
-                    <span className="text-[10px] text-slate-500 font-bold uppercase tracking-widest text-center">Accuracy</span>
+                    <span className="text-[10px] text-slate-500 font-bold uppercase tracking-widest text-center">Precisión</span>
                 </div>
                 <div className="flex flex-col items-center gap-3">
                     <div className="relative w-16 h-16 flex items-center justify-center">
@@ -131,7 +131,7 @@ export default function ChatInsights({ sessionId }: ChatInsightsProps) {
                         </svg>
                         <span className="absolute text-xs font-black text-white">5%</span>
                     </div>
-                    <span className="text-[10px] text-slate-500 font-bold uppercase tracking-widest text-center">Urgency</span>
+                    <span className="text-[10px] text-slate-500 font-bold uppercase tracking-widest text-center">Urgencia</span>
                 </div>
             </div>
         </section>
@@ -139,9 +139,9 @@ export default function ChatInsights({ sessionId }: ChatInsightsProps) {
         {/* Weekly Activity */}
         <section className="bg-slate-900/30 border border-slate-800/50 rounded-2xl p-6 space-y-6">
             <div className="flex justify-between items-center">
-                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em]">Weekly Activity</span>
+                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em]">Actividad Semanal</span>
                 <button className="text-[10px] text-primary hover:text-white font-bold uppercase tracking-widest flex items-center gap-1 transition-colors">
-                    Download <Download className="w-3 h-3" />
+                    Descargar <Download className="w-3 h-3" />
                 </button>
             </div>
             <div className="h-32 flex items-end justify-between gap-1.5 px-1">
@@ -155,7 +155,9 @@ export default function ChatInsights({ sessionId }: ChatInsightsProps) {
                             }`}
                             style={{ height: `${val}%` }}
                         />
-                        <span className="text-[9px] text-slate-600 font-bold uppercase">{days[i][0]}</span>
+                        <span className="text-[9px] text-slate-600 font-bold uppercase">
+                            {['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'][i]}
+                        </span>
                     </div>
                 ))}
             </div>
