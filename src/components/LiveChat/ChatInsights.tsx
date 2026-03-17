@@ -21,119 +21,145 @@ interface ChatInsightsProps {
 export default function ChatInsights({ sessionId }: ChatInsightsProps) {
   if (!sessionId) {
     return (
-      <div className="h-full flex flex-col items-center justify-center p-8 text-center space-y-4 text-slate-500 glass-panel border border-slate-800/50 rounded-2xl">
-        <Activity className="w-12 h-12 text-slate-700 opacity-50" />
-        <p className="text-sm">Select a chat to view live AI insights and lead scoring.</p>
+      <div className="h-full flex flex-col items-center justify-center p-12 text-center space-y-6 text-slate-600 bg-[#030711]">
+        <div className="p-8 rounded-full bg-slate-900/20 border border-slate-800/30">
+          <Activity className="w-12 h-12 text-slate-800" />
+        </div>
+        <div className="space-y-2">
+          <p className="text-lg font-bold text-slate-400">No Session Selected</p>
+          <p className="text-xs max-w-[200px] leading-relaxed">Select a chat to view live AI insights and lead scoring analysis.</p>
+        </div>
       </div>
     );
   }
 
-  // Mock data - In a real app this would come from Supabase or AI analysis
-  const sentiment = 85; // 0 to 100
-  const intent = "Commercial Inquiry";
+  // Mock data
+  const sentiment = 82;
   const score = "4.8/5.0";
-  const urgency = "Medium";
-  const conversionProb = 72;
-
+  const activityData = [35, 60, 40, 85, 75, 45, 95];
   const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-  const activityData = [40, 65, 45, 90, 85, 30, 20];
 
   return (
-    <div className="h-full flex flex-col gap-6 animate-in slide-in-from-right-4 duration-500 overflow-y-auto pr-2 custom-scrollbar">
-      <h2 className="text-xl font-black text-white uppercase tracking-tighter flex items-center gap-2">
-        <Activity className="text-primary w-5 h-5" /> Chat Insights
-      </h2>
+    <div className="h-full flex flex-col bg-[#030711] animate-in slide-in-from-right-8 duration-700">
+      <div className="p-8 space-y-8 overflow-y-auto custom-scrollbar flex-1 pb-12">
+        <h2 className="text-xl font-bold text-white tracking-tight flex items-center gap-2.5">
+          <Activity className="text-primary w-5 h-5 pulse-icon" /> Chat Insights
+        </h2>
 
-      {/* Sentiment Card */}
-      <div className="glass-panel p-5 border-slate-800/50 rounded-2xl space-y-4">
-        <div className="flex justify-between items-center">
-          <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Sentiment Analysis</span>
-          <Smile className="w-4 h-4 text-emerald-500" />
-        </div>
-        <div className="flex flex-col items-center gap-2">
-            <div className="relative w-32 h-16 overflow-hidden">
-                <div className="absolute inset-0 border-[10px] border-slate-800 rounded-t-full" />
-                <div 
-                    className="absolute inset-0 border-[10px] border-emerald-500 rounded-t-full origin-bottom" 
-                    style={{ transform: `rotate(${ (sentiment / 100) * 180 - 180 }deg)` }} 
-                />
+        {/* Sentiment Card */}
+        <section className="bg-slate-900/30 border border-slate-800/50 rounded-2xl p-6 space-y-6">
+          <div className="flex justify-between items-center">
+            <span className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em]">Sentiment Analysis</span>
+            <div className="w-5 h-5 rounded-full bg-emerald-500/10 flex items-center justify-center">
+              <Smile className="w-3.5 h-3.5 text-emerald-500" />
+            </div>
+          </div>
+          
+          <div className="flex flex-col items-center gap-4">
+            <div className="relative w-48 h-24 overflow-hidden">
+                <svg className="w-full h-full transform translate-y-2">
+                    <path 
+                        d="M 10 90 A 80 80 0 0 1 182 90" 
+                        fill="none" 
+                        stroke="#1e293b" 
+                        strokeWidth="12" 
+                        strokeLinecap="round" 
+                    />
+                    <path 
+                        d="M 10 90 A 80 80 0 0 1 182 90" 
+                        fill="none" 
+                        stroke="#10b981" 
+                        strokeWidth="12" 
+                        strokeLinecap="round"
+                        strokeDasharray="270"
+                        strokeDashoffset={270 * (1 - sentiment/100)}
+                        className="transition-all duration-1000 ease-out"
+                    />
+                </svg>
             </div>
             <div className="text-center">
-                <p className="text-2xl font-black text-white">Positive</p>
-                <p className="text-[10px] text-slate-500 font-medium">Highly cooperative customer</p>
+                <p className="text-3xl font-black text-white tracking-tight uppercase italic underline-offset-4 decoration-primary/30">Positive</p>
+                <p className="text-[11px] text-slate-500 font-medium mt-1">Highly cooperative customer</p>
             </div>
-        </div>
-      </div>
+          </div>
+        </section>
 
-      <div className="grid grid-cols-2 gap-4">
-        {/* User Intent */}
-        <div className="glass-panel p-4 border-slate-800/50 rounded-2xl space-y-2">
-            <span className="text-[9px] font-bold text-slate-500 uppercase tracking-widest block">User Intent</span>
-            <p className="text-lg font-bold text-white leading-tight">Inquiry</p>
-            <div className="w-full h-1 bg-slate-800 rounded-full overflow-hidden">
-                <div className="h-full bg-primary w-4/5" />
-            </div>
+        <div className="grid grid-cols-2 gap-5">
+          {/* User Intent */}
+          <div className="bg-slate-900/30 border border-slate-800/50 rounded-2xl p-5 space-y-3">
+              <span className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.15em] block">User Intent</span>
+              <p className="text-xl font-bold text-white tracking-tight">Inquiry</p>
+              <div className="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden mt-2">
+                  <div className="h-full bg-primary w-4/5 rounded-full" />
+              </div>
+          </div>
+          {/* CSAT Score */}
+          <div className="bg-slate-900/30 border border-slate-800/50 rounded-2xl p-5 space-y-3">
+              <span className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.15em] block">CSAT Score</span>
+              <div className="flex items-end gap-1.5">
+                  <p className="text-xl font-bold text-white tracking-tight">{score}</p>
+                  <Star className="w-3.5 h-3.5 text-amber-500 fill-amber-500 mb-1" />
+              </div>
+              <div className="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden mt-2">
+                  <div className="h-full bg-primary w-[96%] rounded-full shadow-[0_0_8px_rgba(59,130,246,0.3)]" />
+              </div>
+          </div>
         </div>
-        {/* CSAT Score */}
-        <div className="glass-panel p-4 border-slate-800/50 rounded-2xl space-y-2">
-            <span className="text-[9px] font-bold text-slate-500 uppercase tracking-widest block">CSAT Score</span>
-            <div className="flex items-end gap-1">
-                <p className="text-lg font-bold text-white">{score}</p>
-                <Star className="w-3 h-3 text-amber-500 mb-1" />
-            </div>
-            <div className="w-full h-1 bg-slate-800 rounded-full overflow-hidden">
-                <div className="h-full bg-amber-500 w-[96%]" />
-            </div>
-        </div>
-      </div>
 
-      {/* Response Dynamics */}
-      <div className="glass-panel p-5 border-slate-800/50 rounded-2xl space-y-4">
+        {/* Response Dynamics */}
+        <section className="bg-slate-900/30 border border-slate-800/50 rounded-2xl p-6 space-y-6">
             <div className="flex justify-between items-center">
-                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Response Dynamics</span>
-                <span className="text-[9px] bg-emerald-500/10 text-emerald-400 px-1.5 py-0.5 rounded border border-emerald-500/20 font-bold">LIVE</span>
+                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em]">Response Dynamics</span>
+                <span className="text-[9px] bg-emerald-500/10 text-emerald-400 px-2 py-0.5 rounded border border-emerald-500/20 font-bold tracking-wider uppercase">LIVE</span>
             </div>
-            <div className="grid grid-cols-2 gap-4">
-                <div className="flex flex-col items-center justify-center p-3 rounded-xl bg-slate-900/50 border border-slate-800 text-center">
-                    <div className="relative w-12 h-12 flex items-center justify-center">
+            <div className="grid grid-cols-2 gap-6">
+                <div className="flex flex-col items-center gap-3">
+                    <div className="relative w-16 h-16 flex items-center justify-center">
                         <svg className="w-full h-full transform -rotate-90">
-                            <circle cx="24" cy="24" r="20" fill="none" stroke="currentColor" strokeWidth="4" className="text-slate-800" />
-                            <circle cx="24" cy="24" r="20" fill="none" stroke="currentColor" strokeWidth="4" className="text-primary" strokeDasharray={2 * Math.PI * 20} strokeDashoffset={2 * Math.PI * 20 * (1 - 0.96)} />
+                            <circle cx="32" cy="32" r="28" fill="none" stroke="#1e293b" strokeWidth="4" />
+                            <circle cx="32" cy="32" r="28" fill="none" stroke="#3b82f6" strokeWidth="4" strokeLinecap="round" strokeDasharray={2 * Math.PI * 28} strokeDashoffset={2 * Math.PI * 28 * (1 - 0.96)} className="transition-all duration-1000" />
                         </svg>
-                        <span className="absolute text-[10px] font-bold text-white">96%</span>
+                        <span className="absolute text-xs font-black text-white">96%</span>
                     </div>
-                    <span className="text-[9px] text-slate-500 font-bold mt-2">Accuracy</span>
+                    <span className="text-[10px] text-slate-500 font-bold uppercase tracking-widest text-center">Accuracy</span>
                 </div>
-                <div className="flex flex-col items-center justify-center p-3 rounded-xl bg-slate-900/50 border border-slate-800 text-center">
-                    <div className="relative w-12 h-12 flex items-center justify-center">
+                <div className="flex flex-col items-center gap-3">
+                    <div className="relative w-16 h-16 flex items-center justify-center">
                         <svg className="w-full h-full transform -rotate-90">
-                            <circle cx="24" cy="24" r="20" fill="none" stroke="currentColor" strokeWidth="4" className="text-slate-800" />
-                            <circle cx="24" cy="24" r="20" fill="none" stroke="currentColor" strokeWidth="4" className="text-rose-500" strokeDasharray={2 * Math.PI * 20} strokeDashoffset={2 * Math.PI * 20 * (1 - 0.05)} />
+                            <circle cx="32" cy="32" r="28" fill="none" stroke="#1e293b" strokeWidth="4" />
+                            <circle cx="32" cy="32" r="28" fill="none" stroke="#f43f5e" strokeWidth="4" strokeLinecap="round" strokeDasharray={2 * Math.PI * 28} strokeDashoffset={2 * Math.PI * 28 * (1 - 0.05)} className="transition-all duration-1000" />
                         </svg>
-                        <span className="absolute text-[10px] font-bold text-white">5%</span>
+                        <span className="absolute text-xs font-black text-white">5%</span>
                     </div>
-                    <span className="text-[9px] text-slate-500 font-bold mt-2">Urgency</span>
+                    <span className="text-[10px] text-slate-500 font-bold uppercase tracking-widest text-center">Urgency</span>
                 </div>
             </div>
-      </div>
+        </section>
 
-      {/* Weekly Activity */}
-      <div className="glass-panel p-5 border-slate-800/50 rounded-2xl space-y-4">
-        <div className="flex justify-between items-center">
-          <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Weekly Activity</span>
-          <button className="text-[10px] text-primary hover:underline font-bold">Download</button>
-        </div>
-        <div className="h-32 flex items-end justify-between gap-1 px-2">
-          {activityData.map((val, i) => (
-            <div key={i} className="flex flex-col items-center gap-2 group/bar cursor-help">
-              <div 
-                className={`w-4 rounded-t-sm transition-all duration-500 ${i === activityData.length - 1 ? 'bg-emerald-500 shadow-lg shadow-emerald-500/20' : 'bg-slate-800 group-hover/bar:bg-primary/50'}`}
-                style={{ height: `${val}%` }}
-              />
-              <span className="text-[8px] text-slate-500 font-bold">{days[i][0]}</span>
+        {/* Weekly Activity */}
+        <section className="bg-slate-900/30 border border-slate-800/50 rounded-2xl p-6 space-y-6">
+            <div className="flex justify-between items-center">
+                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em]">Weekly Activity</span>
+                <button className="text-[10px] text-primary hover:text-white font-bold uppercase tracking-widest flex items-center gap-1 transition-colors">
+                    Download <Download className="w-3 h-3" />
+                </button>
             </div>
-          ))}
-        </div>
+            <div className="h-32 flex items-end justify-between gap-1.5 px-1">
+                {activityData.map((val, i) => (
+                    <div key={i} className="flex flex-col items-center gap-3 flex-1">
+                        <div 
+                            className={`w-full rounded-t-sm transition-all duration-1000 ease-out min-h-[4px] ${
+                                i === activityData.length - 1 
+                                    ? 'bg-emerald-500 shadow-[0_0_12px_rgba(16,185,129,0.3)]' 
+                                    : i === 3 ? 'bg-primary shadow-[0_0_12px_rgba(59,130,246,0.3)]' : 'bg-slate-800'
+                            }`}
+                            style={{ height: `${val}%` }}
+                        />
+                        <span className="text-[9px] text-slate-600 font-bold uppercase">{days[i][0]}</span>
+                    </div>
+                ))}
+            </div>
+        </section>
       </div>
     </div>
   );

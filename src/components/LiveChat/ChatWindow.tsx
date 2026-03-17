@@ -8,35 +8,33 @@ import {
   User, 
   AlertTriangle, 
   Loader2, 
-  ChevronDown,
-  ThumbsDown,
-  ThumbsUp,
-  Brain,
-  ShieldAlert
+  ChevronDown, 
+  ThumbsDown, 
+  ThumbsUp, 
+  Zap, 
+  Brain 
 } from 'lucide-react';
-
-const formatMessageContent = (content: string) => {
-  // Remove technical tool logs like [Used tools: ...] and anything inside those square brackets
-  // The pattern usually starts with [Used tools: and ends with ]]
-  return content.replace(/^\[Used tools:[\s\S]*?\]\]\s*/i, '').trim();
-};
 
 interface Message {
   id: string;
   role: 'user' | 'assistant';
   content: string;
   created_at: string;
-  feedback?: number | null;
   is_manual?: boolean;
 }
+
+const formatMessageContent = (content: string) => {
+  if (!content) return '';
+  return content.replace(/【.*?】/g, '').trim();
+};
 
 export default function ChatWindow({ sessionId }: { sessionId: string }) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputValue, setInputValue] = useState('');
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
-  const [panicMode, setPanicMode] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
+  const [isManualMode, setIsManualMode] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
@@ -51,22 +49,15 @@ export default function ChatWindow({ sessionId }: { sessionId: string }) {
         .eq('session_id', sessionId)
         .order('id', { ascending: true });
 
-      const { data: feedbackData } = await supabase
-        .from('ai_feedback')
-        .select('message_id, rating');
-
       if (!messagesError && messagesData) {
         setMessages(messagesData.map(m => {
           const mType = m.message?.type;
-          const isHumanIntervention = mType === 'human_manual' || m.message?.additional_kwargs?.is_panic_intervention;
-          
           return {
             id: m.id.toString(),
             role: mType === 'human' ? 'user' : 'assistant',
             content: mType === 'human' ? m.message?.content : formatMessageContent(m.message?.content || ''),
             created_at: m.created_at || m.id.toString(),
-            feedback: feedbackData?.find(f => f.message_id === m.id)?.rating || null,
-            is_manual: isHumanIntervention
+            is_manual: mType === 'human_manual' || m.message?.additional_kwargs?.is_panic_intervention
           };
         }));
       }
@@ -76,7 +67,6 @@ export default function ChatWindow({ sessionId }: { sessionId: string }) {
 
     fetchMessages();
 
-    // Subscribe to new messages for this specific session
     const channel = supabase
       .channel(`chat:${sessionId}`)
       .on('postgres_changes', { 
@@ -87,49 +77,20 @@ export default function ChatWindow({ sessionId }: { sessionId: string }) {
       }, (payload) => {
         const message = payload.new.message;
         const type = message?.type;
-        const isHumanIntervention = type === 'human_manual' || message?.additional_kwargs?.is_panic_intervention;
-        
-        if (type === 'human') {
-          setIsTyping(true);
-        } else {
-          setIsTyping(false);
-        }
+        setIsTyping(type === 'human');
 
         const newMessage: Message = {
           id: payload.new.id.toString(),
           role: type === 'human' ? 'user' : 'assistant',
           content: type === 'human' ? (message?.content || '') : formatMessageContent(message?.content || ''),
           created_at: payload.new.created_at || new Date().toISOString(),
-          feedback: null,
-          is_manual: isHumanIntervention
+          is_manual: type === 'human_manual' || message?.additional_kwargs?.is_panic_intervention
         };
 
         setMessages(prev => {
           if (prev.find(m => m.id === newMessage.id)) return prev;
           return [...prev, newMessage];
         });
-      })
-      .on('postgres_changes', {
-        event: 'INSERT',
-        schema: 'public',
-        table: 'ai_feedback'
-      }, (payload) => {
-        setMessages(prev => prev.map(m => 
-          m.id === payload.new.message_id.toString() 
-            ? { ...m, feedback: payload.new.rating } 
-            : m
-        ));
-      })
-      .on('postgres_changes', {
-        event: 'UPDATE',
-        schema: 'public',
-        table: 'ai_feedback'
-      }, (payload) => {
-        setMessages(prev => prev.map(m => 
-          m.id === payload.new.message_id.toString() 
-            ? { ...m, feedback: payload.new.rating } 
-            : m
-        ));
       })
       .subscribe();
 
@@ -140,22 +101,6 @@ export default function ChatWindow({ sessionId }: { sessionId: string }) {
 
   useEffect(scrollToBottom, [messages, isTyping]);
 
-  const handleFeedback = async (messageId: string, rating: number) => {
-    // Optimistic update
-    setMessages(prev => prev.map(m => 
-      m.id === messageId ? { ...m, feedback: rating } : m
-    ));
-
-    const { error } = await supabase
-      .from('ai_feedback')
-      .upsert({ message_id: parseInt(messageId), rating }, { onConflict: 'message_id' });
-    
-    if (error) {
-       console.error('Feedback error:', error);
-       // Revert on error? Or just leave it. Better to revert or show alert.
-    }
-  };
-
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!inputValue.trim() || sending) return;
@@ -164,108 +109,57 @@ export default function ChatWindow({ sessionId }: { sessionId: string }) {
     setInputValue('');
     setSending(true);
 
-    // Optimistic Update
     const tempId = `temp-${Date.now()}`;
     const optimisticMessage: Message = {
       id: tempId,
-      role: panicMode ? 'assistant' : 'user', // Manual intervention is 'assistant' (outbound)
+      role: 'assistant',
       content: messageContent,
-      created_at: new Date().toISOString(),
-      feedback: null
+      created_at: new Date().toISOString()
     };
     setMessages(prev => [...prev, optimisticMessage]);
 
-    const { error, data } = await supabase
+    const { error } = await supabase
       .from('n8n_chat_clientes_historial')
       .insert({
         session_id: sessionId,
         message: {
-          type: panicMode ? 'human_manual' : 'human',
+          type: 'human_manual',
           content: messageContent,
-          additional_kwargs: {
-            is_panic_intervention: panicMode,
-            source: 'alpha_frontend'
-          },
+          additional_kwargs: { is_panic_intervention: true, source: 'alpha_frontend' },
           response_metadata: {}
         }
-      })
-      .select();
+      });
 
     if (error) {
-      console.error('Error sending message:', error);
-      // Remove optimistic message on error
       setMessages(prev => prev.filter(m => m.id !== tempId));
-      setInputValue(messageContent); // Restore input
-    } else if (data && data[0]) {
-      // Replace optimistic message with real one
-      setMessages(prev => prev.map(m => 
-        m.id === tempId ? { ...m, id: data[0].id.toString() } : m
-      ));
-      
-      if (panicMode) {
-        // Trigger n8n manual intervention webhook
-        try {
-          fetch('https://n8n.srv941923.hstgr.cloud/webhook/polaris-intervencion-manual', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              chat_id: sessionId,
-              type: 'human_manual',
-              content: messageContent,
-              metadata: { is_panic_intervention: true }
-            })
-          });
-        } catch (webhookError) {
-          console.error('Webhook error:', webhookError);
-        }
-      } else {
-        setIsTyping(true);
-      }
+      setInputValue(messageContent);
     }
     setSending(false);
   };
 
-  const togglePanicMode = async () => {
-    const { error } = await supabase
-      .from('session_control')
-      .upsert({ session_id: sessionId, is_manual: !panicMode });
-    
-    if (!error) {
-      if (!panicMode) setIsTyping(false);
-      setPanicMode(!panicMode);
-    }
-  };
-
   return (
-    <div className={`flex flex-col h-full transition-colors duration-500 ${
-      panicMode ? 'bg-rose-950/20' : 'bg-transparent'
-    }`}>
-      {/* Chat Header inside Mockup */}
-      <header className={`px-4 pt-8 pb-3 border-b transition-colors duration-500 flex flex-col items-center text-center ${
-        panicMode ? 'border-rose-500/30 bg-rose-500/10' : 'border-slate-800 bg-slate-900/40'
-      }`}>
-        <div className="relative mb-2">
-          <div className={`w-10 h-10 rounded-full flex items-center justify-center border transition-all duration-500 ${
-            panicMode ? 'bg-rose-500/20 border-rose-500/40' : 'bg-primary/20 border-primary/30'
-          }`}>
-            <Bot className={`w-5 h-5 ${panicMode ? 'text-rose-400' : 'text-primary'}`} />
+    <div className="flex flex-col h-full bg-[#030711] relative overflow-hidden font-sans">
+      <header className="px-6 pt-12 pb-6 flex flex-col items-center bg-slate-900/10 border-b border-white/[0.03]">
+        <div className="relative mb-3 group">
+          <div className="w-12 h-12 rounded-full bg-primary/20 border border-primary/30 flex items-center justify-center shadow-[0_0_20px_rgba(59,130,246,0.1)] transition-all group-hover:bg-primary/30">
+            <Bot className="w-6 h-6 text-primary" />
           </div>
-          <div className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-slate-900 ${panicMode ? 'bg-rose-500 animate-pulse' : 'bg-emerald-500'}`} />
+          <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full border-2 border-[#030711] bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
         </div>
-        <div>
-          <h3 className="text-xs font-black text-white flex items-center justify-center gap-1 uppercase tracking-tight">
-            {sessionId.split('@')[0]}
-          </h3>
-          <p className={`text-[8px] uppercase tracking-[0.2em] font-black transition-colors ${
-            panicMode ? 'text-rose-400' : 'text-slate-500'
-          }`}>
-            {panicMode ? 'Intervention Active' : 'AI Agent'}
+        <div className="text-center space-y-1">
+          <div className="flex items-center justify-center gap-1.5 cursor-pointer hover:opacity-80 transition-opacity">
+            <h3 className="text-[13px] font-bold text-white tracking-tight">
+              {sessionId.split('@')[0]}
+            </h3>
+            <ChevronDown className="w-3 h-3 text-slate-500" />
+          </div>
+          <p className="text-[9px] uppercase tracking-[0.2em] font-bold text-primary/80">
+            AI Agent Handling
           </p>
         </div>
       </header>
 
-      {/* Messages Area - More compact */}
-      <div className="flex-1 overflow-y-auto px-3 py-4 space-y-3 custom-scrollbar">
+      <div className="flex-1 overflow-y-auto px-5 py-6 space-y-7 custom-scrollbar bg-gradient-to-b from-[#030711] to-[#0a0c10]">
         {loading ? (
           <div className="flex items-center justify-center h-full">
             <Loader2 className="w-6 h-6 text-primary animate-spin opacity-50" />
@@ -275,63 +169,44 @@ export default function ChatWindow({ sessionId }: { sessionId: string }) {
             {messages.map((message) => (
               <div 
                 key={message.id} 
-                className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'} group animate-in slide-in-from-bottom-2`}
+                className={`flex flex-col ${message.role === 'user' ? 'items-end' : 'items-start'} max-w-full animate-in slide-in-from-bottom-3`}
               >
-                <div className={`flex gap-2 max-w-[95%] ${message.role === 'user' ? 'flex-row-reverse' : 'flex-row'}`}>
-                  <div className={`w-5 h-5 rounded-full shrink-0 flex items-center justify-center border mt-auto mb-0.5 ${
+                {message.role === 'assistant' && (
+                  <span className="text-[9px] font-bold text-primary uppercase tracking-widest mb-1.5 ml-1">Alpha Agent</span>
+                )}
+                
+                <div className={`flex gap-3 max-w-[90%] ${message.role === 'user' ? 'flex-row-reverse' : 'flex-row'}`}>
+                  <div className={`w-7 h-7 rounded-full shrink-0 flex items-center justify-center border ${
                     message.role === 'user' 
-                      ? 'bg-slate-800 border-slate-700' 
-                      : 'bg-primary/10 border-primary/20'
+                      ? 'bg-slate-800/80 border-slate-700/50' 
+                      : 'bg-primary/20 border-primary/30'
                   }`}>
-                    {message.role === 'user' ? <User className="w-2.5 h-2.5 text-slate-400" /> : <Bot className="w-2.5 h-2.5 text-primary" />}
+                    {message.role === 'user' ? <User className="w-3.5 h-3.5 text-slate-400" /> : <Bot className="w-3.5 h-3.5 text-primary" />}
                   </div>
-                  <div className="flex flex-col gap-1">
-                    <div className={`p-2.5 rounded-xl text-[11px] leading-[1.4] transition-all relative shadow-sm ${
+                  
+                  <div className={`flex flex-col ${message.role === 'user' ? 'items-end' : 'items-start'} gap-1.5`}>
+                    <div className={`p-3.5 rounded-2xl text-[12px] leading-[1.6] shadow-sm tracking-tight ${
                       message.role === 'user'
-                        ? 'bg-slate-800 text-white rounded-br-none'
-                        : 'bg-primary/20 text-white border border-primary/10 rounded-bl-none'
+                        ? 'bg-[#1e1b4b] text-white rounded-tr-none border border-primary/10'
+                        : 'bg-[#171923] text-slate-200 border border-white/[0.03] rounded-tl-none'
                     }`}>
+                      {message.role === 'user' && (
+                        <span className="text-[9px] block font-bold text-slate-500 mb-1 uppercase tracking-wider">Mensaje_Cliente:</span>
+                      )}
                       {message.content}
                     </div>
-
-                    {message.role === 'assistant' && (
-                        <div className="flex items-center gap-1 mt-0.5 px-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                             <button 
-                                onClick={() => handleFeedback(message.id, 1)}
-                                className={`p-1 rounded border transition-all ${
-                                message.feedback === 1 
-                                    ? 'bg-emerald-500/20 border-emerald-500/50 text-emerald-400' 
-                                    : 'bg-slate-900/50 border-slate-800 text-slate-600 hover:text-emerald-400'
-                                }`}
-                            >
-                                <ThumbsUp className="w-2.5 h-2.5" />
-                            </button>
-                            <button 
-                                onClick={() => handleFeedback(message.id, -1)}
-                                className={`p-1 rounded border transition-all ${
-                                message.feedback === -1 
-                                    ? 'bg-rose-500/20 border-rose-500/50 text-rose-400' 
-                                    : 'bg-slate-900/50 border-slate-800 text-slate-600 hover:text-rose-400'
-                                }`}
-                            >
-                                <ThumbsDown className="w-2.5 h-2.5" />
-                            </button>
-                            {message.is_manual && (
-                                <span className="text-[7px] text-rose-400 font-black uppercase tracking-widest ml-1">Manual</span>
-                            )}
-                        </div>
-                    )}
+                    <span className="text-[8px] text-slate-600 font-medium px-1 uppercase tracking-widest">Now</span>
                   </div>
                 </div>
               </div>
             ))}
             
-            {isTyping && !panicMode && (
-              <div className="flex justify-start animate-in slide-in-from-bottom-1">
-                <div className="bg-primary/10 px-2.5 py-1.5 rounded-xl flex gap-1 items-center">
-                    <div className="w-0.5 h-0.5 bg-primary/60 rounded-full animate-bounce [animation-delay:-0.3s]" />
-                    <div className="w-0.5 h-0.5 bg-primary/60 rounded-full animate-bounce [animation-delay:-0.15s]" />
-                    <div className="w-0.5 h-0.5 bg-primary/60 rounded-full animate-bounce" />
+            {isTyping && (
+              <div className="flex justify-start items-center gap-2 animate-pulse pl-1">
+                <div className="bg-primary/10 px-3 py-2 rounded-2xl flex gap-1.5 items-center border border-primary/5">
+                    <div className="w-1 h-1 bg-primary/40 rounded-full animate-bounce [animation-delay:-0.3s]" />
+                    <div className="w-1 h-1 bg-primary/40 rounded-full animate-bounce [animation-delay:-0.15s]" />
+                    <div className="w-1 h-1 bg-primary/40 rounded-full animate-bounce" />
                 </div>
               </div>
             )}
@@ -340,50 +215,50 @@ export default function ChatWindow({ sessionId }: { sessionId: string }) {
         )}
       </div>
 
-      {/* Input Area / Panic Button Toggle */}
-      <footer className={`p-3 pb-6 border-t transition-all duration-500 ${
-        panicMode ? 'bg-rose-500/10 border-rose-500/30' : 'bg-slate-900/40 border-slate-800'
-      }`}>
-        {panicMode ? (
-          <div className="space-y-2">
+      <footer className="p-5 bg-slate-900/10 border-t border-white/[0.03] space-y-3">
+        {!isManualMode ? (
+          <button 
+            onClick={() => setIsManualMode(true)}
+            className="w-full group relative overflow-hidden bg-rose-600 hover:bg-rose-700 text-white rounded-xl py-3.5 px-4 transition-all active:scale-[0.98] shadow-lg shadow-rose-950/20 border border-rose-500/50"
+          >
+            <div className="relative z-10 flex items-center justify-center gap-2.5">
+              <AlertTriangle className="w-4 h-4 animate-pulse" />
+              <span className="text-[11px] font-black uppercase tracking-[0.15em]">Panic Button - Manual Intervention</span>
+            </div>
+            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:animate-shimmer" />
+          </button>
+        ) : (
+          <div className="space-y-3 animate-in fade-in slide-in-from-bottom-2 duration-300">
             <div className="flex justify-between items-center px-1">
-              <span className="text-[7px] text-rose-400 font-black uppercase tracking-[0.2em]">Manual Entry</span>
+              <span className="text-[8px] text-rose-500 font-black uppercase tracking-[0.2em]">Manual Override Enabled</span>
               <button 
-                onClick={togglePanicMode}
-                className="text-[7px] text-slate-500 hover:text-white font-black uppercase tracking-widest transition-colors flex items-center gap-1"
+                onClick={() => setIsManualMode(false)}
+                className="text-[8px] text-slate-500 hover:text-white font-black uppercase tracking-widest transition-colors flex items-center gap-1"
               >
-                Resume AI <Bot className="w-2 h-2" />
+                Resume AI <Bot className="w-2.5 h-2.5" />
               </button>
             </div>
-            <form onSubmit={handleSendMessage} className="relative flex items-center gap-1.5">
-                <input 
-                  type="text" 
-                  value={inputValue}
-                  onChange={(e) => setInputValue(e.target.value)}
-                  placeholder="Type manual message..."
-                  className="w-full bg-rose-950/40 border border-rose-500/30 text-white rounded-lg py-2.5 px-3 text-[11px] focus:outline-none focus:border-rose-500 transition-all placeholder:text-rose-900"
-                />
+            <form onSubmit={handleSendMessage} className="relative flex items-center bg-[#0a0c10] border border-rose-500/20 rounded-[1.2rem] px-4 py-2 shadow-xl focus-within:border-rose-500/50 transition-all">
+              <input 
+                type="text" 
+                value={inputValue}
+                onChange={(e) => setInputValue(e.target.value)}
+                placeholder="Type manual message..."
+                className="flex-1 bg-transparent text-white py-2 px-1 text-sm focus:outline-none placeholder:text-rose-900/50 font-medium"
+              />
               <button 
                 type="submit"
                 disabled={!inputValue.trim() || sending}
-                className="p-2.5 rounded-lg bg-rose-600 text-white active:scale-95 disabled:opacity-50 transition-all shadow-lg shadow-rose-950/50"
+                className="p-2 rounded-xl bg-rose-600 text-white hover:bg-rose-500 active:scale-90 disabled:opacity-20 transition-all shadow-lg shadow-rose-600/20"
               >
                 {sending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
               </button>
             </form>
           </div>
-        ) : (
-          <button 
-            onClick={togglePanicMode}
-            className="w-full group relative overflow-hidden bg-rose-600 hover:bg-rose-700 text-white rounded-xl py-3 px-4 transition-all active:scale-[0.98] shadow-lg shadow-rose-900/20 border border-rose-500/50"
-          >
-            <div className="relative z-10 flex items-center justify-center gap-2">
-              <AlertTriangle className="w-3.5 h-3.5 animate-pulse" />
-              <span className="text-[10px] font-black uppercase tracking-widest">Manual Intervention</span>
-            </div>
-            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:animate-shimmer" />
-          </button>
         )}
+        <p className="text-[8px] text-center text-slate-700 uppercase tracking-widest font-bold">
+            Alpha Control - Realtime Manual Intervention Enabled
+        </p>
       </footer>
     </div>
   );

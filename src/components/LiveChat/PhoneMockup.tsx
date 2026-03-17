@@ -8,33 +8,31 @@ interface PhoneMockupProps {
 
 export default function PhoneMockup({ children }: PhoneMockupProps) {
   return (
-    <div className="relative mx-auto w-full max-w-[360px] aspect-[9/19] group animate-in fade-in zoom-in duration-700">
-      {/* Outer Frame - Thinner lines */}
-      <div className="absolute inset-0 bg-slate-900 rounded-[2.5rem] border-[1.5px] border-slate-700/80 shadow-2xl p-1.5 flex flex-col overflow-hidden ring-1 ring-white/5">
+    <div className="relative mx-auto w-full max-w-[340px] aspect-[9/19] group animate-in fade-in zoom-in duration-1000">
+      {/* Outer Frame - Ultra thin premium bezel */}
+      <div className="absolute inset-0 bg-[#0a0c10] rounded-[3rem] border-[1px] border-white/10 shadow-[0_0_50px_rgba(0,0,0,0.5)] p-1.5 flex flex-col overflow-hidden ring-1 ring-white/5">
         
-        {/* Notch - Smaller */}
-        <div className="absolute top-1.5 left-1/2 -translate-x-1/2 w-24 h-5 bg-black rounded-3xl z-50 flex items-center justify-center gap-1.5 px-3">
-            <div className="w-1 h-1 rounded-full bg-slate-800" />
+        {/* Notch - Micro notch */}
+        <div className="absolute top-2 left-1/2 -translate-x-1/2 w-20 h-4 bg-black rounded-full z-50 flex items-center justify-center gap-1.5 px-3">
+            <div className="w-1 h-1 rounded-full bg-slate-900" />
             <div className="flex-1" />
-            <div className="w-3 h-0.5 rounded-full bg-slate-800" />
+            <div className="w-2 h-0.5 rounded-full bg-slate-900" />
         </div>
 
         {/* Screen Container */}
-        <div className="flex-1 rounded-[2.1rem] overflow-hidden bg-slate-950 relative border border-white/5 flex flex-col">
+        <div className="flex-1 rounded-[2.8rem] overflow-hidden bg-[#030711] relative border border-white/5 flex flex-col">
           {children}
         </div>
         
-        {/* Home Indicator - Thinner */}
-        <div className="absolute bottom-1.5 left-1/2 -translate-x-1/2 w-24 h-1 bg-white/10 rounded-full z-50" />
+        {/* Home Indicator - Ghostly line */}
+        <div className="absolute bottom-2 left-1/2 -translate-x-1/2 w-20 h-1 bg-white/[0.03] rounded-full z-50" />
       </div>
 
-      {/* Buttons Side (Visual only) */}
-      <div className="absolute top-32 -left-1 w-1 h-12 bg-slate-700 rounded-l-md border-r border-slate-600" />
-      <div className="absolute top-48 -left-1 w-1 h-12 bg-slate-700 rounded-l-md border-r border-slate-600" />
-      <div className="absolute top-32 -right-1 w-1 h-20 bg-slate-700 rounded-r-md border-l border-slate-600" />
-
-      {/* Glossy Reflect (Subtle) */}
-      <div className="absolute inset-0 rounded-[3rem] pointer-events-none bg-gradient-to-tr from-white/5 via-transparent to-transparent opacity-50 z-40" />
+      {/* Subtle Depth Highlights */}
+      <div className="absolute inset-0 rounded-[3rem] pointer-events-none ring-1 ring-inset ring-white/10 opacity-30 z-40" />
+      
+      {/* Glossy Reflect (Diagonal) */}
+      <div className="absolute inset-x-0 top-0 h-1/2 rounded-t-[3rem] pointer-events-none bg-gradient-to-br from-white/[0.02] to-transparent z-40" />
     </div>
   );
 }

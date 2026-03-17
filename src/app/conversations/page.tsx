@@ -6,7 +6,7 @@ import PhoneMockup from '@/components/LiveChat/PhoneMockup';
 import ChatInsights from '@/components/LiveChat/ChatInsights';
 import { supabase } from '@/lib/supabase';
 import Skeleton from '@/components/ui/Skeleton';
-import { Search, Filter, MessageSquare, User, Activity } from 'lucide-react';
+import { Search, Filter, MessageSquare, User, Activity, AlertTriangle } from 'lucide-react';
 
 export default function ConversationsPage() {
   const [selectedSession, setSelectedSession] = useState<string | null>(null);
@@ -64,33 +64,33 @@ export default function ConversationsPage() {
   );
 
   return (
-    <div className="h-screen w-full flex flex-col px-8 pt-8 pb-8 overflow-hidden">
-      <div className="flex-1 grid grid-cols-[280px_1fr_300px] gap-6 animate-in fade-in duration-500 overflow-hidden">
-      {/* Column 1: Session List */}
-      <aside className="glass-panel rounded-2xl overflow-hidden flex flex-col border border-slate-800/50 shadow-xl">
-        <div className="p-4 border-b border-slate-800/50 space-y-3">
-          <div className="flex justify-between items-center">
-            <h2 className="text-lg font-black text-white uppercase tracking-tighter italic">Chats</h2>
-            <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+    <div className="h-screen w-full flex bg-[#030711] text-slate-400 overflow-hidden font-sans">
+      {/* Column 1: Chat List */}
+      <aside className="w-[320px] border-r border-slate-800/60 flex flex-col bg-[#030711]">
+        <div className="p-6 space-y-4">
+          <div className="flex justify-between items-center px-1">
+            <h2 className="text-xl font-bold text-white tracking-tight">Chats</h2>
+            <div className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
           </div>
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-500" />
+          
+          <div className="relative group">
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 group-focus-within:text-primary transition-colors" />
             <input 
               type="text" 
-              placeholder="Search..."
+              placeholder="Search conversations..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full bg-slate-900/50 border border-slate-800 rounded-lg py-2 pl-9 pr-3 text-xs focus:outline-none focus:ring-1 focus:ring-primary/30 transition-all text-slate-200"
+              className="w-full bg-slate-900/40 border border-slate-800/80 rounded-xl py-2.5 pl-10 pr-4 text-sm focus:outline-none focus:ring-1 focus:ring-primary/40 transition-all text-slate-200 placeholder:text-slate-600"
             />
           </div>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-2 space-y-1 custom-scrollbar">
+        <div className="flex-1 overflow-y-auto px-3 pb-6 space-y-1.5 custom-scrollbar">
           {loading ? (
-            <div className="p-4 space-y-3">
-              {[1, 2, 3, 4, 5].map(i => (
+            <div className="p-4 space-y-4">
+              {[1, 2, 3, 4].map(i => (
                 <div key={i} className="flex gap-3 p-3">
-                  <Skeleton className="w-10 h-10 rounded-full shrink-0" />
+                  <Skeleton className="w-11 h-11 rounded-full shrink-0" />
                   <div className="flex-1 space-y-2">
                     <Skeleton className="h-4 w-3/4" />
                     <Skeleton className="h-3 w-1/2" />
@@ -99,67 +99,87 @@ export default function ConversationsPage() {
               ))}
             </div>
           ) : filteredSessions.length === 0 ? (
-            <div className="p-8 text-center text-slate-600 italic flex flex-col items-center gap-3">
-              <MessageSquare className="w-6 h-6 opacity-20" />
-              <p className="text-xs">{searchTerm ? 'No matches' : 'No chats'}</p>
+            <div className="p-12 text-center text-slate-600 italic flex flex-col items-center gap-4">
+              <MessageSquare className="w-8 h-8 opacity-10" />
+              <p className="text-sm">{searchTerm ? 'No results found' : 'No active chats'}</p>
             </div>
           ) : (
             filteredSessions.map((session) => (
               <button
                 key={session.id}
                 onClick={() => setSelectedSession(session.id)}
-                className={`w-full text-left p-3 rounded-xl transition-all flex items-center gap-3 group ${
+                className={`w-full text-left p-4 rounded-xl transition-all flex items-center gap-4 group border ${
                   selectedSession === session.id 
-                    ? 'bg-primary/10 border-primary/30 text-white' 
-                    : 'hover:bg-slate-800/40 text-slate-400 border border-transparent'
-                } border`}
+                    ? 'bg-primary/5 border-primary/40 shadow-[0_0_20px_rgba(59,130,246,0.05)]' 
+                    : 'hover:bg-slate-900/40 border-transparent'
+                }`}
               >
-                <div className={`w-10 h-10 rounded-full flex items-center justify-center border transition-colors ${
-                  selectedSession === session.id ? 'bg-primary border-primary/40' : 'bg-slate-800 border-slate-700'
+                <div className={`w-11 h-11 rounded-full flex items-center justify-center border transition-all ${
+                  selectedSession === session.id 
+                    ? 'bg-primary/20 border-primary/30' 
+                    : 'bg-slate-800/50 border-slate-700/50 group-hover:border-slate-600'
                 }`}>
-                  <User className={`w-5 h-5 ${selectedSession === session.id ? 'text-white' : 'text-slate-500'}`} />
+                  <User className={`w-5 h-5 ${selectedSession === session.id ? 'text-primary' : 'text-slate-400'}`} />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className={`text-xs font-black truncate uppercase tracking-tight ${selectedSession === session.id ? 'text-white' : 'text-slate-300'}`}>
-                    {(session.id as string)?.split('@')[0] || session.id}
-                  </p>
-                  <div className="flex items-center gap-1 mt-0.5">
-                    <span className="w-1 h-1 rounded-full bg-emerald-500" />
-                    <p className="text-[9px] text-slate-600 font-bold uppercase tracking-widest leading-none">Live</p>
+                  <div className="flex justify-between items-start">
+                    <p className={`text-sm font-semibold truncate ${selectedSession === session.id ? 'text-white' : 'text-slate-300'}`}>
+                      {(session.id as string)?.split('@')[0] || session.id}
+                    </p>
+                    <span className="text-[10px] text-slate-500 font-medium">Now</span>
+                  </div>
+                  <div className="flex items-center gap-1.5 mt-0.5">
+                    <p className={`text-xs truncate ${selectedSession === session.id ? 'text-slate-300' : 'text-slate-500'}`}>
+                      Active now
+                    </p>
                   </div>
                 </div>
+                {selectedSession === session.id && (
+                  <div className="w-1.5 h-1.5 rounded-full bg-primary" />
+                )}
               </button>
             ))
           )}
         </div>
       </aside>
 
-      {/* Column 2: Phone Mockup Area */}
-      <section className="relative flex flex-col items-center justify-center">
+      {/* Column 2: Chat Header and Phone */}
+      <main className="flex-1 flex flex-col bg-[#030711] relative overflow-hidden">
         {selectedSession ? (
-          <div className="w-full h-full flex items-center justify-center py-2 relative">
-              <PhoneMockup>
-                <ChatWindow sessionId={selectedSession} />
-              </PhoneMockup>
-          </div>
-        ) : (
-          <div className="flex-1 flex flex-col items-center justify-center text-slate-500 space-y-4 glass-panel w-full rounded-2xl border border-slate-800/50">
-            <div className="p-6 rounded-full bg-slate-900/50 border border-slate-800">
-              <Activity className="w-10 h-10 text-primary/30" />
+          <>
+            <div className="flex-1 flex flex-col items-center justify-center p-8">
+              <div className="w-full max-w-[420px] aspect-[9/19.5] relative">
+                <PhoneMockup>
+                  <ChatWindow sessionId={selectedSession} />
+                </PhoneMockup>
+              </div>
             </div>
-            <div className="text-center">
-                <p className="text-lg font-black text-white uppercase tracking-tighter italic">Spectator Mode</p>
-                <p className="text-xs text-slate-600">Select a chat to begin monitoring.</p>
+          </>
+        ) : (
+          <div className="flex-1 flex flex-col items-center justify-center text-slate-500 space-y-6">
+            <div className="p-8 rounded-full bg-slate-900/30 border border-slate-800/50 animate-pulse">
+              <Activity className="w-12 h-12 text-primary/20" />
+            </div>
+            <div className="text-center space-y-2">
+              <h3 className="text-2xl font-bold text-white tracking-tight">Spectator Mode</h3>
+              <p className="text-sm text-slate-500 max-w-xs">
+                Select an active conversation to monitor in real-time and access AI insights.
+              </p>
             </div>
           </div>
         )}
-      </section>
+      </main>
 
-      {/* Column 3: Chat Insights */}
-      <aside className="glass-panel rounded-2xl p-5 border border-slate-800/50 shadow-xl overflow-hidden">
+      {/* Column 3: Insights */}
+      <aside className="w-[360px] border-l border-slate-800/60 bg-[#030711] overflow-hidden">
         <ChatInsights sessionId={selectedSession} />
       </aside>
-    </div>
+
+      {/* Background patterns */}
+      <div className="absolute inset-0 pointer-events-none opacity-[0.03] overflow-hidden">
+        <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-primary rounded-full blur-[150px]" />
+        <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-primary rounded-full blur-[150px]" />
+      </div>
     </div>
   );
 }
