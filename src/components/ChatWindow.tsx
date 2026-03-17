@@ -15,6 +15,12 @@ import {
   ShieldAlert
 } from 'lucide-react';
 
+const formatMessageContent = (content: string) => {
+  // Remove technical tool logs like [Used tools: ...] and anything inside those square brackets
+  // The pattern usually starts with [Used tools: and ends with ]]
+  return content.replace(/^\[Used tools:[\s\S]*?\]\]\s*/i, '').trim();
+};
+
 interface Message {
   id: string;
   role: 'user' | 'assistant';
@@ -57,7 +63,7 @@ export default function ChatWindow({ sessionId }: { sessionId: string }) {
           return {
             id: m.id.toString(),
             role: mType === 'human' ? 'user' : 'assistant',
-            content: m.message?.content || '',
+            content: mType === 'human' ? m.message?.content : formatMessageContent(m.message?.content || ''),
             created_at: m.created_at || m.id.toString(),
             feedback: feedbackData?.find(f => f.message_id === m.id)?.rating || null,
             is_manual: isHumanIntervention
@@ -92,7 +98,7 @@ export default function ChatWindow({ sessionId }: { sessionId: string }) {
         const newMessage: Message = {
           id: payload.new.id.toString(),
           role: type === 'human' ? 'user' : 'assistant',
-          content: message?.content || '',
+          content: type === 'human' ? (message?.content || '') : formatMessageContent(message?.content || ''),
           created_at: payload.new.created_at || new Date().toISOString(),
           feedback: null,
           is_manual: isHumanIntervention
