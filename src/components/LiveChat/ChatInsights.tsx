@@ -4,20 +4,16 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { 
   Smile, 
-  Target, 
   Activity, 
   Frown,
   Meh,
   Star,
   Loader2,
-  Zap,
-  TrendingUp,
-  AlertCircle
+  TrendingUp
 } from 'lucide-react';
 
 interface ChatInsightsProps {
   sessionId: string | null;
-  conversationContext?: string;
 }
 
 interface Insights {
@@ -30,8 +26,6 @@ interface Insights {
   response_urgency: number | null;
   status: string;
 }
-
-const N8N_INSIGHTS_WEBHOOK = 'https://n8n.srv941923.hstgr.cloud/webhook/polaris-analisis-conversacion';
 
 function SentimentIcon({ sentiment }: { sentiment: string | null }) {
   if (!sentiment) return <Meh className="w-3.5 h-3.5 text-slate-500" />;
@@ -76,9 +70,8 @@ function SkeletonBlock({ className }: { className?: string }) {
   return <div className={`bg-slate-800/60 animate-pulse rounded-lg ${className}`} />;
 }
 
-export default function ChatInsights({ sessionId, conversationContext }: ChatInsightsProps) {
+export default function ChatInsights({ sessionId }: ChatInsightsProps) {
   const [insights, setInsights] = useState<Insights | null>(null);
-  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (!sessionId) {
@@ -86,45 +79,20 @@ export default function ChatInsights({ sessionId, conversationContext }: ChatIns
       return;
     }
 
-    setLoading(true);
+    const phone = sessionId.split('@')[0];
 
-    // 1. Fetch current insights (or create pending row)
-    async function initInsights() {
-      const phone = sessionId!.split('@')[0];
-
-      // Upsert to create the row if it doesn't exist
-      const { data: existing } = await supabase
+    // Load existing insights for this session
+    async function loadInsights() {
+      const { data } = await supabase
         .from('conversation_insights')
         .select('*')
         .eq('session_id', phone)
         .single();
-
-      if (existing) {
-        setInsights(existing);
-        setLoading(false);
-        // If pending/context changed, re-trigger analysis
-        if (existing.status !== 'analyzed' && conversationContext) {
-          triggerAnalysis(phone, conversationContext);
-        }
-      } else if (conversationContext) {
-        // Insert pending row and trigger analysis
-        await supabase.from('conversation_insights').insert({
-          session_id: phone,
-          conversation_context: conversationContext,
-          status: 'pending'
-        });
-        setInsights({ session_id: phone, sentiment: null, sentiment_score: null, user_intent: null, csat_score: null, response_accuracy: null, response_urgency: null, status: 'pending' });
-        setLoading(false);
-        triggerAnalysis(phone, conversationContext);
-      } else {
-        setLoading(false);
-      }
+      if (data) setInsights(data);
     }
+    loadInsights();
 
-    initInsights();
-
-    // 2. Realtime subscription
-    const phone = sessionId.split('@')[0];
+    // Realtime subscription — DB trigger handles all updates
     const channel = supabase
       .channel(`insights:${phone}`)
       .on('postgres_changes', {
@@ -139,35 +107,6 @@ export default function ChatInsights({ sessionId, conversationContext }: ChatIns
 
     return () => { supabase.removeChannel(channel); };
   }, [sessionId]);
-
-  // Re-trigger when conversation context grows
-  useEffect(() => {
-    if (!sessionId || !conversationContext) return;
-    const phone = sessionId.split('@')[0];
-    triggerAnalysis(phone, conversationContext);
-  }, [conversationContext]);
-
-  async function triggerAnalysis(phone: string, context: string) {
-    try {
-      const contextJson = JSON.parse(context); // Parse to object for JSONB column
-
-      // Update context in DB first
-      await supabase.from('conversation_insights').upsert({
-        session_id: phone,
-        conversation_context: contextJson,
-        status: 'pending'
-      }, { onConflict: 'session_id' });
-
-      // POST to n8n with structured JSON
-      await fetch(N8N_INSIGHTS_WEBHOOK, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ session_id: phone, conversation_context: contextJson })
-      });
-    } catch (e) {
-      console.error('[Alpha] Error al enviar contexto al webhook de análisis:', e);
-    }
-  }
 
   if (!sessionId) {
     return (
@@ -194,12 +133,11 @@ export default function ChatInsights({ sessionId, conversationContext }: ChatIns
           <h2 className="text-xl font-bold text-white tracking-tight flex items-center gap-2.5">
             <Activity className="text-primary w-5 h-5" /> Insights del Chat
           </h2>
-          {isPending && (
+          {isPending ? (
             <span className="text-[9px] bg-amber-500/10 text-amber-400 px-2 py-0.5 rounded border border-amber-500/20 font-bold tracking-wider uppercase flex items-center gap-1">
               <Loader2 className="w-2.5 h-2.5 animate-spin" /> Analizando
             </span>
-          )}
-          {!isPending && (
+          ) : (
             <span className="text-[9px] bg-emerald-500/10 text-emerald-400 px-2 py-0.5 rounded border border-emerald-500/20 font-bold tracking-wider uppercase">
               EN VIVO
             </span>
@@ -262,7 +200,7 @@ export default function ChatInsights({ sessionId, conversationContext }: ChatIns
               <>
                 <p className="text-xl font-bold text-white tracking-tight">{insights?.user_intent ?? '—'}</p>
                 <div className="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden mt-2">
-                  <div className="h-full bg-primary rounded-full transition-all duration-1000" style={{ width: '80%' }} />
+                  <div className="h-full bg-primary rounded-full" style={{ width: '80%' }} />
                 </div>
               </>
             )}
@@ -284,7 +222,7 @@ export default function ChatInsights({ sessionId, conversationContext }: ChatIns
                 </div>
                 <div className="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden mt-2">
                   <div
-                    className="h-full bg-amber-500 rounded-full shadow-[0_0_8px_rgba(245,158,11,0.3)] transition-all duration-1000"
+                    className="h-full bg-amber-500 rounded-full transition-all duration-1000"
                     style={{ width: `${((insights?.csat_score ?? 0) / 5) * 100}%` }}
                   />
                 </div>

@@ -13,7 +13,6 @@ export default function ConversationsPage() {
   const [sessions, setSessions] = useState<any[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
-  const [conversationContext, setConversationContext] = useState<string | undefined>(undefined);
 
   useEffect(() => {
     async function fetchSessions() {
@@ -59,38 +58,6 @@ export default function ConversationsPage() {
       supabase.removeChannel(channel);
     };
   }, []);
-
-  // Fetch full conversation context when session changes
-  useEffect(() => {
-    if (!selectedSession) {
-      setConversationContext(undefined);
-      return;
-    }
-    async function fetchContext() {
-      const { data } = await supabase
-        .from('n8n_chat_clientes_historial')
-        .select('message')
-        .eq('session_id', selectedSession)
-        .order('id', { ascending: true });
-
-      if (data) {
-        // Build a JSON array of conversation turns:
-        // [{ Human: "msg" }, { IA: "resp" }, ...]
-        const turns = data
-          .map(row => {
-            const type = row.message?.type;
-            const content = (row.message?.content || '').trim();
-            if (!content) return null;
-            const isHuman = type === 'human' || type === 'human_manual';
-            return isHuman ? { Human: content } : { IA: content };
-          })
-          .filter(Boolean);
-
-        setConversationContext(JSON.stringify(turns));
-      }
-    }
-    fetchContext();
-  }, [selectedSession]);
 
   const filteredSessions = sessions.filter(s => 
     s?.id?.toLowerCase().includes(searchTerm.toLowerCase())
@@ -205,7 +172,7 @@ export default function ConversationsPage() {
 
       {/* Column 3: Insights */}
       <aside className="w-[360px] border-l border-slate-800/60 bg-[#030711] overflow-hidden">
-        <ChatInsights sessionId={selectedSession} conversationContext={conversationContext} />
+        <ChatInsights sessionId={selectedSession} />
       </aside>
 
       {/* Background patterns */}
