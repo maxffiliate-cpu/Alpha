@@ -13,6 +13,15 @@ import {
 } from 'lucide-react';
 
 export default function AgentSettings() {
+  const [config, setConfig] = useState({
+    id: '00000000-0000-0000-0000-000000000000',
+    system_prompt: '',
+    temperature: 0.7,
+    model: 'gemini-3-flash'
+  });
+  const [saving, setSaving] = useState(false);
+  const [status, setStatus] = useState<'idle' | 'success' | 'error'>('idle');
+
   useEffect(() => {
     async function loadConfig() {
       const { data, error } = await supabase
