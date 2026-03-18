@@ -14,6 +14,7 @@ import {
 
 export default function AgentSettings() {
   const [config, setConfig] = useState({
+    id: '00000000-0000-0000-0000-000000000000',
     system_prompt: '',
     temperature: 0.7,
     model: 'gemini-3-flash'
@@ -26,7 +27,7 @@ export default function AgentSettings() {
       const { data, error } = await supabase
         .from('agent_config')
         .select('*')
-        .eq('id', 'default')
+        .limit(1)
         .single();
       
       if (data) setConfig(data);
@@ -39,7 +40,12 @@ export default function AgentSettings() {
     setStatus('idle');
     const { error } = await supabase
       .from('agent_config')
-      .upsert({ id: 'default', ...config });
+      .upsert({ 
+        id: config.id, 
+        system_prompt: config.system_prompt,
+        temperature: config.temperature,
+        model: config.model
+      });
     
     if (!error) {
       setStatus('success');
