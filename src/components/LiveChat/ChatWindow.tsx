@@ -114,6 +114,25 @@ export default function ChatWindow({ sessionId }: { sessionId: string }) {
 
   useEffect(scrollToBottom, [messages, isTyping]);
 
+  // Extrae el número limpio del session_id ("5491XXXXXXXXX@s.whatsapp.net" -> "5491XXXXXXXXX")
+  const getPhoneFromSession = (sid: string) => sid.split('@')[0];
+
+  const activatePanicMode = async () => {
+    const phone = getPhoneFromSession(sessionId);
+    await supabase
+      .from('session_control')
+      .upsert({ session_id: phone, is_manual: true }, { onConflict: 'session_id' });
+    setIsManualMode(true);
+  };
+
+  const deactivatePanicMode = async () => {
+    const phone = getPhoneFromSession(sessionId);
+    await supabase
+      .from('session_control')
+      .upsert({ session_id: phone, is_manual: false }, { onConflict: 'session_id' });
+    setIsManualMode(false);
+  };
+
   const N8N_WEBHOOK_URL = 'https://n8n.srv941923.hstgr.cloud/webhook/polaris-intervencion-manual';
 
   const handleSendMessage = async (e: React.FormEvent) => {
@@ -291,7 +310,7 @@ export default function ChatWindow({ sessionId }: { sessionId: string }) {
       <footer className="p-5 bg-slate-900/10 border-t border-white/[0.03] space-y-3">
         {!isManualMode ? (
           <button 
-            onClick={() => setIsManualMode(true)}
+            onClick={activatePanicMode}
             className="w-full group relative overflow-hidden bg-rose-600 hover:bg-rose-700 text-white rounded-xl py-2.5 px-4 transition-all active:scale-[0.98] shadow-lg shadow-rose-950/20 border border-rose-500/50"
           >
             <div className="relative z-10 flex items-center justify-center gap-2.5">
@@ -305,7 +324,7 @@ export default function ChatWindow({ sessionId }: { sessionId: string }) {
             <div className="flex justify-between items-center px-1">
               <span className="text-[8px] text-rose-500 font-black uppercase tracking-[0.2em]">Intervención Manual Activada</span>
               <button 
-                onClick={() => setIsManualMode(false)}
+                onClick={deactivatePanicMode}
                 className="text-[8px] text-slate-500 hover:text-white font-black uppercase tracking-widest transition-colors flex items-center gap-1"
               >
                 Reanudar IA <Bot className="w-2.5 h-2.5" />
