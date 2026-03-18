@@ -39,13 +39,17 @@ const formatMessageContent = (content: string) => {
   return formatted.trim();
 };
 
-export default function ChatWindow({ sessionId }: { sessionId: string }) {
+export default function ChatWindow({ sessionId, isManualMode, setIsManualMode }: { 
+  sessionId: string;
+  isManualMode: boolean;
+  setIsManualMode: (v: boolean) => void;
+}) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputValue, setInputValue] = useState('');
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
-  const [isManualMode, setIsManualMode] = useState(false);
+  const [feedbackGiven, setFeedbackGiven] = useState<Record<string, number>>({});
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
@@ -196,7 +200,8 @@ export default function ChatWindow({ sessionId }: { sessionId: string }) {
 
   const handleFeedback = async (messageId: string, rating: number) => {
     if (messageId.startsWith('temp-')) return;
-    
+    // Track locally for instant UI feedback
+    setFeedbackGiven(prev => ({ ...prev, [messageId]: rating }));
     await supabase
       .from('ai_feedback')
       .upsert({ 
@@ -271,22 +276,38 @@ export default function ChatWindow({ sessionId }: { sessionId: string }) {
                     </div>
                     <div className="flex items-center justify-between gap-3 px-1">
                       <span className="text-[8px] text-slate-600 font-medium uppercase tracking-widest">Ahora</span>
-                      {message.role === 'assistant' && !message.id.startsWith('temp-') && (
-                        <div className="flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <button 
-                            onClick={() => handleFeedback(message.id, 1)}
-                            className="p-1 hover:bg-emerald-500/10 rounded-md transition-all active:scale-90 group/thumb"
-                          >
-                            <ThumbsUp className="w-2.5 h-2.5 text-slate-600 group-hover/thumb:text-emerald-500" />
-                          </button>
-                          <button 
-                            onClick={() => handleFeedback(message.id, -1)}
-                            className="p-1 hover:bg-rose-500/10 rounded-md transition-all active:scale-90 group/thumb"
-                          >
-                            <ThumbsDown className="w-2.5 h-2.5 text-slate-600 group-hover/thumb:text-rose-500" />
-                          </button>
-                        </div>
-                      )}
+                        {message.role === 'assistant' && !message.id.startsWith('temp-') && (
+                          <div className="flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <button 
+                              onClick={() => handleFeedback(message.id, 1)}
+                              className={`p-1 rounded-md transition-all active:scale-90 group/thumb ${
+                                feedbackGiven[message.id] === 1 
+                                  ? 'bg-emerald-500/20' 
+                                  : 'hover:bg-emerald-500/10'
+                              }`}
+                            >
+                              <ThumbsUp className={`w-2.5 h-2.5 ${
+                                feedbackGiven[message.id] === 1 
+                                  ? 'text-emerald-400' 
+                                  : 'text-slate-600 group-hover/thumb:text-emerald-500'
+                              }`} />
+                            </button>
+                            <button 
+                              onClick={() => handleFeedback(message.id, -1)}
+                              className={`p-1 rounded-md transition-all active:scale-90 group/thumb ${
+                                feedbackGiven[message.id] === -1 
+                                  ? 'bg-rose-500/20' 
+                                  : 'hover:bg-rose-500/10'
+                              }`}
+                            >
+                              <ThumbsDown className={`w-2.5 h-2.5 ${
+                                feedbackGiven[message.id] === -1 
+                                  ? 'text-rose-400' 
+                                  : 'text-slate-600 group-hover/thumb:text-rose-500'
+                              }`} />
+                            </button>
+                          </div>
+                        )}
                     </div>
                   </div>
                 </div>
@@ -330,18 +351,18 @@ export default function ChatWindow({ sessionId }: { sessionId: string }) {
                 Reanudar IA <Bot className="w-2.5 h-2.5" />
               </button>
             </div>
-            <form onSubmit={handleSendMessage} className="relative flex items-center bg-[#0a0c10] border border-rose-500/20 rounded-[1.2rem] px-4 py-2 shadow-xl focus-within:border-rose-500/50 transition-all">
+            <form onSubmit={handleSendMessage} className="relative flex items-center bg-[#12070f] border border-rose-500/40 rounded-[1.2rem] px-4 py-2 shadow-[0_0_20px_rgba(244,63,94,0.15)] focus-within:border-rose-400/70 focus-within:shadow-[0_0_30px_rgba(244,63,94,0.25)] transition-all">
               <input 
                 type="text" 
                 value={inputValue}
                 onChange={(e) => setInputValue(e.target.value)}
                 placeholder="Escribe un mensaje manual..."
-                className="flex-1 bg-transparent text-white py-2 px-1 text-sm focus:outline-none placeholder:text-rose-900/50 font-medium"
+                className="flex-1 bg-transparent text-white py-2 px-1 text-sm focus:outline-none placeholder:text-rose-400/40 font-medium"
               />
               <button 
                 type="submit"
                 disabled={!inputValue.trim() || sending}
-                className="p-2 rounded-xl bg-rose-600 text-white hover:bg-rose-500 active:scale-90 disabled:opacity-20 transition-all shadow-lg shadow-rose-600/20"
+                className="p-2 rounded-xl bg-rose-500 text-white hover:bg-rose-400 active:scale-90 disabled:opacity-20 transition-all shadow-lg shadow-rose-600/30 border border-rose-400/30"
               >
                 {sending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
               </button>

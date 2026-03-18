@@ -4,13 +4,18 @@ import React from 'react';
 
 interface PhoneMockupProps {
   children: React.ReactNode;
+  isPanic?: boolean;
 }
 
-export default function PhoneMockup({ children }: PhoneMockupProps) {
+export default function PhoneMockup({ children, isPanic = false }: PhoneMockupProps) {
   return (
     <div className="relative mx-auto w-full max-w-[340px] aspect-[9/19] group animate-in fade-in zoom-in duration-1000">
-      {/* Outer Frame - Ultra thin premium bezel */}
-      <div className="absolute inset-0 bg-[#0a0c10] rounded-[3rem] border-[1px] border-white/10 shadow-[0_0_50px_rgba(0,0,0,0.5)] p-1.5 flex flex-col overflow-hidden ring-1 ring-white/5">
+      {/* Outer Frame */}
+      <div className={`absolute inset-0 bg-[#0a0c10] rounded-[3rem] border-[1px] p-1.5 flex flex-col overflow-hidden ring-1 transition-all duration-500 ${
+        isPanic
+          ? 'border-rose-500/60 shadow-[0_0_60px_rgba(244,63,94,0.35),0_0_120px_rgba(244,63,94,0.15)] ring-rose-500/20'
+          : 'border-white/10 shadow-[0_0_50px_rgba(0,0,0,0.5)] ring-white/5'
+      }`}>
         
         {/* Notch - Micro notch */}
         <div className="absolute top-2 left-1/2 -translate-x-1/2 w-20 h-4 bg-black rounded-full z-50 flex items-center justify-center gap-1.5 px-3">

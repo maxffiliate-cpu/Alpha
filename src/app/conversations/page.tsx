@@ -13,6 +13,13 @@ export default function ConversationsPage() {
   const [sessions, setSessions] = useState<any[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
+  const [isManualMode, setIsManualMode] = useState(false);
+
+  // Reset panic mode when switching sessions
+  const handleSelectSession = (id: string) => {
+    setSelectedSession(id);
+    setIsManualMode(false);
+  };
 
   useEffect(() => {
     async function fetchSessions() {
@@ -107,7 +114,7 @@ export default function ConversationsPage() {
             filteredSessions.map((session) => (
               <button
                 key={session.id}
-                onClick={() => setSelectedSession(session.id)}
+                onClick={() => handleSelectSession(session.id)}
                 className={`w-full text-left p-4 rounded-xl transition-all flex items-center gap-4 group border ${
                   selectedSession === session.id 
                     ? 'bg-primary/5 border-primary/40 shadow-[0_0_20px_rgba(59,130,246,0.05)]' 
@@ -149,9 +156,13 @@ export default function ConversationsPage() {
           <>
             <div className="flex-1 flex flex-col items-center pt-8 pb-8 px-8 overflow-y-auto custom-scrollbar">
               <div className="w-full max-w-[340px] relative">
-                <PhoneMockup>
-                  <ChatWindow sessionId={selectedSession} />
-                </PhoneMockup>
+                <PhoneMockup isPanic={isManualMode}>
+                <ChatWindow 
+                  sessionId={selectedSession} 
+                  isManualMode={isManualMode}
+                  setIsManualMode={setIsManualMode}
+                />
+              </PhoneMockup>
               </div>
             </div>
           </>
