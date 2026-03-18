@@ -26,7 +26,11 @@ interface Message {
 
 const formatMessageContent = (content: string) => {
   if (!content) return '';
-  return content.replace(/【.*?】/g, '').trim();
+  // Eliminar bloques de herramientas usadas [Used tools: ...]
+  let formatted = content.replace(/\[Used tools:[\s\S]*?\]\s*/g, '');
+  // Eliminar etiquetas de referencia técnica como 【12:1†source】
+  formatted = formatted.replace(/【.*?】/g, '');
+  return formatted.trim();
 };
 
 export default function ChatWindow({ sessionId }: { sessionId: string }) {
@@ -55,12 +59,12 @@ export default function ChatWindow({ sessionId }: { sessionId: string }) {
           const mType = m.message?.type;
           return {
             id: m.id.toString(),
-            role: mType === 'human' ? 'user' : 'assistant',
-            content: mType === 'human' ? m.message?.content : formatMessageContent(m.message?.content || ''),
+            role: (mType === 'human' ? 'user' : 'assistant') as 'user' | 'assistant',
+            content: mType === 'human' ? (m.message?.content || '') : formatMessageContent(m.message?.content || ''),
             created_at: m.created_at || m.id.toString(),
             is_manual: mType === 'human_manual' || m.message?.additional_kwargs?.is_panic_intervention
           };
-        }));
+        }).filter(m => m.content && m.content.trim().length > 0));
       }
       setLoading(false);
       scrollToBottom();
@@ -88,10 +92,12 @@ export default function ChatWindow({ sessionId }: { sessionId: string }) {
           is_manual: type === 'human_manual' || message?.additional_kwargs?.is_panic_intervention
         };
 
-        setMessages(prev => {
-          if (prev.find(m => m.id === newMessage.id)) return prev;
-          return [...prev, newMessage];
-        });
+        if (newMessage.content && newMessage.content.trim().length > 0) {
+          setMessages(prev => {
+            if (prev.find(m => m.id === newMessage.id)) return prev;
+            return [...prev, newMessage];
+          });
+        }
       })
       .subscribe();
 
