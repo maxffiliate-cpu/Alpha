@@ -26,10 +26,16 @@ interface Message {
 
 const formatMessageContent = (content: string) => {
   if (!content) return '';
-  // Eliminar bloques de herramientas usadas [Used tools: ...]
-  let formatted = content.replace(/\[Used tools:[\s\S]*?\]\s*/g, '');
-  // Eliminar etiquetas de referencia técnica como 【12:1†source】
+  // 1. Eliminar bloques de herramientas usadas y ruidos técnicos adyacentes (}}, ]], etc)
+  let formatted = content.replace(/\[Used tools:[\s\S]+?\][}\]\s,.-]*/g, '');
+  
+  // 2. Eliminar de forma agresiva cualquier residuo técnico al inicio del mensaje
+  // Limpia secuencias como }]] , ]] , o cualquier combinación de cierre JSON/Array al principio.
+  formatted = formatted.replace(/^[\]\}\s,.-]+/, '');
+
+  // 3. Eliminar etiquetas de referencia técnica como 【12:1†source】
   formatted = formatted.replace(/【.*?】/g, '');
+  
   return formatted.trim();
 };
 
