@@ -114,6 +114,8 @@ export default function ChatWindow({ sessionId }: { sessionId: string }) {
 
   useEffect(scrollToBottom, [messages, isTyping]);
 
+  const N8N_WEBHOOK_URL = 'https://n8n.srv941923.hstgr.cloud/webhook/polaris-intervencion-manual';
+
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!inputValue.trim() || sending) return;
@@ -131,6 +133,7 @@ export default function ChatWindow({ sessionId }: { sessionId: string }) {
     };
     setMessages(prev => [...prev, optimisticMessage]);
 
+    // 1. Guardar en Supabase para el historial
     const { error } = await supabase
       .from('n8n_chat_clientes_historial')
       .insert({
@@ -146,7 +149,29 @@ export default function ChatWindow({ sessionId }: { sessionId: string }) {
     if (error) {
       setMessages(prev => prev.filter(m => m.id !== tempId));
       setInputValue(messageContent);
+      setSending(false);
+      return;
     }
+
+    // 2. Enviar al webhook de n8n para que llegue vía WhatsApp al cliente
+    try {
+      // El session_id tiene formato "5491XXXXXXXXX@s.whatsapp.net" — extraemos el número
+      const phoneNumber = sessionId.split('@')[0];
+      await fetch(N8N_WEBHOOK_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          session_id: sessionId,
+          phone: phoneNumber,
+          message: messageContent,
+          source: 'alpha_manual_intervention'
+        })
+      });
+    } catch (webhookError) {
+      // El mensaje ya fue guardado en Supabase; sólo logueamos sin bloquear la UI
+      console.error('[Alpha] Error al llamar webhook n8n:', webhookError);
+    }
+
     setSending(false);
   };
 
