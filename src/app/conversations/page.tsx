@@ -74,16 +74,19 @@ export default function ConversationsPage() {
         .order('id', { ascending: true });
 
       if (data) {
-        const context = data
+        // Build a JSON array of conversation turns:
+        // [{ Human: "msg" }, { IA: "resp" }, ...]
+        const turns = data
           .map(row => {
             const type = row.message?.type;
-            const content = row.message?.content || '';
-            const role = type === 'human' || type === 'human_manual' ? 'Cliente' : 'Agente';
-            return `${role}: ${content}`;
+            const content = (row.message?.content || '').trim();
+            if (!content) return null;
+            const isHuman = type === 'human' || type === 'human_manual';
+            return isHuman ? { Human: content } : { IA: content };
           })
-          .filter(line => line.length > 8)
-          .join('\n');
-        setConversationContext(context);
+          .filter(Boolean);
+
+        setConversationContext(JSON.stringify(turns));
       }
     }
     fetchContext();

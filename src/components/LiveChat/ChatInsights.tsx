@@ -149,18 +149,20 @@ export default function ChatInsights({ sessionId, conversationContext }: ChatIns
 
   async function triggerAnalysis(phone: string, context: string) {
     try {
+      const contextJson = JSON.parse(context); // Parse to object for JSONB column
+
       // Update context in DB first
       await supabase.from('conversation_insights').upsert({
         session_id: phone,
-        conversation_context: context,
+        conversation_context: contextJson,
         status: 'pending'
       }, { onConflict: 'session_id' });
 
-      // POST to n8n
+      // POST to n8n with structured JSON
       await fetch(N8N_INSIGHTS_WEBHOOK, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ session_id: phone, conversation_context: context })
+        body: JSON.stringify({ session_id: phone, conversation_context: contextJson })
       });
     } catch (e) {
       console.error('[Alpha] Error al enviar contexto al webhook de análisis:', e);
