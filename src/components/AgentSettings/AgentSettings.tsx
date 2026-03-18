@@ -13,24 +13,21 @@ import {
 } from 'lucide-react';
 
 export default function AgentSettings() {
-  const [config, setConfig] = useState({
-    id: '00000000-0000-0000-0000-000000000000',
-    system_prompt: '',
-    temperature: 0.7,
-    model: 'gemini-3-flash'
-  });
-  const [saving, setSaving] = useState(false);
-  const [status, setStatus] = useState<'idle' | 'success' | 'error'>('idle');
-
   useEffect(() => {
     async function loadConfig() {
       const { data, error } = await supabase
         .from('agent_config')
         .select('*')
-        .limit(1)
-        .single();
+        .limit(1);
       
-      if (data) setConfig(data);
+      if (data && data.length > 0) {
+        setConfig({
+          id: data[0].id,
+          system_prompt: data[0].system_prompt,
+          temperature: data[0].temperature,
+          model: 'gemini-3-flash' // Model is currently static or managed elsewhere
+        });
+      }
     }
     loadConfig();
   }, []);
@@ -43,8 +40,7 @@ export default function AgentSettings() {
       .upsert({ 
         id: config.id, 
         system_prompt: config.system_prompt,
-        temperature: config.temperature,
-        model: config.model
+        temperature: config.temperature
       });
     
     if (!error) {
