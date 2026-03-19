@@ -8,13 +8,14 @@ import {
   Settings2, 
   LayoutDashboard,
   Zap,
-  ShieldCheck,
+  ShoppingCart,
   ChevronRight
 } from 'lucide-react';
 
 const navItems = [
   { href: '/', label: 'Resumen', icon: LayoutDashboard },
   { href: '/conversations', label: 'Chats en Vivo', icon: MessageSquare },
+  { href: '/recuperador', label: 'Recuperador de Carritos', icon: ShoppingCart },
   { href: '/analytics', label: 'Analíticas', icon: BarChart3 },
   { href: '/settings', label: 'Ajustes del Agente', icon: Settings2 },
 ];
