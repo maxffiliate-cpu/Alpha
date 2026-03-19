@@ -1,25 +1,38 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
+import { supabase } from '@/lib/supabase';
 import {
   ShoppingCart,
   TrendingUp,
   DollarSign,
   Mail,
-  Power,
-  Zap,
+  Save,
+  Loader2,
+  CheckCircle2,
 } from 'lucide-react';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
-type MessageConfig = {
-  id: number;
-  label: string;
-  template: string;
-  delay: number;
-  maxDelay: number;
-  enabled: boolean;
-};
+interface Plantilla {
+  id: string;
+  nombre: string;
+  descripcion: string | null;
+}
+
+interface Estrategia {
+  id: string;
+  is_active: boolean;
+  msg1_active: boolean;
+  msg1_template: string;
+  msg1_delay_min: number;
+  msg2_active: boolean;
+  msg2_template: string;
+  msg2_delay_min: number;
+  msg3_active: boolean;
+  msg3_template: string;
+  msg3_delay_min: number;
+}
 
 type CartEntry = {
   initials: string;
@@ -30,36 +43,26 @@ type CartEntry = {
   status: 'Recuperado' | 'Pendiente' | 'Perdido';
 };
 
-// ─── Static Data ─────────────────────────────────────────────────────────────
-
-const STRATEGIES = [
-  { id: 1, name: 'Conversión A', desc: 'Optimizado Ventas' },
-  { id: 2, name: 'Fidelidad B', desc: 'Enfoque Soporte' },
-  { id: 3, name: 'Urgencia C', desc: 'Liquidación Stock' },
-  { id: 4, name: 'Retención D', desc: 'Seguimiento VIP' },
-];
-
-const TEMPLATES_1 = ['Recordatorio Estándar', 'Bienvenida E-commerce', 'Urgencia + Descuento'];
-const TEMPLATES_2 = ['Urgencia + Descuento', 'Recordatorio Estándar', 'Respuesta de Soporte'];
-const TEMPLATES_3 = ['Seguimiento Final', 'Recordatorio de Cita', 'Especial VIP'];
-
-const INITIAL_MESSAGES: MessageConfig[] = [
-  { id: 1, label: 'Mensaje 1', template: TEMPLATES_1[0], delay: 5,   maxDelay: 60,  enabled: true  },
-  { id: 2, label: 'Mensaje 2', template: TEMPLATES_2[0], delay: 30,  maxDelay: 120, enabled: true  },
-  { id: 3, label: 'Mensaje 3', template: TEMPLATES_3[0], delay: 120, maxDelay: 240, enabled: false },
-];
-
 const CART_ENTRIES: CartEntry[] = [
-  { initials: 'JP', name: 'Juan P.',    phone: '+54 9 11 ***-9234', amount: '$12,450.00', time: 'Hoy, 14:20 PM', status: 'Recuperado' },
-  { initials: 'ML', name: 'Maria L.',   phone: '+34 654 ***-112',   amount: '$3,200.50',  time: 'Hoy, 13:55 PM', status: 'Pendiente'  },
-  { initials: 'RK', name: 'Robert K.',  phone: '+1 305 ***-8821',   amount: '$45,000.00', time: 'Hoy, 12:10 PM', status: 'Perdido'    },
+  { initials: 'JP', name: 'Juan P.',   phone: '+54 9 11 ***-9234', amount: '$12,450.00', time: 'Hoy, 14:20 PM', status: 'Recuperado' },
+  { initials: 'ML', name: 'Maria L.',  phone: '+34 654 ***-112',   amount: '$3,200.50',  time: 'Hoy, 13:55 PM', status: 'Pendiente' },
+  { initials: 'RK', name: 'Robert K.', phone: '+1 305 ***-8821',   amount: '$45,000.00', time: 'Hoy, 12:10 PM', status: 'Perdido' },
 ];
 
 const STATUS_STYLES: Record<CartEntry['status'], string> = {
   Recuperado: 'bg-emerald-500/10 text-emerald-400',
-  Pendiente:  'bg-blue-500/10   text-blue-400',
-  Perdido:    'bg-rose-500/10   text-rose-400',
+  Pendiente:  'bg-blue-500/10 text-blue-400',
+  Perdido:    'bg-rose-500/10 text-rose-400',
 };
+
+const STRATEGIES = [
+  { id: 1, name: 'Conversión A',  desc: 'Optimizado Ventas' },
+  { id: 2, name: 'Fidelidad B',   desc: 'Enfoque Soporte' },
+  { id: 3, name: 'Urgencia C',    desc: 'Liquidación Stock' },
+  { id: 4, name: 'Retención D',   desc: 'Seguimiento VIP' },
+];
+
+const ESTRATEGIA_ID = '00000000-0000-0000-0000-000000000001';
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
@@ -82,23 +85,31 @@ function Toggle({ checked, onChange }: { checked: boolean; onChange: () => void 
 }
 
 function MessageCard({
-  msg,
-  templates,
+  label,
+  active,
+  template,
+  delay,
+  maxDelay,
+  plantillas,
   onToggle,
   onDelayChange,
   onTemplateChange,
 }: {
-  msg: MessageConfig;
-  templates: string[];
+  label: string;
+  active: boolean;
+  template: string;
+  delay: number;
+  maxDelay: number;
+  plantillas: Plantilla[];
   onToggle: () => void;
   onDelayChange: (v: number) => void;
   onTemplateChange: (v: string) => void;
 }) {
   return (
-    <div className="glass-panel p-6 rounded-2xl flex flex-col gap-6">
+    <div className={`glass-panel p-6 rounded-2xl flex flex-col gap-6 transition-opacity duration-300 ${!active ? 'opacity-50' : ''}`}>
       <div className="flex justify-between items-center">
-        <h4 className="text-sm font-bold text-white">{msg.label}</h4>
-        <Toggle checked={msg.enabled} onChange={onToggle} />
+        <h4 className="text-sm font-bold text-white">{label}</h4>
+        <Toggle checked={active} onChange={onToggle} />
       </div>
 
       <div>
@@ -106,18 +117,20 @@ function MessageCard({
           Plantilla
         </label>
         <select
-          value={msg.template}
+          value={template}
           onChange={(e) => onTemplateChange(e.target.value)}
-          className="w-full bg-slate-800/60 border border-slate-700/50 rounded-xl px-4 py-3 text-xs text-slate-200 font-medium focus:ring-1 focus:ring-blue-500/40 focus:outline-none appearance-none"
+          disabled={!active}
+          className="w-full bg-slate-800/60 border border-slate-700/50 rounded-xl px-4 py-3 text-xs text-slate-200 font-medium focus:ring-1 focus:ring-blue-500/40 focus:outline-none disabled:cursor-not-allowed"
           style={{
             backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%2364748b' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")`,
             backgroundPosition: 'right 0.75rem center',
             backgroundRepeat: 'no-repeat',
             backgroundSize: '1.2em 1.2em',
+            appearance: 'none',
           }}
         >
-          {templates.map((t) => (
-            <option key={t} value={t}>{t}</option>
+          {plantillas.map((p) => (
+            <option key={p.id} value={p.nombre}>{p.nombre}</option>
           ))}
         </select>
       </div>
@@ -125,15 +138,16 @@ function MessageCard({
       <div>
         <div className="flex justify-between text-[10px] text-slate-500 font-bold uppercase tracking-widest mb-2">
           <span>Delay</span>
-          <span className="text-blue-400">{msg.delay} min</span>
+          <span className="text-blue-400">{delay} min</span>
         </div>
         <input
           type="range"
           min={1}
-          max={msg.maxDelay}
-          value={msg.delay}
+          max={maxDelay}
+          value={delay}
+          disabled={!active}
           onChange={(e) => onDelayChange(Number(e.target.value))}
-          className="w-full h-1.5 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-blue-500"
+          className="w-full h-1.5 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-blue-500 disabled:cursor-not-allowed"
         />
       </div>
     </div>
@@ -143,29 +157,74 @@ function MessageCard({
 // ─── Main Component ──────────────────────────────────────────────────────────
 
 export default function RecuperadorView() {
-  const [motorActivo, setMotorActivo] = useState(true);
-  const [messages, setMessages] = useState<MessageConfig[]>(INITIAL_MESSAGES);
+  const [plantillas, setPlantillas] = useState<Plantilla[]>([]);
+  const [estrategia, setEstrategia] = useState<Estrategia | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
   const [activeStrategy, setActiveStrategy] = useState<number | null>(null);
 
-  function toggleMessage(id: number) {
-    setMessages((prev) =>
-      prev.map((m) => (m.id === id ? { ...m, enabled: !m.enabled } : m))
-    );
+  // ── Load data from Supabase ──────────────────────────────────────────────
+  const loadData = useCallback(async () => {
+    setLoading(true);
+    const [{ data: pData }, { data: eData }] = await Promise.all([
+      supabase
+        .from('plantillas_recuperacion')
+        .select('id, nombre, descripcion')
+        .eq('activa', true)
+        .order('created_at', { ascending: true }),
+      supabase
+        .from('estrategia_recuperacion')
+        .select('*')
+        .eq('id', ESTRATEGIA_ID)
+        .single(),
+    ]);
+
+    if (pData) setPlantillas(pData);
+    if (eData) setEstrategia(eData);
+    setLoading(false);
+  }, []);
+
+  useEffect(() => { loadData(); }, [loadData]);
+
+  // ── Field updater helper ─────────────────────────────────────────────────
+  function update<K extends keyof Estrategia>(key: K, value: Estrategia[K]) {
+    setEstrategia((prev) => prev ? { ...prev, [key]: value } : prev);
+    setSaved(false);
   }
 
-  function setDelay(id: number, delay: number) {
-    setMessages((prev) =>
-      prev.map((m) => (m.id === id ? { ...m, delay } : m))
-    );
+  // ── Save to Supabase ─────────────────────────────────────────────────────
+  async function handleSave() {
+    if (!estrategia) return;
+    setSaving(true);
+    await supabase
+      .from('estrategia_recuperacion')
+      .upsert({
+        id: ESTRATEGIA_ID,
+        is_active:      estrategia.is_active,
+        msg1_active:    estrategia.msg1_active,
+        msg1_template:  estrategia.msg1_template,
+        msg1_delay_min: estrategia.msg1_delay_min,
+        msg2_active:    estrategia.msg2_active,
+        msg2_template:  estrategia.msg2_template,
+        msg2_delay_min: estrategia.msg2_delay_min,
+        msg3_active:    estrategia.msg3_active,
+        msg3_template:  estrategia.msg3_template,
+        msg3_delay_min: estrategia.msg3_delay_min,
+      });
+    setSaving(false);
+    setSaved(true);
+    setTimeout(() => setSaved(false), 3000);
   }
 
-  function setTemplate(id: number, template: string) {
-    setMessages((prev) =>
-      prev.map((m) => (m.id === id ? { ...m, template } : m))
+  if (loading || !estrategia) {
+    return (
+      <div className="flex items-center justify-center h-64 gap-3 text-slate-500">
+        <Loader2 className="w-5 h-5 animate-spin" />
+        <span className="text-sm">Cargando configuración...</span>
+      </div>
     );
   }
-
-  const templateSets = [TEMPLATES_1, TEMPLATES_2, TEMPLATES_3];
 
   return (
     <div className="space-y-10 animate-in fade-in duration-500">
@@ -191,23 +250,23 @@ export default function RecuperadorView() {
             <span className="text-[10px] uppercase font-bold tracking-widest text-slate-500">
               Estado del Sistema
             </span>
-            <span className={`text-sm font-semibold ${motorActivo ? 'text-emerald-400' : 'text-slate-500'}`}>
-              {motorActivo ? 'Motor Activo' : 'Motor Inactivo'}
+            <span className={`text-sm font-semibold ${estrategia.is_active ? 'text-emerald-400' : 'text-slate-500'}`}>
+              {estrategia.is_active ? 'Motor Activo' : 'Motor Inactivo'}
             </span>
           </div>
-          <Toggle checked={motorActivo} onChange={() => setMotorActivo(!motorActivo)} />
+          <Toggle
+            checked={estrategia.is_active}
+            onChange={() => update('is_active', !estrategia.is_active)}
+          />
         </div>
       </section>
 
       {/* ── KPI Cards ────────────────────────────────────── */}
       <section className="grid grid-cols-1 md:grid-cols-3 gap-5">
-        {/* Ingresos Rescatados */}
         <div className="glass-panel rounded-2xl p-6 relative overflow-hidden group">
           <div className="absolute -right-6 -top-6 w-28 h-28 bg-emerald-500/5 rounded-full blur-3xl group-hover:bg-emerald-500/10 transition-colors" />
           <div className="flex items-center justify-between mb-4">
-            <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500">
-              Ingresos Rescatados
-            </span>
+            <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Ingresos Rescatados</span>
             <DollarSign className="w-5 h-5 text-emerald-400" />
           </div>
           <p className="text-3xl font-black text-emerald-400 tracking-tight">$1,450,000</p>
@@ -216,53 +275,37 @@ export default function RecuperadorView() {
           </p>
         </div>
 
-        {/* Tasa de Recuperación */}
         <div className="glass-panel rounded-2xl p-6 relative overflow-hidden group">
           <div className="flex items-center justify-between mb-4">
-            <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500">
-              Tasa de Recuperación
-            </span>
+            <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Tasa de Recuperación</span>
             <TrendingUp className="w-5 h-5 text-blue-400" />
           </div>
           <p className="text-3xl font-black text-white tracking-tight">24.5%</p>
-          {/* Sparkline */}
           <div className="mt-4 h-12 w-full flex items-end gap-1">
             {[33, 50, 66, 75, 50, 85, 100].map((h, i) => (
-              <div
-                key={i}
-                className="rounded-t-sm w-full transition-all"
-                style={{
-                  height: `${h}%`,
-                  backgroundColor: `rgba(59,130,246,${0.2 + i * 0.12})`,
-                  boxShadow: i === 6 ? '0 0 10px rgba(59,130,246,0.3)' : undefined,
-                }}
-              />
+              <div key={i} className="rounded-t-sm w-full" style={{
+                height: `${h}%`,
+                backgroundColor: `rgba(59,130,246,${0.2 + i * 0.12})`,
+                boxShadow: i === 6 ? '0 0 10px rgba(59,130,246,0.3)' : undefined,
+              }} />
             ))}
           </div>
         </div>
 
-        {/* Carritos Procesados */}
         <div className="glass-panel rounded-2xl p-6 relative overflow-hidden group">
           <div className="flex items-center justify-between mb-4">
-            <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500">
-              Carritos Procesados
-            </span>
+            <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Carritos Procesados</span>
             <ShoppingCart className="w-5 h-5 text-slate-500" />
           </div>
           <p className="text-3xl font-black text-white tracking-tight">142</p>
           <p className="text-xs text-slate-500 mt-2">Actividad registrada esta semana</p>
           <div className="flex -space-x-2 mt-4">
             {['JP', 'ML', 'RK'].map((init) => (
-              <div
-                key={init}
-                className="w-7 h-7 rounded-full bg-slate-700 border-2 border-slate-900 flex items-center justify-center text-[9px] font-bold text-slate-300"
-              >
+              <div key={init} className="w-7 h-7 rounded-full bg-slate-700 border-2 border-slate-900 flex items-center justify-center text-[9px] font-bold text-slate-300">
                 {init}
               </div>
             ))}
-            <div className="w-7 h-7 rounded-full bg-slate-800 border-2 border-slate-900 flex items-center justify-center text-[9px] font-bold text-slate-400">
-              +12
-            </div>
+            <div className="w-7 h-7 rounded-full bg-slate-800 border-2 border-slate-900 flex items-center justify-center text-[9px] font-bold text-slate-400">+12</div>
           </div>
         </div>
       </section>
@@ -279,19 +322,15 @@ export default function RecuperadorView() {
         {/* Estrategias */}
         <div className="mb-8">
           <div className="flex items-center justify-between mb-4">
-            <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">
-              Estrategias Predeterminadas
-            </span>
-            <button className="text-[10px] font-black text-blue-400 uppercase hover:underline">
-              Ver todas
-            </button>
+            <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Estrategias Predeterminadas</span>
+            <button className="text-[10px] font-black text-blue-400 uppercase hover:underline">Ver todas</button>
           </div>
           <div className="flex gap-3 overflow-x-auto pb-2">
             {STRATEGIES.map((s) => (
               <button
                 key={s.id}
                 onClick={() => setActiveStrategy(s.id === activeStrategy ? null : s.id)}
-                className={`flex-1 min-w-[160px] flex flex-col gap-1 p-4 rounded-xl border transition-all text-left group ${
+                className={`flex-1 min-w-[160px] flex flex-col gap-1 p-4 rounded-xl border transition-all text-left ${
                   activeStrategy === s.id
                     ? 'bg-blue-500/10 border-blue-500/30 text-blue-400'
                     : 'bg-slate-800/40 border-slate-700/30 text-slate-300 hover:bg-slate-800/70'
@@ -306,22 +345,59 @@ export default function RecuperadorView() {
 
         {/* Message Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-8">
-          {messages.map((msg, i) => (
-            <MessageCard
-              key={msg.id}
-              msg={msg}
-              templates={templateSets[i]}
-              onToggle={() => toggleMessage(msg.id)}
-              onDelayChange={(v) => setDelay(msg.id, v)}
-              onTemplateChange={(v) => setTemplate(msg.id, v)}
-            />
-          ))}
+          <MessageCard
+            label="Mensaje 1"
+            active={estrategia.msg1_active}
+            template={estrategia.msg1_template}
+            delay={estrategia.msg1_delay_min}
+            maxDelay={60}
+            plantillas={plantillas}
+            onToggle={() => update('msg1_active', !estrategia.msg1_active)}
+            onDelayChange={(v) => update('msg1_delay_min', v)}
+            onTemplateChange={(v) => update('msg1_template', v)}
+          />
+          <MessageCard
+            label="Mensaje 2"
+            active={estrategia.msg2_active}
+            template={estrategia.msg2_template}
+            delay={estrategia.msg2_delay_min}
+            maxDelay={120}
+            plantillas={plantillas}
+            onToggle={() => update('msg2_active', !estrategia.msg2_active)}
+            onDelayChange={(v) => update('msg2_delay_min', v)}
+            onTemplateChange={(v) => update('msg2_template', v)}
+          />
+          <MessageCard
+            label="Mensaje 3"
+            active={estrategia.msg3_active}
+            template={estrategia.msg3_template}
+            delay={estrategia.msg3_delay_min}
+            maxDelay={240}
+            plantillas={plantillas}
+            onToggle={() => update('msg3_active', !estrategia.msg3_active)}
+            onDelayChange={(v) => update('msg3_delay_min', v)}
+            onTemplateChange={(v) => update('msg3_template', v)}
+          />
         </div>
 
         {/* Save Button */}
         <div className="flex justify-center">
-          <button className="w-full max-w-md py-4 bg-gradient-to-r from-blue-500 to-blue-600 text-white font-bold rounded-xl shadow-lg shadow-blue-500/20 hover:shadow-blue-500/30 hover:from-blue-400 hover:to-blue-500 active:scale-[0.98] transition-all">
-            Guardar Estrategia
+          <button
+            onClick={handleSave}
+            disabled={saving}
+            className={`w-full max-w-md py-4 font-bold rounded-xl shadow-lg transition-all flex items-center justify-center gap-2 active:scale-[0.98] ${
+              saved
+                ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 shadow-emerald-500/10'
+                : 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-blue-500/20 hover:shadow-blue-500/30 hover:from-blue-400 hover:to-blue-500'
+            }`}
+          >
+            {saving ? (
+              <><Loader2 className="w-4 h-4 animate-spin" /> Guardando...</>
+            ) : saved ? (
+              <><CheckCircle2 className="w-4 h-4" /> ¡Estrategia Guardada!</>
+            ) : (
+              <><Save className="w-4 h-4" /> Guardar Estrategia</>
+            )}
           </button>
         </div>
       </section>
@@ -341,12 +417,7 @@ export default function RecuperadorView() {
             <thead>
               <tr className="bg-slate-800/30">
                 {['Cliente', 'Monto', 'Fecha / Hora', 'Status'].map((h) => (
-                  <th
-                    key={h}
-                    className={`px-6 py-4 text-[10px] uppercase font-black text-slate-500 tracking-widest ${
-                      h === 'Status' ? 'text-right' : ''
-                    }`}
-                  >
+                  <th key={h} className={`px-6 py-4 text-[10px] uppercase font-black text-slate-500 tracking-widest ${h === 'Status' ? 'text-right' : ''}`}>
                     {h}
                   </th>
                 ))}
@@ -361,37 +432,24 @@ export default function RecuperadorView() {
                         {entry.initials}
                       </div>
                       <span className="text-sm font-medium text-slate-200">
-                        {entry.name}{' '}
-                        <span className="text-slate-500 text-xs ml-1">{entry.phone}</span>
+                        {entry.name} <span className="text-slate-500 text-xs ml-1">{entry.phone}</span>
                       </span>
                     </div>
                   </td>
                   <td className="px-6 py-4 text-sm font-bold text-white">{entry.amount}</td>
                   <td className="px-6 py-4 text-xs text-slate-500">{entry.time}</td>
                   <td className="px-6 py-4 text-right">
-                    <span
-                      className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${
-                        STATUS_STYLES[entry.status]
-                      }`}
-                    >
+                    <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${STATUS_STYLES[entry.status]}`}>
                       {entry.status}
                     </span>
                   </td>
                 </tr>
               ))}
-              {/* Skeleton row */}
               <tr className="opacity-25">
-                <td className="px-6 py-4">
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-lg bg-slate-700" />
-                    <div className="h-4 w-32 bg-slate-700 rounded" />
-                  </div>
-                </td>
+                <td className="px-6 py-4"><div className="flex items-center gap-3"><div className="w-8 h-8 rounded-lg bg-slate-700" /><div className="h-4 w-32 bg-slate-700 rounded" /></div></td>
                 <td className="px-6 py-4"><div className="h-4 w-16 bg-slate-700 rounded" /></td>
                 <td className="px-6 py-4"><div className="h-3 w-20 bg-slate-700 rounded" /></td>
-                <td className="px-6 py-4 text-right">
-                  <div className="inline-block h-5 w-20 bg-slate-700 rounded-full" />
-                </td>
+                <td className="px-6 py-4 text-right"><div className="inline-block h-5 w-20 bg-slate-700 rounded-full" /></td>
               </tr>
             </tbody>
           </table>
