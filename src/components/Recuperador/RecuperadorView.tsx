@@ -179,12 +179,25 @@ export default function RecuperadorView() {
   // ── Delete a named strategy ───────────────────────────────────────────────
   async function handleDelete(s: Estrategia, e: React.MouseEvent) {
     e.stopPropagation();
-    await supabase.from('estrategia_recuperacion').delete().eq('id', s.id);
+    const { error } = await supabase
+      .from('estrategia_recuperacion')
+      .delete()
+      .eq('id', s.id);
+
+    if (error) {
+      console.error('Error al eliminar estrategia:', error.message);
+      return; // Do not touch UI if DB rejected the operation
+    }
+
+    // Only update state after confirmed deletion
     setNamedStrategies((prev) => prev.filter((x) => x.id !== s.id));
     if (estrategiaActiva?.id === s.id) {
       setEstrategiaActiva(null);
       setEditorState(fallback);
-      await supabase.from('estrategia_recuperacion').update({ is_active: true }).eq('id', FALLBACK_ID);
+      await supabase
+        .from('estrategia_recuperacion')
+        .update({ is_active: true })
+        .eq('id', FALLBACK_ID);
     }
   }
 
