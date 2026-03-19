@@ -158,17 +158,34 @@ export default function RecuperadorView() {
 
   useEffect(() => { loadData(); }, [loadData]);
 
-  // ── Select a strategy card ───────────────────────────────────────────────
-  function handleSelectStrategy(s: Estrategia) {
+  // ── Select a strategy card (also toggles is_active in DB) ─────────────────
+  async function handleSelectStrategy(s: Estrategia) {
     if (estrategiaActiva?.id === s.id) {
-      // Deselect → volver a fallback
+      // Deselect → fallback becomes active
       setEstrategiaActiva(null);
       setEditorState(fallback);
+      await supabase.from('estrategia_recuperacion').update({ is_active: false }).neq('id', FALLBACK_ID);
+      await supabase.from('estrategia_recuperacion').update({ is_active: true }).eq('id', FALLBACK_ID);
     } else {
       setEstrategiaActiva(s);
       setEditorState(s);
+      // Set all inactive, then activate selected
+      await supabase.from('estrategia_recuperacion').update({ is_active: false }).neq('id', s.id);
+      await supabase.from('estrategia_recuperacion').update({ is_active: true }).eq('id', s.id);
     }
     setSaved(false);
+  }
+
+  // ── Delete a named strategy ───────────────────────────────────────────────
+  async function handleDelete(s: Estrategia, e: React.MouseEvent) {
+    e.stopPropagation();
+    await supabase.from('estrategia_recuperacion').delete().eq('id', s.id);
+    setNamedStrategies((prev) => prev.filter((x) => x.id !== s.id));
+    if (estrategiaActiva?.id === s.id) {
+      setEstrategiaActiva(null);
+      setEditorState(fallback);
+      await supabase.from('estrategia_recuperacion').update({ is_active: true }).eq('id', FALLBACK_ID);
+    }
   }
 
   // ── Update editor field ──────────────────────────────────────────────────
@@ -332,23 +349,32 @@ export default function RecuperadorView() {
           <div className="flex gap-3 overflow-x-auto pb-2">
             {/* Strategy cards (only if named strategies exist) */}
             {namedStrategies.map((s) => (
-              <button
-                key={s.id}
-                onClick={() => handleSelectStrategy(s)}
-                className={`flex-shrink-0 min-w-[160px] flex flex-col gap-1 p-4 rounded-xl border transition-all text-left ${
-                  estrategiaActiva?.id === s.id
-                    ? 'bg-blue-500/10 border-blue-500/30 text-blue-400'
-                    : 'bg-slate-800/40 border-slate-700/30 text-slate-300 hover:bg-slate-800/70'
-                }`}
-              >
-                <p className="text-[11px] font-bold truncate max-w-[140px]">{s.nombre}</p>
-                <p className="text-[9px] text-slate-500">
-                  {[s.msg1_active && 'M1', s.msg2_active && 'M2', s.msg3_active && 'M3'].filter(Boolean).join(' · ')}
-                </p>
-                {estrategiaActiva?.id === s.id && (
-                  <span className="text-[9px] text-blue-400 font-black uppercase tracking-widest mt-1">Activa</span>
-                )}
-              </button>
+              <div key={s.id} className="relative group/card flex-shrink-0">
+                <button
+                  onClick={() => handleSelectStrategy(s)}
+                  className={`min-w-[160px] w-full flex flex-col gap-1 p-4 rounded-xl border transition-all text-left ${
+                    estrategiaActiva?.id === s.id
+                      ? 'bg-blue-500/10 border-blue-500/30 text-blue-400'
+                      : 'bg-slate-800/40 border-slate-700/30 text-slate-300 hover:bg-slate-800/70'
+                  }`}
+                >
+                  <p className="text-[11px] font-bold truncate max-w-[130px]">{s.nombre}</p>
+                  <p className="text-[9px] text-slate-500">
+                    {[s.msg1_active && 'M1', s.msg2_active && 'M2', s.msg3_active && 'M3'].filter(Boolean).join(' · ')}
+                  </p>
+                  {estrategiaActiva?.id === s.id && (
+                    <span className="text-[9px] text-blue-400 font-black uppercase tracking-widest mt-1">Activa</span>
+                  )}
+                </button>
+                {/* Delete X button */}
+                <button
+                  onClick={(e) => handleDelete(s, e)}
+                  className="absolute -top-2 -right-2 w-5 h-5 rounded-full bg-slate-700 border border-slate-600 flex items-center justify-center text-slate-400 hover:bg-rose-500/80 hover:text-white hover:border-rose-500 transition-all opacity-0 group-hover/card:opacity-100 scale-75 group-hover/card:scale-100"
+                  title="Eliminar estrategia"
+                >
+                  <X className="w-2.5 h-2.5" />
+                </button>
+              </div>
             ))}
 
             {/* Botón "Crear Estrategia" — siempre al final */}
