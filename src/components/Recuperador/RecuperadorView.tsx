@@ -13,7 +13,18 @@ import {
   Plus,
   X,
   Check,
+  FileText,
 } from 'lucide-react';
+
+const IDIOMAS = [
+  'Español (ES)',
+  'Español (CHL)',
+  'Español (ARG)',
+  'Español (MEX)',
+  'Inglés (EEUU)',
+  'Inglés (UK)',
+  'Portugués (BR)',
+];
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -21,6 +32,7 @@ interface Plantilla {
   id: string;
   nombre: string;
   descripcion: string | null;
+  idioma: string | null;
 }
 
 interface Estrategia {
@@ -136,11 +148,16 @@ export default function RecuperadorView() {
   const [creating, setCreating]     = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
+  // Añadir Plantillas
+  const [newPlantillaNombre, setNewPlantillaNombre] = useState('');
+  const [newPlantillaIdioma, setNewPlantillaIdioma] = useState(IDIOMAS[0]);
+  const [addingPlantilla, setAddingPlantilla]       = useState(false);
+
   // ── Load ─────────────────────────────────────────────────────────────────
   const loadData = useCallback(async () => {
     setLoading(true);
     const [{ data: pData }, { data: eData }] = await Promise.all([
-      supabase.from('plantillas_recuperacion').select('id, nombre, descripcion').eq('activa', true).order('created_at'),
+      supabase.from('plantillas_recuperacion').select('id, nombre, descripcion, idioma').eq('activa', true).order('created_at'),
       supabase.from('estrategia_recuperacion').select('*').order('nombre', { nullsFirst: true }),
     ]);
 
@@ -205,6 +222,32 @@ export default function RecuperadorView() {
   function update<K extends keyof Estrategia>(key: K, value: Estrategia[K]) {
     setEditorState((prev) => prev ? { ...prev, [key]: value } : prev);
     setSaved(false);
+  }
+
+  // ── Add a new plantilla ────────────────────────────────────────────────
+  async function handleAddPlantilla() {
+    const nombre = newPlantillaNombre.trim();
+    if (!nombre) return;
+    setAddingPlantilla(true);
+    const { data, error } = await supabase
+      .from('plantillas_recuperacion')
+      .insert({ nombre, idioma: newPlantillaIdioma, activa: true })
+      .select('id, nombre, descripcion, idioma')
+      .single();
+    if (!error && data) {
+      setPlantillas((prev) => [...prev, data]);
+      setNewPlantillaNombre('');
+    }
+    setAddingPlantilla(false);
+  }
+
+  // ── Delete a plantilla ───────────────────────────────────────────────────
+  async function handleDeletePlantilla(id: string) {
+    const { error } = await supabase
+      .from('plantillas_recuperacion')
+      .delete()
+      .eq('id', id);
+    if (!error) setPlantillas((prev) => prev.filter((p) => p.id !== id));
   }
 
   // ── Save (upsert to the active strategy or fallback) ─────────────────────
@@ -452,7 +495,7 @@ export default function RecuperadorView() {
         </div>
 
         {/* ── Save Button ── */}
-        <div className="flex justify-center">
+        <div className="flex justify-center mb-10">
           <button
             onClick={handleSave}
             disabled={saving}
@@ -467,6 +510,67 @@ export default function RecuperadorView() {
               : <><Save className="w-4 h-4" /> {estrategiaActiva ? `Guardar "${estrategiaActiva.nombre}"` : 'Guardar Configuración Base'}</>
             }
           </button>
+        </div>
+
+        {/* ── Añadir Plantillas ── */}
+        <div className="border-t border-slate-800/50 pt-8">
+          <div className="flex items-start gap-3 mb-1">
+            <div className="w-9 h-9 rounded-xl bg-slate-800/80 border border-slate-700/50 flex items-center justify-center shrink-0">
+              <FileText className="w-4 h-4 text-slate-400" />
+            </div>
+            <div>
+              <h3 className="text-base font-bold text-white">Añadir Plantillas</h3>
+              <p className="text-[11px] text-slate-500 mt-0.5">Copia y Pega el Nombre de la Plantilla APROBADA por Meta</p>
+            </div>
+          </div>
+
+          {/* Input row */}
+          <div className="flex gap-2 mt-5">
+            <input
+              value={newPlantillaNombre}
+              onChange={(e) => setNewPlantillaNombre(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handleAddPlantilla()}
+              placeholder="ej: recordatorio_carrito_es"
+              className="flex-1 bg-slate-800/60 border border-slate-700/50 rounded-xl px-4 py-2.5 text-sm text-slate-200 placeholder-slate-600 focus:outline-none focus:ring-1 focus:ring-blue-500/40"
+            />
+            <select
+              value={newPlantillaIdioma}
+              onChange={(e) => setNewPlantillaIdioma(e.target.value)}
+              className="bg-slate-800/60 border border-slate-700/50 rounded-xl px-3 py-2.5 text-xs text-slate-200 font-medium focus:outline-none focus:ring-1 focus:ring-blue-500/40 shrink-0"
+              style={{ backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%2364748b' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")`, backgroundPosition: 'right 0.5rem center', backgroundRepeat: 'no-repeat', backgroundSize: '1.1em 1.1em', paddingRight: '2rem', appearance: 'none' }}
+            >
+              {IDIOMAS.map((lang) => <option key={lang} value={lang}>{lang}</option>)}
+            </select>
+            <button
+              onClick={handleAddPlantilla}
+              disabled={addingPlantilla || !newPlantillaNombre.trim()}
+              className="w-10 h-10 rounded-xl bg-blue-500 hover:bg-blue-400 text-white flex items-center justify-center transition-all disabled:opacity-40 shrink-0"
+              title="Añadir plantilla"
+            >
+              {addingPlantilla ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
+            </button>
+          </div>
+
+          {/* Plantillas list */}
+          {plantillas.length > 0 && (
+            <div className="mt-4 flex flex-wrap gap-2">
+              {plantillas.map((p) => (
+                <div key={p.id} className="group/chip flex items-center gap-1.5 bg-slate-800/60 border border-slate-700/40 hover:border-slate-600 rounded-lg px-3 py-1.5 transition-all">
+                  <span className="text-xs font-medium text-slate-300">{p.nombre}</span>
+                  {p.idioma && (
+                    <span className="text-[9px] font-bold text-slate-500 bg-slate-700/50 rounded px-1.5 py-0.5">{p.idioma}</span>
+                  )}
+                  <button
+                    onClick={() => handleDeletePlantilla(p.id)}
+                    className="ml-1 text-slate-600 hover:text-rose-400 transition-colors opacity-0 group-hover/chip:opacity-100"
+                    title="Eliminar plantilla"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </section>
 
