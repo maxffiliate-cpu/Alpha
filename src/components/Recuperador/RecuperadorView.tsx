@@ -26,6 +26,16 @@ const IDIOMAS = [
   'Portugués (BR)',
 ];
 
+const IDIOMA_CODES: Record<string, string> = {
+  'Español (ES)':   'es_ES',
+  'Español (CHL)':  'es_CL',
+  'Español (ARG)':  'es_AR',
+  'Español (MEX)':  'es_MX',
+  'Inglés (EEUU)':  'en_US',
+  'Inglés (UK)':    'en_GB',
+  'Portugués (BR)': 'pt_BR',
+};
+
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 interface Plantilla {
@@ -110,7 +120,7 @@ function MessageCard({
           className="w-full bg-slate-800/60 border border-slate-700/50 rounded-xl px-4 py-3 text-xs text-slate-200 font-medium focus:ring-1 focus:ring-blue-500/40 focus:outline-none disabled:cursor-not-allowed"
           style={{ backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%2364748b' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")`, backgroundPosition: 'right 0.75rem center', backgroundRepeat: 'no-repeat', backgroundSize: '1.2em 1.2em', appearance: 'none' }}
         >
-          {plantillas.map((p) => <option key={p.id} value={p.nombre}>{p.nombre}</option>)}
+          {plantillas.map((p) => <option key={p.id} value={p.nombre}>{p.nombre.split('|')[0]}{p.idioma ? ` (${IDIOMA_CODES[p.idioma] ?? p.idioma})` : ''}</option>)}
         </select>
       </div>
       <div>
@@ -228,10 +238,13 @@ export default function RecuperadorView() {
   async function handleAddPlantilla() {
     const nombre = newPlantillaNombre.trim();
     if (!nombre) return;
+    // Build the final name: nombre|locale_code  (e.g. "recordatorio_carrito|es_CL")
+    const localeCode = IDIOMA_CODES[newPlantillaIdioma] ?? newPlantillaIdioma;
+    const nombreFinal = `${nombre}|${localeCode}`;
     setAddingPlantilla(true);
     const { data, error } = await supabase
       .from('plantillas_recuperacion')
-      .insert({ nombre, idioma: newPlantillaIdioma, activa: true })
+      .insert({ nombre: nombreFinal, idioma: newPlantillaIdioma, activa: true })
       .select('id, nombre, descripcion, idioma')
       .single();
     if (!error && data) {
@@ -556,10 +569,10 @@ export default function RecuperadorView() {
             <div className="mt-4 flex flex-wrap gap-2">
               {plantillas.map((p) => (
                 <div key={p.id} className="group/chip flex items-center gap-1.5 bg-slate-800/60 border border-slate-700/40 hover:border-slate-600 rounded-lg px-3 py-1.5 transition-all">
-                  <span className="text-xs font-medium text-slate-300">{p.nombre}</span>
-                  {p.idioma && (
-                    <span className="text-[9px] font-bold text-slate-500 bg-slate-700/50 rounded px-1.5 py-0.5">{p.idioma}</span>
-                  )}
+                  <span className="text-xs font-medium text-slate-300">{p.nombre.split('|')[0]}</span>
+                  <span className="text-[9px] font-bold text-slate-500 bg-slate-700/50 rounded px-1.5 py-0.5">
+                    {p.nombre.includes('|') ? p.nombre.split('|')[1] : (p.idioma ?? '')}
+                  </span>
                   <button
                     onClick={() => handleDeletePlantilla(p.id)}
                     className="ml-1 text-slate-600 hover:text-rose-400 transition-colors opacity-0 group-hover/chip:opacity-100"
