@@ -5,6 +5,7 @@ import { supabase } from '@/lib/supabase';
 import {
   ShoppingCart,
   TrendingUp,
+  TrendingDown,
   DollarSign,
   Mail,
   Save,
@@ -15,6 +16,12 @@ import {
   Check,
   FileText,
 } from 'lucide-react';
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+const formatCLP = (n: number) =>
+  new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP', maximumFractionDigits: 0 }).format(n);
+
 
 const IDIOMAS = [
   'Español (ES)',
@@ -152,6 +159,10 @@ export default function RecuperadorView() {
   const [saving, setSaving]     = useState(false);
   const [saved, setSaved]       = useState(false);
 
+  // KPIs from DB
+  const [kpis, setKpis] = useState({ totalRecuperado: 0, rescatados: 0, perdidos: 0 });
+
+
   // Modal "Crear Estrategia"
   const [showCreate, setShowCreate] = useState(false);
   const [newName, setNewName]       = useState('');
@@ -166,9 +177,16 @@ export default function RecuperadorView() {
   // ── Load ─────────────────────────────────────────────────────────────────
   const loadData = useCallback(async () => {
     setLoading(true);
-    const [{ data: pData }, { data: eData }] = await Promise.all([
+    const [
+      { data: pData },
+      { data: eData },
+      { data: completadosData },
+      { count: perdidosCount },
+    ] = await Promise.all([
       supabase.from('plantillas_recuperacion').select('id, nombre, descripcion, idioma').eq('activa', true).order('created_at'),
       supabase.from('estrategia_recuperacion').select('*').order('nombre', { nullsFirst: true }),
+      supabase.from('completados').select('amount').eq('status', 'completed'),
+      supabase.from('no_completados').select('*', { count: 'exact', head: true }).in('status', ['abandoned', 'cancelled']),
     ]);
 
     if (pData) setPlantillas(pData);
@@ -177,11 +195,17 @@ export default function RecuperadorView() {
       const named = eData.filter((e) => e.id !== FALLBACK_ID && e.nombre !== null);
       setFallback(fb);
       setNamedStrategies(named);
-      // Editor arranca con el fallback
       setEditorState(fb);
+    }
+    if (completadosData) {
+      const totalRecuperado = completadosData.reduce((acc, r) => acc + (Number(r.amount) || 0), 0);
+      const rescatados = completadosData.length;
+      const perdidos = perdidosCount ?? 0;
+      setKpis({ totalRecuperado, rescatados, perdidos });
     }
     setLoading(false);
   }, []);
+
 
   useEffect(() => { loadData(); }, [loadData]);
 
@@ -355,43 +379,90 @@ export default function RecuperadorView() {
       </section>
 
       {/* ── KPI Cards ─────────────────────────────────────── */}
-      <section className="grid grid-cols-1 md:grid-cols-3 gap-5">
-        <div className="glass-panel rounded-2xl p-6 relative overflow-hidden group">
-          <div className="absolute -right-6 -top-6 w-28 h-28 bg-emerald-500/5 rounded-full blur-3xl group-hover:bg-emerald-500/10 transition-colors" />
-          <div className="flex items-center justify-between mb-4">
-            <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Ingresos Rescatados</span>
-            <DollarSign className="w-5 h-5 text-emerald-400" />
-          </div>
-          <p className="text-3xl font-black text-emerald-400 tracking-tight">$1,450,000</p>
-          <p className="text-xs text-slate-500 mt-2 flex items-center gap-1"><TrendingUp className="w-3 h-3" /> +12.4% vs mes anterior</p>
-        </div>
-        <div className="glass-panel rounded-2xl p-6 relative overflow-hidden group">
-          <div className="flex items-center justify-between mb-4">
-            <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Tasa de Recuperación</span>
-            <TrendingUp className="w-5 h-5 text-blue-400" />
-          </div>
-          <p className="text-3xl font-black text-white tracking-tight">24.5%</p>
-          <div className="mt-4 h-12 w-full flex items-end gap-1">
-            {[33, 50, 66, 75, 50, 85, 100].map((h, i) => (
-              <div key={i} className="rounded-t-sm w-full" style={{ height: `${h}%`, backgroundColor: `rgba(59,130,246,${0.2 + i * 0.12})`, boxShadow: i === 6 ? '0 0 10px rgba(59,130,246,0.3)' : undefined }} />
-            ))}
-          </div>
-        </div>
-        <div className="glass-panel rounded-2xl p-6 relative overflow-hidden group">
-          <div className="flex items-center justify-between mb-4">
-            <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Carritos Procesados</span>
-            <ShoppingCart className="w-5 h-5 text-slate-500" />
-          </div>
-          <p className="text-3xl font-black text-white tracking-tight">142</p>
-          <p className="text-xs text-slate-500 mt-2">Actividad registrada esta semana</p>
-          <div className="flex -space-x-2 mt-4">
-            {['JP', 'ML', 'RK'].map((init) => (
-              <div key={init} className="w-7 h-7 rounded-full bg-slate-700 border-2 border-slate-900 flex items-center justify-center text-[9px] font-bold text-slate-300">{init}</div>
-            ))}
-            <div className="w-7 h-7 rounded-full bg-slate-800 border-2 border-slate-900 flex items-center justify-center text-[9px] font-bold text-slate-400">+12</div>
-          </div>
-        </div>
-      </section>
+      {(() => {
+        const { totalRecuperado, rescatados, perdidos } = kpis;
+        const total = rescatados + perdidos;
+        const tasa  = total > 0 ? (rescatados / total) * 100 : 0;
+        // Donut SVG math
+        const R = 40; const r = 28;
+        const circ = 2 * Math.PI * R;
+        const filled = (tasa / 100) * circ;
+        return (
+          <section className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-5">
+
+            {/* 1 — Dinero Recuperado */}
+            <div className="glass-panel rounded-2xl p-6 relative overflow-hidden group col-span-1 md:col-span-2 xl:col-span-1">
+              <div className="absolute -right-8 -top-8 w-36 h-36 bg-emerald-500/8 rounded-full blur-3xl group-hover:bg-emerald-500/15 transition-colors" />
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Dinero Total Recuperado</span>
+                <DollarSign className="w-5 h-5 text-emerald-400" />
+              </div>
+              <p className="text-4xl font-black text-emerald-400 tracking-tight leading-none mb-1">
+                {formatCLP(totalRecuperado)}
+              </p>
+              <p className="text-xs text-slate-500 mt-3 flex items-center gap-1">
+                <TrendingUp className="w-3 h-3 text-emerald-500" />
+                <span>Ventas recuperadas por el bot</span>
+              </p>
+            </div>
+
+            {/* 2 — Carritos Rescatados */}
+            <div className="glass-panel rounded-2xl p-6 relative overflow-hidden group">
+              <div className="absolute -right-6 -top-6 w-28 h-28 bg-blue-500/5 rounded-full blur-3xl group-hover:bg-blue-500/10 transition-colors" />
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Carritos Rescatados</span>
+                <div className="flex items-center gap-1">
+                  <ShoppingCart className="w-4 h-4 text-blue-400" />
+                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                </div>
+              </div>
+              <p className="text-4xl font-black text-white tracking-tight leading-none mb-1">{rescatados}</p>
+              <p className="text-xs text-slate-500 mt-3">Ventas salvadas por el bot</p>
+            </div>
+
+            {/* 3 — Carritos Perdidos */}
+            <div className="glass-panel rounded-2xl p-6 relative overflow-hidden group">
+              <div className="absolute -right-6 -top-6 w-28 h-28 bg-orange-500/5 rounded-full blur-3xl group-hover:bg-orange-500/10 transition-colors" />
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Carritos Perdidos</span>
+                <TrendingDown className="w-5 h-5 text-orange-400" />
+              </div>
+              <p className="text-4xl font-black text-orange-400 tracking-tight leading-none mb-1">{perdidos}</p>
+              <p className="text-xs text-slate-500 mt-3">Oportunidad de mejora</p>
+            </div>
+
+            {/* 4 — Tasa de Recuperación (Donut SVG) */}
+            <div className="glass-panel rounded-2xl p-6 relative overflow-hidden group">
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Tasa de Recuperación</span>
+              </div>
+              <div className="flex items-center justify-center">
+                <svg width="100" height="100" viewBox="0 0 100 100">
+                  {/* Track */}
+                  <circle cx="50" cy="50" r={R} fill="none" stroke="rgba(71,85,105,0.4)" strokeWidth="12" />
+                  {/* Fill */}
+                  <circle
+                    cx="50" cy="50" r={R}
+                    fill="none"
+                    stroke={tasa > 0 ? '#10b981' : 'rgba(71,85,105,0.2)'}
+                    strokeWidth="12"
+                    strokeDasharray={`${filled} ${circ}`}
+                    strokeLinecap="round"
+                    transform="rotate(-90 50 50)"
+                    style={{ transition: 'stroke-dasharray 0.6s ease' }}
+                  />
+                  <text x="50" y="54" textAnchor="middle" fontSize="14" fontWeight="800" fill="white">
+                    {tasa.toFixed(1)}%
+                  </text>
+                </svg>
+              </div>
+              <p className="text-xs text-slate-500 text-center mt-1">de carritos convertidos</p>
+            </div>
+
+          </section>
+        );
+      })()}
+
 
       {/* ── Gestionar Mensajes ────────────────────────────── */}
       <section className="bg-slate-900/60 border border-slate-800/50 rounded-3xl p-8">
