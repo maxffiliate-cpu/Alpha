@@ -197,13 +197,13 @@ export default function RecuperadorView() {
       setEditorState(fb);
     }
     if (ncData) {
-      const totalRows      = ncData.length;
-      const rescatados     = ncData.filter((r) => r.status === 'completed').length;
-      const perdidos       = ncData.filter((r) => r.status === 'abandoned' || r.status === 'cancelled').length;
+      const totalRows       = ncData.length;
+      const rescatados      = ncData.filter((r) => r.status === 'completed').length;
+      const perdidos        = totalRows; // ALL carts that entered the system
       const totalRecuperado = ncData
         .filter((r) => r.status === 'completed')
         .reduce((acc, r) => acc + (Number(r.amount) || 0), 0);
-      // Tasa = (completed / ALL rows in no_completados) * 100
+      // Tasa = (completed / total rows) * 100  — as specified
       const tasa = totalRows > 0 ? (rescatados / totalRows) * 100 : 0;
       setKpis({ totalRecuperado, rescatados, perdidos, tasa, totalRows });
     }
