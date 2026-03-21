@@ -160,7 +160,7 @@ export default function RecuperadorView() {
   const [saved, setSaved]       = useState(false);
 
   // KPIs from DB
-  const [kpis, setKpis] = useState({ totalRecuperado: 0, rescatados: 0, perdidos: 0 });
+  const [kpis, setKpis] = useState({ totalRecuperado: 0, rescatados: 0, perdidos: 0, tasa: 0, totalRows: 0 });
 
 
   // Modal "Crear Estrategia"
@@ -180,13 +180,12 @@ export default function RecuperadorView() {
     const [
       { data: pData },
       { data: eData },
-      { data: completadosData },
-      { count: perdidosCount },
+      { data: ncData },
     ] = await Promise.all([
       supabase.from('plantillas_recuperacion').select('id, nombre, descripcion, idioma').eq('activa', true).order('created_at'),
       supabase.from('estrategia_recuperacion').select('*').order('nombre', { nullsFirst: true }),
-      supabase.from('completados').select('amount').eq('status', 'completed'),
-      supabase.from('no_completados').select('*', { count: 'exact', head: true }).in('status', ['abandoned', 'cancelled']),
+      // Single source of truth: all rows from no_completados
+      supabase.from('no_completados').select('amount, status'),
     ]);
 
     if (pData) setPlantillas(pData);
@@ -197,14 +196,20 @@ export default function RecuperadorView() {
       setNamedStrategies(named);
       setEditorState(fb);
     }
-    if (completadosData) {
-      const totalRecuperado = completadosData.reduce((acc, r) => acc + (Number(r.amount) || 0), 0);
-      const rescatados = completadosData.length;
-      const perdidos = perdidosCount ?? 0;
-      setKpis({ totalRecuperado, rescatados, perdidos });
+    if (ncData) {
+      const totalRows      = ncData.length;
+      const rescatados     = ncData.filter((r) => r.status === 'completed').length;
+      const perdidos       = ncData.filter((r) => r.status === 'abandoned' || r.status === 'cancelled').length;
+      const totalRecuperado = ncData
+        .filter((r) => r.status === 'completed')
+        .reduce((acc, r) => acc + (Number(r.amount) || 0), 0);
+      // Tasa = (completed / ALL rows in no_completados) * 100
+      const tasa = totalRows > 0 ? (rescatados / totalRows) * 100 : 0;
+      setKpis({ totalRecuperado, rescatados, perdidos, tasa, totalRows });
     }
     setLoading(false);
   }, []);
+
 
 
   useEffect(() => { loadData(); }, [loadData]);
@@ -380,11 +385,9 @@ export default function RecuperadorView() {
 
       {/* ── KPI Cards ─────────────────────────────────────── */}
       {(() => {
-        const { totalRecuperado, rescatados, perdidos } = kpis;
-        const total = rescatados + perdidos;
-        const tasa  = total > 0 ? (rescatados / total) * 100 : 0;
+        const { totalRecuperado, rescatados, perdidos, tasa } = kpis;
         // Donut SVG math
-        const R = 40; const r = 28;
+        const R = 40;
         const circ = 2 * Math.PI * R;
         const filled = (tasa / 100) * circ;
         return (
