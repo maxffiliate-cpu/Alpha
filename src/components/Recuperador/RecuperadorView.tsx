@@ -214,7 +214,7 @@ export default function RecuperadorView() {
       supabase.from('plantillas_recuperacion').select('id, nombre, descripcion, idioma').eq('activa', true).order('created_at'),
       supabase.from('estrategia_recuperacion').select('*').order('nombre', { nullsFirst: true }),
       // Single source of truth: all rows from no_completados
-      supabase.from('no_completados').select('amount, status'),
+      supabase.from('no_completados').select('amount, status, source'),
       // Table display: 50 most recent
       supabase
         .from('no_completados')
@@ -233,10 +233,10 @@ export default function RecuperadorView() {
     }
     if (ncData) {
       const totalRows       = ncData.length;
-      const rescatados      = ncData.filter((r) => r.status === 'completed').length;
+      const rescatados      = ncData.filter((r) => r.status === 'completed' && r.source === 'wsp_recup').length;
       const perdidos        = totalRows; // ALL carts that entered the system
       const totalRecuperado = ncData
-        .filter((r) => r.status === 'completed')
+        .filter((r) => r.status === 'completed' && r.source === 'wsp_recup')
         .reduce((acc, r) => acc + (Number(r.amount) || 0), 0);
       // Tasa = (completed / total rows) * 100  — as specified
       const tasa = totalRows > 0 ? (rescatados / totalRows) * 100 : 0;
