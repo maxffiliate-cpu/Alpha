@@ -92,8 +92,26 @@ function statusStyle(s: string | null) {
 
 function msgBadge(ts: string | null) {
   if (!ts) return <span className="text-[10px] text-slate-600 font-medium">—</span>;
-  return <span className="px-2 py-0.5 rounded-md bg-blue-500/10 text-blue-400 text-[10px] font-bold">✓ Enviado</span>;
+  return (
+    <span className="px-3 py-1 rounded-full bg-blue-500/10 text-blue-400 text-[10px] font-black uppercase tracking-widest whitespace-nowrap">
+      ✓ Enviado
+    </span>
+  );
 }
+
+
+const SOURCE_MAP: Record<string, { label: string; cls: string }> = {
+  web:    { label: 'Web Store', cls: 'bg-blue-500/10 text-blue-400' },
+  mobile: { label: 'Mobile',    cls: 'bg-indigo-500/10 text-indigo-400' },
+  ads:    { label: 'Facebook Ads', cls: 'bg-sky-500/10 text-sky-400' },
+  manual: { label: 'Manual',    cls: 'bg-slate-700/30 text-slate-300' },
+};
+
+function sourceStyle(s: string | null) {
+  const norm = s?.toLowerCase().trim() ?? '';
+  return SOURCE_MAP[norm] ?? { label: s ?? '—', cls: 'bg-slate-700/30 text-slate-400' };
+}
+
 
 
 const FALLBACK_ID = '00000000-0000-0000-0000-000000000001';
@@ -689,15 +707,17 @@ export default function RecuperadorView() {
           </div>
         </div>
 
-        <div className="overflow-x-auto">
-          <table className="text-left" style={{ minWidth: '960px', width: '100%' }}>
-            <thead>
-              <tr className="bg-slate-800/30">
-                {['Nombre', 'Teléfono', 'Monto', 'Estado', 'Fuente', 'Mensaje 1', 'Mensaje 2', 'Mensaje 3'].map((h) => (
-                  <th key={h} className="px-5 py-4 text-[10px] uppercase font-black text-slate-500 tracking-widest whitespace-nowrap">{h}</th>
-                ))}
-              </tr>
-            </thead>
+        <div className="overflow-x-auto relative">
+          <div className="max-h-[380px] overflow-y-auto scrollbar-thin scrollbar-thumb-slate-700">
+            <table className="text-left border-separate border-spacing-0" style={{ minWidth: '960px', width: '100%' }}>
+              <thead className="sticky top-0 z-20 bg-[#0f172a]">
+                <tr className="bg-slate-800/50">
+                  {['Nombre', 'Teléfono', 'Monto', 'Estado', 'Fuente', 'Mensaje 1', 'Mensaje 2', 'Mensaje 3'].map((h) => (
+                    <th key={h} className="px-5 py-4 text-[10px] uppercase font-black text-slate-500 tracking-widest whitespace-nowrap border-b border-slate-800/60">{h}</th>
+                  ))}
+                </tr>
+              </thead>
+
             <tbody className="divide-y divide-slate-800/40">
               {tableRows.length === 0 ? (
                 <tr>
@@ -725,7 +745,16 @@ export default function RecuperadorView() {
                         {st.label}
                       </span>
                     </td>
-                    <td className="px-5 py-4 text-xs text-slate-400 whitespace-nowrap">{row.source ?? '—'}</td>
+                    <td className="px-5 py-4">
+                      {(() => {
+                        const src = sourceStyle(row.source);
+                        return (
+                          <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest whitespace-nowrap ${src.cls}`}>
+                            {src.label}
+                          </span>
+                        );
+                      })()}
+                    </td>
                     <td className="px-5 py-4">{msgBadge(row.recipt_msj1)}</td>
                     <td className="px-5 py-4">{msgBadge(row.recipt_msj2)}</td>
                     <td className="px-5 py-4">{msgBadge(row.recipt_msj3)}</td>
@@ -734,12 +763,14 @@ export default function RecuperadorView() {
               })}
             </tbody>
           </table>
+          </div>
         </div>
 
         <div className="p-4 bg-slate-800/20 text-center border-t border-slate-800/40">
           <button className="text-xs font-bold text-blue-400 hover:underline transition-all">Ver historial completo de transacciones</button>
         </div>
       </section>
+
 
       {/* Decorative bleed */}
       <div className="fixed top-0 right-0 -z-10 w-[500px] h-[500px] bg-blue-500/5 rounded-full blur-[120px] pointer-events-none" />
