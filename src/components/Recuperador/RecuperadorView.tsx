@@ -67,26 +67,34 @@ interface Estrategia {
   msg3_delay_min: number;
 }
 
-type CartEntry = {
-  initials: string;
-  name: string;
-  phone: string;
-  amount: string;
-  time: string;
-  status: 'Recuperado' | 'Pendiente' | 'Perdido';
+interface TableRow {
+  commerce_order: string;
+  buyer_name: string | null;
+  buyer_phone: string | null;
+  amount: number | null;
+  status: string | null;
+  source: string | null;
+  recipt_msj1: string | null;
+  recipt_msj2: string | null;
+  recipt_msj3: string | null;
+}
+
+const STATUS_MAP: Record<string, { label: string; cls: string }> = {
+  completed: { label: 'Recuperado', cls: 'bg-emerald-500/10 text-emerald-400' },
+  cancelled:  { label: 'Cancelado',  cls: 'bg-rose-500/10 text-rose-400' },
+  abandoned:  { label: 'Abandonado', cls: 'bg-orange-500/10 text-orange-400' },
+  pending:    { label: 'Pendiente',  cls: 'bg-blue-500/10 text-blue-400' },
 };
 
-const CART_ENTRIES: CartEntry[] = [
-  { initials: 'JP', name: 'Juan P.',   phone: '+54 9 11 ***-9234', amount: '$12,450.00', time: 'Hoy, 14:20 PM', status: 'Recuperado' },
-  { initials: 'ML', name: 'Maria L.',  phone: '+34 654 ***-112',   amount: '$3,200.50',  time: 'Hoy, 13:55 PM', status: 'Pendiente' },
-  { initials: 'RK', name: 'Robert K.', phone: '+1 305 ***-8821',   amount: '$45,000.00', time: 'Hoy, 12:10 PM', status: 'Perdido' },
-];
+function statusStyle(s: string | null) {
+  return STATUS_MAP[s ?? ''] ?? { label: s ?? '—', cls: 'bg-slate-700/30 text-slate-400' };
+}
 
-const STATUS_STYLES: Record<CartEntry['status'], string> = {
-  Recuperado: 'bg-emerald-500/10 text-emerald-400',
-  Pendiente:  'bg-blue-500/10 text-blue-400',
-  Perdido:    'bg-rose-500/10 text-rose-400',
-};
+function msgBadge(ts: string | null) {
+  if (!ts) return <span className="text-[10px] text-slate-600 font-medium">—</span>;
+  return <span className="px-2 py-0.5 rounded-md bg-blue-500/10 text-blue-400 text-[10px] font-bold">✓ Enviado</span>;
+}
+
 
 const FALLBACK_ID = '00000000-0000-0000-0000-000000000001';
 
@@ -161,6 +169,8 @@ export default function RecuperadorView() {
 
   // KPIs from DB
   const [kpis, setKpis] = useState({ totalRecuperado: 0, rescatados: 0, perdidos: 0, tasa: 0, totalRows: 0 });
+  // Table rows
+  const [tableRows, setTableRows] = useState<TableRow[]>([]);
 
 
   // Modal "Crear Estrategia"
@@ -181,11 +191,18 @@ export default function RecuperadorView() {
       { data: pData },
       { data: eData },
       { data: ncData },
+      { data: tData },
     ] = await Promise.all([
       supabase.from('plantillas_recuperacion').select('id, nombre, descripcion, idioma').eq('activa', true).order('created_at'),
       supabase.from('estrategia_recuperacion').select('*').order('nombre', { nullsFirst: true }),
       // Single source of truth: all rows from no_completados
       supabase.from('no_completados').select('amount, status'),
+      // Table display: 50 most recent
+      supabase
+        .from('no_completados')
+        .select('commerce_order, buyer_name, buyer_phone, amount, status, source, recipt_msj1, recipt_msj2, recipt_msj3')
+        .order('created_at', { ascending: false })
+        .limit(50),
     ]);
 
     if (pData) setPlantillas(pData);
@@ -207,6 +224,7 @@ export default function RecuperadorView() {
       const tasa = totalRows > 0 ? (rescatados / totalRows) * 100 : 0;
       setKpis({ totalRecuperado, rescatados, perdidos, tasa, totalRows });
     }
+    if (tData) setTableRows(tData);
     setLoading(false);
   }, []);
 
@@ -670,40 +688,54 @@ export default function RecuperadorView() {
             <span className="text-xs font-medium text-slate-400">Escaneando carritos...</span>
           </div>
         </div>
+
         <div className="overflow-x-auto">
-          <table className="w-full text-left">
+          <table className="text-left" style={{ minWidth: '960px', width: '100%' }}>
             <thead>
               <tr className="bg-slate-800/30">
-                {['Cliente', 'Monto', 'Fecha / Hora', 'Status'].map((h) => (
-                  <th key={h} className={`px-6 py-4 text-[10px] uppercase font-black text-slate-500 tracking-widest ${h === 'Status' ? 'text-right' : ''}`}>{h}</th>
+                {['Nombre', 'Teléfono', 'Monto', 'Estado', 'Fuente', 'Mensaje 1', 'Mensaje 2', 'Mensaje 3'].map((h) => (
+                  <th key={h} className="px-5 py-4 text-[10px] uppercase font-black text-slate-500 tracking-widest whitespace-nowrap">{h}</th>
                 ))}
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-800/40">
-              {CART_ENTRIES.map((entry) => (
-                <tr key={entry.initials} className="hover:bg-slate-800/20 transition-colors">
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-lg bg-slate-800 flex items-center justify-center text-[10px] font-bold text-slate-300">{entry.initials}</div>
-                      <span className="text-sm font-medium text-slate-200">{entry.name} <span className="text-slate-500 text-xs ml-1">{entry.phone}</span></span>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 text-sm font-bold text-white">{entry.amount}</td>
-                  <td className="px-6 py-4 text-xs text-slate-500">{entry.time}</td>
-                  <td className="px-6 py-4 text-right">
-                    <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${STATUS_STYLES[entry.status]}`}>{entry.status}</span>
-                  </td>
+              {tableRows.length === 0 ? (
+                <tr>
+                  <td colSpan={8} className="px-6 py-10 text-center text-sm text-slate-600">Sin registros todavía</td>
                 </tr>
-              ))}
-              <tr className="opacity-25">
-                <td className="px-6 py-4"><div className="flex items-center gap-3"><div className="w-8 h-8 rounded-lg bg-slate-700" /><div className="h-4 w-32 bg-slate-700 rounded" /></div></td>
-                <td className="px-6 py-4"><div className="h-4 w-16 bg-slate-700 rounded" /></td>
-                <td className="px-6 py-4"><div className="h-3 w-20 bg-slate-700 rounded" /></td>
-                <td className="px-6 py-4 text-right"><div className="inline-block h-5 w-20 bg-slate-700 rounded-full" /></td>
-              </tr>
+              ) : tableRows.map((row) => {
+                const st = statusStyle(row.status);
+                const initials = (row.buyer_name ?? '??').split(' ').map((w: string) => w[0]).join('').slice(0, 2).toUpperCase();
+                return (
+                  <tr key={row.commerce_order} className="hover:bg-slate-800/20 transition-colors">
+                    <td className="px-5 py-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-lg bg-slate-800 border border-slate-700/50 flex items-center justify-center text-[10px] font-bold text-slate-300 shrink-0">
+                          {initials}
+                        </div>
+                        <span className="text-sm font-medium text-slate-200 whitespace-nowrap">{row.buyer_name ?? '—'}</span>
+                      </div>
+                    </td>
+                    <td className="px-5 py-4 text-xs text-slate-400 whitespace-nowrap">{row.buyer_phone ?? '—'}</td>
+                    <td className="px-5 py-4 text-sm font-bold text-white whitespace-nowrap">
+                      {row.amount != null ? formatCLP(Number(row.amount)) : '—'}
+                    </td>
+                    <td className="px-5 py-4">
+                      <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest whitespace-nowrap ${st.cls}`}>
+                        {st.label}
+                      </span>
+                    </td>
+                    <td className="px-5 py-4 text-xs text-slate-400 whitespace-nowrap">{row.source ?? '—'}</td>
+                    <td className="px-5 py-4">{msgBadge(row.recipt_msj1)}</td>
+                    <td className="px-5 py-4">{msgBadge(row.recipt_msj2)}</td>
+                    <td className="px-5 py-4">{msgBadge(row.recipt_msj3)}</td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
+
         <div className="p-4 bg-slate-800/20 text-center border-t border-slate-800/40">
           <button className="text-xs font-bold text-blue-400 hover:underline transition-all">Ver historial completo de transacciones</button>
         </div>
