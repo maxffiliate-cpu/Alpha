@@ -263,10 +263,12 @@ export default function RecuperadorView() {
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'no_completados' },
-        () => {
-          // Refetch everything when there is a change
-          loadData();
-        }
+        () => { loadData(); }
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'completados' },
+        () => { loadData(); }
       )
       .subscribe();
 
