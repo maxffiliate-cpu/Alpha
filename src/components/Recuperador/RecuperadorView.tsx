@@ -215,9 +215,9 @@ export default function RecuperadorView() {
       supabase.from('plantillas_recuperacion').select('id, nombre, descripcion, idioma').eq('activa', true).order('created_at'),
       supabase.from('estrategia_recuperacion').select('*').order('nombre', { nullsFirst: true }),
       // Single source of truth: all rows from no_completados (targeting recipt_msj1 for Perdidos)
-      supabase.from('no_completados').select('commerce_order, amount, status, source, recipt_msj1', { count: 'exact' }),
+      supabase.from('no_completados').select('commerce_order, amount, status, source, recipt_msj1', { count: 'exact' }).range(0, 10000),
       // Also check completados for wsp_recup and recipt_msj1
-      supabase.from('completados').select('commerce_order, amount, status, source, recipt_msj1'),
+      supabase.from('completados').select('commerce_order, amount, status, source, recipt_msj1').range(0, 10000),
       // Table display: All wsp_recup rows from no_completados
       supabase
         .from('no_completados')
@@ -245,8 +245,10 @@ export default function RecuperadorView() {
     const rescC = cDataArray.filter((r: any) => r.status === 'completed' && r.source === 'wsp_recup');
     const rescatadosCount = rescC.length;
 
-    // 2. Perdidos: rows ONLY in no_completados table where recipt_msj1 is NOT NULL
-    const perdidosTotal = ncData.filter((r: any) => r.recipt_msj1 !== null).length;
+    // 2. Perdidos: rows across both tables where recipt_msj1 is NOT NULL (targeting 1,175 total)
+    const perdidosNCCount = ncData.filter((r: any) => r.recipt_msj1 !== null).length;
+    const perdidosCCount = cDataArray.filter((r: any) => r.recipt_msj1 !== null).length;
+    const perdidosTotal = perdidosNCCount + perdidosCCount;
     
     // 3. Dinero Total Recuperado: Sum amount for the rescatados from completados table
     const totalRecuperado = rescC.reduce((acc, r: any) => acc + (Number(r.amount) || 0), 0);
