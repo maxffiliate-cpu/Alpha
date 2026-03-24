@@ -9,7 +9,9 @@ import {
   Meh,
   Star,
   Loader2,
-  TrendingUp
+  TrendingUp,
+  AlertTriangle,
+  Zap
 } from 'lucide-react';
 
 interface ChatInsightsProps {
@@ -23,23 +25,26 @@ interface Insights {
   user_intent: string | null;
   csat_score: number | null;
   response_accuracy: number | null;
-  response_urgency: number | null;
+  response_urgency: string | null; // Urgency Level in prompt
+  escalation_required: boolean | null;
+  actionable_insight: string | null;
   status: string;
 }
 
 function SentimentIcon({ sentiment }: { sentiment: string | null }) {
   if (!sentiment) return <Meh className="w-3.5 h-3.5 text-slate-500" />;
   const s = sentiment.toLowerCase();
-  if (s.includes('positiv')) return <Smile className="w-3.5 h-3.5 text-emerald-500" />;
-  if (s.includes('negativ')) return <Frown className="w-3.5 h-3.5 text-rose-500" />;
+  if (s.includes('excelente') || s.includes('bueno')) return <Smile className="w-3.5 h-3.5 text-emerald-500" />;
+  if (s.includes('malo')) return <Frown className="w-3.5 h-3.5 text-rose-500" />;
   return <Meh className="w-3.5 h-3.5 text-amber-500" />;
 }
 
 function SentimentColor(sentiment: string | null) {
   if (!sentiment) return '#64748b';
   const s = sentiment.toLowerCase();
-  if (s.includes('positiv')) return '#10b981';
-  if (s.includes('negativ')) return '#f43f5e';
+  if (s.includes('excelente')) return '#10b981';
+  if (s.includes('bueno')) return '#34d399';
+  if (s.includes('malo')) return '#f43f5e';
   return '#f59e0b';
 }
 
@@ -144,6 +149,19 @@ export default function ChatInsights({ sessionId }: ChatInsightsProps) {
           )}
         </div>
 
+        {/* Escalation Required Alert */}
+        {!isPending && insights?.escalation_required && (
+          <div className="bg-rose-500/10 border border-rose-500/30 rounded-2xl p-4 flex items-center gap-4 animate-pulse">
+            <div className="w-10 h-10 rounded-full bg-rose-500/20 flex items-center justify-center shrink-0">
+              <AlertTriangle className="w-5 h-5 text-rose-500" />
+            </div>
+            <div>
+              <p className="text-xs font-black text-rose-500 uppercase tracking-widest">Atención Requerida</p>
+              <p className="text-[10px] text-rose-400/80 font-medium">El bot ha detectado una situación que requiere intervención humana urgente.</p>
+            </div>
+          </div>
+        )}
+
         {/* Sentiment Card */}
         <section className="bg-slate-900/30 border border-slate-800/50 rounded-2xl p-6 space-y-6">
           <div className="flex justify-between items-center">
@@ -190,7 +208,7 @@ export default function ChatInsights({ sessionId }: ChatInsightsProps) {
         {/* Intent + CSAT */}
         <div className="grid grid-cols-2 gap-5">
           <div className="bg-slate-900/30 border border-slate-800/50 rounded-2xl p-5 space-y-3">
-            <span className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.15em] block">Intención del Usuario</span>
+            <span className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.15em] block">Intención</span>
             {isPending ? (
               <>
                 <SkeletonBlock className="w-20 h-6" />
@@ -198,7 +216,7 @@ export default function ChatInsights({ sessionId }: ChatInsightsProps) {
               </>
             ) : (
               <>
-                <p className="text-xl font-bold text-white tracking-tight">{insights?.user_intent ?? '—'}</p>
+                <p className="text-base font-bold text-white tracking-tight leading-tight">{insights?.user_intent ?? '—'}</p>
                 <div className="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden mt-2">
                   <div className="h-full bg-primary rounded-full" style={{ width: '80%' }} />
                 </div>
@@ -206,7 +224,7 @@ export default function ChatInsights({ sessionId }: ChatInsightsProps) {
             )}
           </div>
           <div className="bg-slate-900/30 border border-slate-800/50 rounded-2xl p-5 space-y-3">
-            <span className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.15em] block">Puntuación CSAT</span>
+            <span className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.15em] block">Satisfacción</span>
             {isPending ? (
               <>
                 <SkeletonBlock className="w-16 h-6" />
@@ -216,7 +234,7 @@ export default function ChatInsights({ sessionId }: ChatInsightsProps) {
               <>
                 <div className="flex items-end gap-1.5">
                   <p className="text-xl font-bold text-white tracking-tight">
-                    {insights?.csat_score != null ? `${insights.csat_score.toFixed(1)}/5.0` : '—'}
+                    {insights?.csat_score != null ? `${insights.csat_score.toFixed(0)}/5` : '—'}
                   </p>
                   <Star className="w-3.5 h-3.5 text-amber-500 fill-amber-500 mb-1" />
                 </div>
@@ -235,7 +253,15 @@ export default function ChatInsights({ sessionId }: ChatInsightsProps) {
         <section className="bg-slate-900/30 border border-slate-800/50 rounded-2xl p-6 space-y-6">
           <div className="flex justify-between items-center">
             <span className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em]">Dinámica de Respuesta</span>
-            <TrendingUp className="w-3.5 h-3.5 text-primary" />
+            <div className="flex items-center gap-2">
+               <span className="text-[9px] font-bold text-slate-400">URGENCIA:</span>
+               <span className={`text-[9px] font-black uppercase tracking-widest ${
+                 insights?.response_urgency === 'Muy Alta' ? 'text-rose-500' : 
+                 insights?.response_urgency === 'Alta' ? 'text-orange-500' : 'text-blue-500'
+               }`}>
+                 {insights?.response_urgency ?? '—'}
+               </span>
+            </div>
           </div>
           <div className="grid grid-cols-2 gap-6">
             {isPending ? (
@@ -251,12 +277,25 @@ export default function ChatInsights({ sessionId }: ChatInsightsProps) {
               </>
             ) : (
               <>
-                <CircleGauge value={insights?.response_accuracy ?? 0} color="#3b82f6" label="Precisión" />
-                <CircleGauge value={insights?.response_urgency ?? 0} color="#f43f5e" label="Urgencia" />
+                <CircleGauge value={insights?.response_accuracy ?? 0} color="#3b82f6" label="Precisión IA" />
+                <CircleGauge value={insights?.sentiment_score ?? 0} color="#10b981" label="Empatía" />
               </>
             )}
           </div>
         </section>
+
+        {/* Actionable Insight */}
+        {!isPending && insights?.actionable_insight && (
+          <section className="bg-primary/5 border border-primary/20 rounded-2xl p-5 space-y-3">
+            <div className="flex items-center gap-2">
+              <Zap className="w-3.5 h-3.5 text-primary" />
+              <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Recomendación BI</span>
+            </div>
+            <p className="text-[11px] text-slate-300 font-medium italic leading-relaxed">
+              "{insights.actionable_insight}"
+            </p>
+          </section>
+        )}
       </div>
     </div>
   );

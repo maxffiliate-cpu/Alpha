@@ -208,19 +208,23 @@ export default function RecuperadorView() {
     const [
       { data: pData },
       { data: eData },
-      { data: ncData },
+      ncResponse,
+      { data: cData },
       { data: tData },
     ] = await Promise.all([
       supabase.from('plantillas_recuperacion').select('id, nombre, descripcion, idioma').eq('activa', true).order('created_at'),
       supabase.from('estrategia_recuperacion').select('*').order('nombre', { nullsFirst: true }),
-      // Single source of truth: all rows from no_completados
-      supabase.from('no_completados').select('amount, status, source'),
-      // Table display: 50 most recent
+      // Single source of truth: all rows from no_completados (using count for absolute total)
+      supabase.from('no_completados').select('amount, status, source', { count: 'exact' }),
+      // Also check completados for wsp_recup
+      supabase.from('completados').select('amount, status, source').eq('source', 'wsp_recup'),
+      // Table display: All wsp_recup rows from no_completados
       supabase
         .from('no_completados')
         .select('commerce_order, buyer_name, buyer_phone, amount, status, source, recipt_msj1, recipt_msj2, recipt_msj3')
+        .eq('source', 'wsp_recup')
         .order('created_at', { ascending: false })
-        .limit(50),
+        .range(0, 5000), // High range to bypass 1000 limit
     ]);
 
     if (pData) setPlantillas(pData);
@@ -231,17 +235,25 @@ export default function RecuperadorView() {
       setNamedStrategies(named);
       setEditorState(fb);
     }
+
+    const ncData = (ncResponse as any)?.data ?? [];
+    const totalCountFromDB = (ncResponse as any)?.count ?? ncData.length;
+
     if (ncData) {
-      const totalRows       = ncData.length;
-      const rescatados      = ncData.filter((r) => r.status === 'completed' && r.source === 'wsp_recup').length;
-      const perdidos        = totalRows; // ALL carts that entered the system
-      const totalRecuperado = ncData
-        .filter((r) => r.status === 'completed' && r.source === 'wsp_recup')
+      const rescNC = ncData.filter((r: any) => r.status === 'completed' && r.source === 'wsp_recup');
+      const rescC  = (cData ?? []).filter((r: any) => r.status === 'completed');
+      
+      const rescatadosCount = rescNC.length + rescC.length;
+      const totalRows       = totalCountFromDB;
+      const perdidos        = totalRows; 
+      
+      const totalRecuperado = [...rescNC, ...rescC]
         .reduce((acc, r) => acc + (Number(r.amount) || 0), 0);
-      // Tasa = (completed / total rows) * 100  — as specified
-      const tasa = totalRows > 0 ? (rescatados / totalRows) * 100 : 0;
-      setKpis({ totalRecuperado, rescatados, perdidos, tasa, totalRows });
+
+      const tasa = totalRows > 0 ? (rescatadosCount / totalRows) * 100 : 0;
+      setKpis({ totalRecuperado, rescatados: rescatadosCount, perdidos, tasa, totalRows });
     }
+
     if (tData) setTableRows(tData);
     setLoading(false);
   }, []);
