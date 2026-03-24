@@ -214,13 +214,12 @@ export default function RecuperadorView() {
       supabase.from('plantillas_recuperacion').select('id, nombre, descripcion, idioma').eq('activa', true).order('created_at'),
       supabase.from('estrategia_recuperacion').select('*').order('nombre', { nullsFirst: true }),
       supabase.rpc('get_recovery_stats'),
-      // Table display: Recent wsp_recup rows from no_completados
+      // Table display: Recent history from ALL sources in no_completados
       supabase
         .from('no_completados')
         .select('commerce_order, buyer_name, buyer_phone, amount, status, source, recipt_msj1, recipt_msj2, recipt_msj3')
-        .eq('source', 'wsp_recup')
         .order('created_at', { ascending: false })
-        .limit(200), // Recent history for context
+        .limit(200),
     ]);
 
     if (pData) setPlantillas(pData);
@@ -253,7 +252,28 @@ export default function RecuperadorView() {
     setLoading(false);
   }, []);
 
-  useEffect(() => { loadData(); }, [loadData]);
+  useEffect(() => { 
+    loadData(); 
+  }, [loadData]);
+
+  // ── Realtime Monitoring ──────────────────────────────────────────────────
+  useEffect(() => {
+    const channel = supabase
+      .channel('realtime_recuperador')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'no_completados' },
+        () => {
+          // Refetch everything when there is a change
+          loadData();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [loadData]);
 
   // ── Select a strategy card (also toggles is_active in DB) ─────────────────
   async function handleSelectStrategy(s: Estrategia) {
