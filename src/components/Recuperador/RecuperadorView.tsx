@@ -214,10 +214,10 @@ export default function RecuperadorView() {
     ] = await Promise.all([
       supabase.from('plantillas_recuperacion').select('id, nombre, descripcion, idioma').eq('activa', true).order('created_at'),
       supabase.from('estrategia_recuperacion').select('*').order('nombre', { nullsFirst: true }),
-      // Single source of truth: all rows from no_completados (using count for absolute total)
-      supabase.from('no_completados').select('commerce_order, amount, status, source', { count: 'exact' }),
-      // Also check completados for wsp_recup
-      supabase.from('completados').select('commerce_order, amount, status, source').eq('source', 'wsp_recup'),
+      // Single source of truth: all rows from no_completados (targeting recipt_msj1 for Perdidos)
+      supabase.from('no_completados').select('commerce_order, amount, status, source, recipt_msj1', { count: 'exact' }),
+      // Also check completados for wsp_recup and recipt_msj1
+      supabase.from('completados').select('commerce_order, amount, status, source, recipt_msj1'),
       // Table display: All wsp_recup rows from no_completados
       supabase
         .from('no_completados')
@@ -237,36 +237,26 @@ export default function RecuperadorView() {
     }
 
     const ncData = (ncResponse as any)?.data ?? [];
-    const totalCountFromDB = (ncResponse as any)?.count ?? ncData.length;
+    const cDataArray = cData ?? [];
 
-    if (ncData) {
-      // Use a Map to keep unique commerce_orders across all relevant tables
-      const uniqueRecoveredOrders = new Map();
-      
-      // Potential recovered orders from no_completados
-      ncData.forEach((r: any) => {
-        if (r.status === 'completed' && r.source === 'wsp_recup') {
-          uniqueRecoveredOrders.set(r.commerce_order, r);
-        }
-      });
-      
-      // Merge unique orders from completados (also source=wsp_recup filtered in query)
-      (cData ?? []).forEach((r: any) => {
-        if (r.status === 'completed') {
-          uniqueRecoveredOrders.set(r.commerce_order, r);
-        }
-      });
+    // KPI Calculations according to new automation logic
+    
+    // 1. Rescatados: completados table ONLY where status=completed and source=wsp_recup
+    const rescC = cDataArray.filter((r: any) => r.status === 'completed' && r.source === 'wsp_recup');
+    const rescatadosCount = rescC.length;
 
-      const rescatadosCount = uniqueRecoveredOrders.size;
-      const totalRows       = totalCountFromDB;
-      const perdidos        = totalRows; 
-      
-      const totalRecuperado = Array.from(uniqueRecoveredOrders.values())
-        .reduce((acc, r: any) => acc + (Number(r.amount) || 0), 0);
+    // 2. Perdidos: rows across both tables where recipt_msj1 is NOT NULL
+    const perdidosNCCount = ncData.filter((r: any) => r.recipt_msj1 !== null).length;
+    const perdidosCCount = cDataArray.filter((r: any) => r.recipt_msj1 !== null).length;
+    const perdidosTotal = perdidosNCCount + perdidosCCount;
+    
+    // 3. Dinero Total Recuperado: Sum amount for the rescatados from completados table
+    const totalRecuperado = rescC.reduce((acc, r: any) => acc + (Number(r.amount) || 0), 0);
 
-      const tasa = totalRows > 0 ? (rescatadosCount / totalRows) * 100 : 0;
-      setKpis({ totalRecuperado, rescatados: rescatadosCount, perdidos, tasa, totalRows });
-    }
+    // 4. Rate = (Rescatados / Perdidos)
+    const tasa = perdidosTotal > 0 ? (rescatadosCount / perdidosTotal) * 100 : 0;
+
+    setKpis({ totalRecuperado, rescatados: rescatadosCount, perdidos: perdidosTotal, tasa, totalRows: (ncResponse as any)?.count ?? 0 });
 
     if (tData) setTableRows(tData);
     setLoading(false);
