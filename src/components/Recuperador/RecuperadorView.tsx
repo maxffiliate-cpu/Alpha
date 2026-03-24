@@ -208,23 +208,19 @@ export default function RecuperadorView() {
     const [
       { data: pData },
       { data: eData },
-      ncResponse,
-      { data: cData },
+      { data: statsData }, // Use RPC result for metrics
       { data: tData },
     ] = await Promise.all([
       supabase.from('plantillas_recuperacion').select('id, nombre, descripcion, idioma').eq('activa', true).order('created_at'),
       supabase.from('estrategia_recuperacion').select('*').order('nombre', { nullsFirst: true }),
-      // Single source of truth: all rows from no_completados (targeting recipt_msj1 for Perdidos)
-      supabase.from('no_completados').select('commerce_order, amount, status, source, recipt_msj1', { count: 'exact' }).range(0, 10000),
-      // Also check completados for wsp_recup and recipt_msj1
-      supabase.from('completados').select('commerce_order, amount, status, source, recipt_msj1').range(0, 10000),
-      // Table display: All wsp_recup rows from no_completados
+      supabase.rpc('get_recovery_stats'),
+      // Table display: Recent wsp_recup rows from no_completados
       supabase
         .from('no_completados')
         .select('commerce_order, buyer_name, buyer_phone, amount, status, source, recipt_msj1, recipt_msj2, recipt_msj3')
         .eq('source', 'wsp_recup')
         .order('created_at', { ascending: false })
-        .range(0, 5000), // High range to bypass 1000 limit
+        .limit(200), // Recent history for context
     ]);
 
     if (pData) setPlantillas(pData);
@@ -236,33 +232,26 @@ export default function RecuperadorView() {
       setEditorState(fb);
     }
 
-    const ncData = (ncResponse as any)?.data ?? [];
-    const cDataArray = cData ?? [];
-
-    // KPI Calculations according to new automation logic
-    
-    // 1. Rescatados: completados table ONLY where status=completed and source=wsp_recup
-    const rescC = cDataArray.filter((r: any) => r.status === 'completed' && r.source === 'wsp_recup');
-    const rescatadosCount = rescC.length;
-
-    // 2. Perdidos: rows across both tables where recipt_msj1 is NOT NULL (targeting 1,175 total)
-    const perdidosNCCount = ncData.filter((r: any) => r.recipt_msj1 !== null).length;
-    const perdidosCCount = cDataArray.filter((r: any) => r.recipt_msj1 !== null).length;
-    const perdidosTotal = perdidosNCCount + perdidosCCount;
-    
-    // 3. Dinero Total Recuperado: Sum amount for the rescatados from completados table
-    const totalRecuperado = rescC.reduce((acc, r: any) => acc + (Number(r.amount) || 0), 0);
-
-    // 4. Rate = (Rescatados / Perdidos)
-    const tasa = perdidosTotal > 0 ? (rescatadosCount / perdidosTotal) * 100 : 0;
-
-    setKpis({ totalRecuperado, rescatados: rescatadosCount, perdidos: perdidosTotal, tasa, totalRows: (ncResponse as any)?.count ?? 0 });
+    if (statsData) {
+      // statsData[0] contains { rescatados_count, perdidos_count, total_dinero }
+      const stats = statsData[0] || { rescatados_count: 0, perdidos_count: 0, total_dinero: 0 };
+      const rescatados = Number(stats.rescatados_count);
+      const perdidos = Number(stats.perdidos_count);
+      const dinero = Number(stats.total_dinero);
+      
+      const tasa = perdidos > 0 ? (rescatados / perdidos) * 100 : 0;
+      setKpis({ 
+        totalRecuperado: dinero, 
+        rescatados: rescatados, 
+        perdidos: perdidos, 
+        tasa, 
+        totalRows: perdidos // Use perdidos as total rows context
+      });
+    }
 
     if (tData) setTableRows(tData);
     setLoading(false);
   }, []);
-
-
 
   useEffect(() => { loadData(); }, [loadData]);
 
