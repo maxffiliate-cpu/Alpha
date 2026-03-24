@@ -245,10 +245,8 @@ export default function RecuperadorView() {
     const rescC = cDataArray.filter((r: any) => r.status === 'completed' && r.source === 'wsp_recup');
     const rescatadosCount = rescC.length;
 
-    // 2. Perdidos: rows across both tables where recipt_msj1 is NOT NULL
-    const perdidosNCCount = ncData.filter((r: any) => r.recipt_msj1 !== null).length;
-    const perdidosCCount = cDataArray.filter((r: any) => r.recipt_msj1 !== null).length;
-    const perdidosTotal = perdidosNCCount + perdidosCCount;
+    // 2. Perdidos: rows ONLY in no_completados table where recipt_msj1 is NOT NULL
+    const perdidosTotal = ncData.filter((r: any) => r.recipt_msj1 !== null).length;
     
     // 3. Dinero Total Recuperado: Sum amount for the rescatados from completados table
     const totalRecuperado = rescC.reduce((acc, r: any) => acc + (Number(r.amount) || 0), 0);
