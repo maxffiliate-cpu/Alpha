@@ -215,9 +215,9 @@ export default function RecuperadorView() {
       supabase.from('plantillas_recuperacion').select('id, nombre, descripcion, idioma').eq('activa', true).order('created_at'),
       supabase.from('estrategia_recuperacion').select('*').order('nombre', { nullsFirst: true }),
       // Single source of truth: all rows from no_completados (using count for absolute total)
-      supabase.from('no_completados').select('amount, status, source', { count: 'exact' }),
+      supabase.from('no_completados').select('commerce_order, amount, status, source', { count: 'exact' }),
       // Also check completados for wsp_recup
-      supabase.from('completados').select('amount, status, source').eq('source', 'wsp_recup'),
+      supabase.from('completados').select('commerce_order, amount, status, source').eq('source', 'wsp_recup'),
       // Table display: All wsp_recup rows from no_completados
       supabase
         .from('no_completados')
@@ -240,15 +240,29 @@ export default function RecuperadorView() {
     const totalCountFromDB = (ncResponse as any)?.count ?? ncData.length;
 
     if (ncData) {
-      const rescNC = ncData.filter((r: any) => r.status === 'completed' && r.source === 'wsp_recup');
-      const rescC  = (cData ?? []).filter((r: any) => r.status === 'completed');
+      // Use a Map to keep unique commerce_orders across all relevant tables
+      const uniqueRecoveredOrders = new Map();
       
-      const rescatadosCount = rescNC.length + rescC.length;
+      // Potential recovered orders from no_completados
+      ncData.forEach((r: any) => {
+        if (r.status === 'completed' && r.source === 'wsp_recup') {
+          uniqueRecoveredOrders.set(r.commerce_order, r);
+        }
+      });
+      
+      // Merge unique orders from completados (also source=wsp_recup filtered in query)
+      (cData ?? []).forEach((r: any) => {
+        if (r.status === 'completed') {
+          uniqueRecoveredOrders.set(r.commerce_order, r);
+        }
+      });
+
+      const rescatadosCount = uniqueRecoveredOrders.size;
       const totalRows       = totalCountFromDB;
       const perdidos        = totalRows; 
       
-      const totalRecuperado = [...rescNC, ...rescC]
-        .reduce((acc, r) => acc + (Number(r.amount) || 0), 0);
+      const totalRecuperado = Array.from(uniqueRecoveredOrders.values())
+        .reduce((acc, r: any) => acc + (Number(r.amount) || 0), 0);
 
       const tasa = totalRows > 0 ? (rescatadosCount / totalRows) * 100 : 0;
       setKpis({ totalRecuperado, rescatados: rescatadosCount, perdidos, tasa, totalRows });
