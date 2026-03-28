@@ -50,6 +50,7 @@ interface Plantilla {
   nombre: string;
   descripcion: string | null;
   idioma: string | null;
+  tenant_id?: string;
 }
 
 interface Estrategia {
@@ -65,6 +66,7 @@ interface Estrategia {
   msg3_active: boolean;
   msg3_template: string;
   msg3_delay_min: number;
+  tenant_id?: string;
 }
 
 interface TableRow {
@@ -77,6 +79,7 @@ interface TableRow {
   recipt_msj1: string | null;
   recipt_msj2: string | null;
   recipt_msj3: string | null;
+  tenant_id?: string;
 }
 
 const STATUS_MAP: Record<string, { label: string; cls: string }> = {
@@ -181,6 +184,7 @@ export default function RecuperadorView() {
   // editorState = lo que muestran los sliders/toggles/selects en este momento
   const [editorState, setEditorState]         = useState<Estrategia | null>(null);
 
+  const [tenantId, setTenantId] = useState<string | null>(null);
   const [loading, setLoading]   = useState(true);
   const [saving, setSaving]     = useState(false);
   const [saved, setSaved]       = useState(false);
@@ -273,8 +277,14 @@ export default function RecuperadorView() {
     setLoading(false);
   }, []);
 
-  useEffect(() => { 
-    loadData(); 
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      setTenantId(user?.app_metadata?.tenant_id ?? null);
+    });
+  }, []);
+
+  useEffect(() => {
+    loadData();
   }, [loadData]);
 
   // ── Realtime Monitoring ──────────────────────────────────────────────────
@@ -304,14 +314,14 @@ export default function RecuperadorView() {
       // Deselect → fallback becomes active
       setEstrategiaActiva(null);
       setEditorState(fallback);
-      await supabase.from('estrategia_recuperacion').update({ is_active: false }).neq('id', FALLBACK_ID);
-      await supabase.from('estrategia_recuperacion').update({ is_active: true }).eq('id', FALLBACK_ID);
+      await supabase.from('estrategia_recuperacion').update({ is_active: false }).neq('id', FALLBACK_ID).eq('tenant_id', tenantId);
+      await supabase.from('estrategia_recuperacion').update({ is_active: true }).eq('id', FALLBACK_ID).eq('tenant_id', tenantId);
     } else {
       setEstrategiaActiva(s);
       setEditorState(s);
       // Set all inactive, then activate selected
-      await supabase.from('estrategia_recuperacion').update({ is_active: false }).neq('id', s.id);
-      await supabase.from('estrategia_recuperacion').update({ is_active: true }).eq('id', s.id);
+      await supabase.from('estrategia_recuperacion').update({ is_active: false }).neq('id', s.id).eq('tenant_id', tenantId);
+      await supabase.from('estrategia_recuperacion').update({ is_active: true }).eq('id', s.id).eq('tenant_id', tenantId);
     }
     setSaved(false);
   }
@@ -337,7 +347,8 @@ export default function RecuperadorView() {
       await supabase
         .from('estrategia_recuperacion')
         .update({ is_active: true })
-        .eq('id', FALLBACK_ID);
+        .eq('id', FALLBACK_ID)
+        .eq('tenant_id', tenantId);
     }
   }
 

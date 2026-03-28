@@ -24,9 +24,13 @@ export default function AgentSettings() {
 
   useEffect(() => {
     async function loadConfig() {
+      const { data: { user } } = await supabase.auth.getUser();
+      const tenantId = user?.app_metadata?.tenant_id;
+
       const { data, error } = await supabase
         .from('agent_config')
         .select('*')
+        .eq('tenant_id', tenantId)
         .limit(1);
       
       if (data && data.length > 0) {

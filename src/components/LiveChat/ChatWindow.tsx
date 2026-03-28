@@ -50,11 +50,18 @@ export default function ChatWindow({ sessionId, isManualMode, setIsManualMode }:
   const [sending, setSending] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
   const [feedbackGiven, setFeedbackGiven] = useState<Record<string, number>>({});
+  const [tenantId, setTenantId] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      setTenantId(user?.app_metadata?.tenant_id ?? null);
+    });
+  }, []);
 
   useEffect(() => {
     async function fetchMessages() {
@@ -125,7 +132,7 @@ export default function ChatWindow({ sessionId, isManualMode, setIsManualMode }:
     const phone = getPhoneFromSession(sessionId);
     await supabase
       .from('session_control')
-      .upsert({ session_id: phone, is_manual: true }, { onConflict: 'session_id' });
+      .upsert({ session_id: phone, is_manual: true, tenant_id: tenantId }, { onConflict: 'session_id' });
     setIsManualMode(true);
   };
 
@@ -133,7 +140,7 @@ export default function ChatWindow({ sessionId, isManualMode, setIsManualMode }:
     const phone = getPhoneFromSession(sessionId);
     await supabase
       .from('session_control')
-      .upsert({ session_id: phone, is_manual: false }, { onConflict: 'session_id' });
+      .upsert({ session_id: phone, is_manual: false, tenant_id: tenantId }, { onConflict: 'session_id' });
     setIsManualMode(false);
   };
 
@@ -204,10 +211,11 @@ export default function ChatWindow({ sessionId, isManualMode, setIsManualMode }:
     setFeedbackGiven(prev => ({ ...prev, [messageId]: rating }));
     await supabase
       .from('ai_feedback')
-      .upsert({ 
-        message_id: parseInt(messageId), 
+      .upsert({
+        message_id: parseInt(messageId),
         rating,
-        processed: false
+        processed: false,
+        tenant_id: tenantId
       }, { onConflict: 'message_id' });
   };
 

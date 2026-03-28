@@ -53,8 +53,9 @@ export async function updateSession(request: NextRequest) {
     const tenantId = user.app_metadata?.tenant_id || (user as any).tenant_id
 
     if (!tenantId && !request.nextUrl.pathname.startsWith('/no-access')) {
-        // Podríamos redirigir a una página de "Sin acceso"
-        // Pero por ahora solo lo mencionamos
+        const url = request.nextUrl.clone();
+        url.pathname = '/no-access';
+        return NextResponse.redirect(url);
     }
 
     if (request.nextUrl.pathname === '/login') {
