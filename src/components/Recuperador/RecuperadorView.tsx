@@ -223,13 +223,34 @@ export default function RecuperadorView() {
     ]);
 
     if (pData) setPlantillas(pData);
-    if (eData) {
-      const fb = eData.find((e) => e.id === FALLBACK_ID) ?? null;
-      const named = eData.filter((e) => e.id !== FALLBACK_ID && e.nombre !== null);
-      setFallback(fb);
-      setNamedStrategies(named);
-      setEditorState(fb);
-    }
+      if (eData) {
+        const fb = eData.find((e) => e.id === FALLBACK_ID) ?? null;
+        const named = eData.filter((e) => e.id !== FALLBACK_ID && e.nombre !== null);
+        setFallback(fb);
+        setNamedStrategies(named);
+        
+        // Si no existe configuración previa (como en un nuevo tenant), 
+        // proporcionamos un estado inicial por defecto para evitar el bloqueo.
+        if (!fb && named.length === 0) {
+          const initialState: Estrategia = {
+            id: FALLBACK_ID,
+            nombre: null,
+            is_active: false,
+            msg1_active: true,
+            msg1_template: pData && pData.length > 0 ? pData[0].nombre : '',
+            msg1_delay_min: 5,
+            msg2_active: false,
+            msg2_template: pData && pData.length > 0 ? pData[0].nombre : '',
+            msg2_delay_min: 30,
+            msg3_active: false,
+            msg3_template: pData && pData.length > 0 ? pData[0].nombre : '',
+            msg3_delay_min: 60,
+          };
+          setEditorState(initialState);
+        } else {
+          setEditorState(fb || named[0]);
+        }
+      }
 
     if (statsData) {
       // statsData[0] contains { rescatados_count, perdidos_count, total_dinero }
