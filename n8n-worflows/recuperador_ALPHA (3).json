@@ -1,0 +1,1243 @@
+{
+  "name": "recuperador_ALPHA",
+  "nodes": [
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "0ef82565-c36d-4b5b-b399-a868f5a8ff8e",
+              "name": "body.ticket.commerce_order",
+              "value": "={{ $json.body.ticket.commerce_order }}",
+              "type": "string"
+            },
+            {
+              "id": "613b6dbb-cdaa-4b81-b6e0-60932b6d6c25",
+              "name": "body.ticket.id",
+              "value": "={{ $json.body.ticket.id }}",
+              "type": "string"
+            },
+            {
+              "id": "6d3f25f7-6f79-4fa1-9744-2971b94185fc",
+              "name": "body.ticket.ticket_number",
+              "value": "={{ $json.body.ticket.ticket_number }}",
+              "type": "number"
+            },
+            {
+              "id": "b155755d-bad6-4a62-bb84-4f9096920a1e",
+              "name": "body.ticket.email",
+              "value": "={{ $json.body.ticket.email }}",
+              "type": "string"
+            },
+            {
+              "id": "a201f921-79a5-42eb-97a2-b58d0a023789",
+              "name": "body.ticket.buyer_name",
+              "value": "={{ $json.body.ticket.buyer_name }}",
+              "type": "string"
+            },
+            {
+              "id": "68d42fe4-014a-4228-b498-ad9ec4e32316",
+              "name": "body.ticket.buyer_phone",
+              "value": "={{(() => {\n  const raw = ( $json.body.ticket.buyer_phone || '').trim(); // eliminar \\n, espacios, etc.\n  const digits = raw.replace(/\\D/g, ''); // Quitar todo lo que no sea número\n\n  if (digits.startsWith('56') && digits.length === 11) {\n    return `${digits}`;\n  }\n\n  if (digits.startsWith('9') && digits.length === 9) {\n    return `56${digits}`;\n  }\n\n  if (digits.length === 8) {\n    return `569${digits}`;\n  }\n\n  if (raw.startsWith('569') && digits.length === 11) {\n    return raw; // ya está bien\n  }\n\n  return raw; // fallback\n})()}}",
+              "type": "string"
+            },
+            {
+              "id": "96e83df1-8502-47c7-afd5-ce8ce164c5f2",
+              "name": "body.ticket.amount",
+              "value": "={{ $json.body.ticket.amount }}",
+              "type": "number"
+            },
+            {
+              "id": "e83ae415-d09b-46b6-bac8-e50285eff88f",
+              "name": "body.new_status",
+              "value": "={{ ({'paid': 'completed', 'cancelled': 'cancelled', 'abandoned': 'abandoned'})[$json.body.new_status] || 'pending' }}",
+              "type": "string"
+            },
+            {
+              "id": "2dd9fb76-610c-4e10-8fc7-3981d2857a4c",
+              "name": "body.ticket.payment_gateway",
+              "value": "={{ $json.body.ticket.payment_gateway }}",
+              "type": "string"
+            },
+            {
+              "id": "6af6d6fe-8880-4283-b553-1091a87a0273",
+              "name": "body.ticket.source",
+              "value": "={{ $json.body.ticket.source }}",
+              "type": "string"
+            },
+            {
+              "id": "b082506f-d08e-459c-81e4-f09ad2f82d6f",
+              "name": "body.ticket.pack_id",
+              "value": "={{ $json.body.ticket.pack_id }}",
+              "type": "string"
+            },
+            {
+              "id": "82680528-740a-44d2-a1ac-f257c62c3357",
+              "name": "body.ticket.tickets_count",
+              "value": "={{ $json.body.ticket.tickets_count }}",
+              "type": "number"
+            },
+            {
+              "id": "df5e301f-099c-4f38-871d-3fc671ee9be7",
+              "name": "body.ticket.paid_at",
+              "value": "={{ DateTime.fromISO($json.body.ticket.paid_at.replace(' ', 'T')).setZone('America/Santiago').toISO() }}",
+              "type": "string"
+            },
+            {
+              "id": "6019a3cc-1ee4-4d4c-b989-23ee1c269dde",
+              "name": "body.ticket.created_at",
+              "value": "={{ DateTime.fromISO($json.body.ticket.created_at.replace(' ', 'T')).setZone('America/Santiago').toISO() }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -192,
+        0
+      ],
+      "id": "a372aeff-51ba-4515-a062-f650375a39fb",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        1120,
+        16
+      ],
+      "id": "84c5cc51-32ce-4cef-8826-84ec14b0c6a8",
+      "name": "Wait",
+      "webhookId": "9103f5d0-b475-4a6d-b1ea-e42895d6a867"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        1376,
+        16
+      ],
+      "id": "43a8276b-b98d-4f9d-a35f-50e79ffe99fc",
+      "name": "Loop Over Items"
+    },
+    {
+      "parameters": {
+        "amount": "={{ $json.msg1_delay_min }}",
+        "unit": "minutes"
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        2016,
+        112
+      ],
+      "id": "81a6f63a-d6c5-4b9e-a02e-be02e293e77d",
+      "name": "Wait1",
+      "webhookId": "24b2dcb3-2a6c-426d-93cf-513ec6707a38"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "b67afb57-0572-44e8-bfda-7df975f8e64e",
+              "leftValue": "={{ $json.is_active }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1792,
+        128
+      ],
+      "id": "85db3883-657c-4635-adfb-586fbef80542",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "phoneNumberId": "711342198729291",
+        "recipientPhoneNumber": "={{ $('Loop Over Items').item.json.buyer_phone }}",
+        "template": "={{ $('Get many rows').item.json.msg1_template }}",
+        "components": {
+          "component": [
+            {
+              "type": "header",
+              "headerParameters": {
+                "parameter": [
+                  {
+                    "type": "image",
+                    "imageLink": "https://i.postimg.cc/Cx9ZdP5F/Premia2Logo1.png"
+                  }
+                ]
+              }
+            },
+            {
+              "bodyParameters": {
+                "parameter": [
+                  {
+                    "text": "={{ $('Loop Over Items').item.json.buyer_name }}"
+                  },
+                  {
+                    "text": "={{ $('Loop Over Items').item.json.tickets_count }}"
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.whatsApp",
+      "typeVersion": 1.1,
+      "position": [
+        2768,
+        128
+      ],
+      "id": "7c2b7aa5-fb6c-4c08-8cb1-204377362342",
+      "name": "Send template",
+      "webhookId": "0df3e393-241a-43a8-a678-5ed87ed95901",
+      "credentials": {
+        "whatsAppApi": {
+          "id": "RmBILMwqzIaGnJKu",
+          "name": "WhatsApp Premia2_Bot"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        2000,
+        336
+      ],
+      "id": "5891bebc-6314-480a-9b08-3b9f313991ef",
+      "name": "No Operation, do nothing"
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "estrategia_recuperacion",
+        "limit": 1,
+        "matchType": "allFilters",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "is_active",
+              "condition": "eq",
+              "keyValue": "true"
+            },
+            {
+              "keyName": "tenant_id",
+              "condition": "eq",
+              "keyValue": "1bf4cdbb-c845-4eb3-930e-2a2613e385bb"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        1568,
+        128
+      ],
+      "id": "2bd74fc0-5d15-4b43-a006-a9b424f870a8",
+      "name": "Get many rows",
+      "credentials": {
+        "supabaseApi": {
+          "id": "l6zxJpWglEfkxgXX",
+          "name": "Premia2_Sup"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        3056,
+        400
+      ],
+      "id": "42d3e1eb-8c92-45d5-b016-98a17f5ff294",
+      "name": "Wait4",
+      "webhookId": "39f0d0ec-8e9a-4c61-a16e-3200880a5343"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "lovable-to-n8n-v20032026",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -464,
+        0
+      ],
+      "id": "a8bbb33a-d511-43ec-bfb5-3fc52b1f0c81",
+      "name": "Webhook",
+      "webhookId": "42f1e723-35f6-468e-8dd0-94074db493fd"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "195f6aa4-728e-4415-b688-2f2770f48bc4",
+              "leftValue": "={{ $json.status }}",
+              "rightValue": "completed",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        656,
+        -16
+      ],
+      "id": "da24c042-7a1d-4a20-ae27-9767e5131427",
+      "name": "If3"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        1696,
+        -416
+      ],
+      "id": "bb46ab90-e91f-4ed8-8893-ea80a4a060bb",
+      "name": "No Operation, do nothing3"
+    },
+    {
+      "parameters": {
+        "tableId": "completados",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "commerce_order",
+              "fieldValue": "={{ $json.commerce_order }}"
+            },
+            {
+              "fieldId": "id",
+              "fieldValue": "={{ $json.id }}"
+            },
+            {
+              "fieldId": "ticket_number",
+              "fieldValue": "={{ $json.ticket_number }}"
+            },
+            {
+              "fieldId": "email",
+              "fieldValue": "={{ $json.email }}"
+            },
+            {
+              "fieldId": "buyer_name",
+              "fieldValue": "={{ $json.buyer_name }}"
+            },
+            {
+              "fieldId": "buyer_phone",
+              "fieldValue": "={{ $json.buyer_phone }}"
+            },
+            {
+              "fieldId": "amount",
+              "fieldValue": "={{ $json.amount }}"
+            },
+            {
+              "fieldId": "status",
+              "fieldValue": "={{ $json.status }}"
+            },
+            {
+              "fieldId": "payment_gateway",
+              "fieldValue": "={{ $json.payment_gateway }}"
+            },
+            {
+              "fieldId": "source",
+              "fieldValue": "={{ $json.source }}"
+            },
+            {
+              "fieldId": "pack_id",
+              "fieldValue": "={{ $json.pack_id }}"
+            },
+            {
+              "fieldId": "tickets_count",
+              "fieldValue": "={{ $json.tickets_count }}"
+            },
+            {
+              "fieldId": "paid_at",
+              "fieldValue": "={{ $json.paid_at }}"
+            },
+            {
+              "fieldId": "created_at",
+              "fieldValue": "={{ $json.created_at }}"
+            },
+            {
+              "fieldId": "tenant_id",
+              "fieldValue": "1bf4cdbb-c845-4eb3-930e-2a2613e385bb"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        864,
+        -272
+      ],
+      "id": "97455328-a94e-4552-99ad-45e9bc6eae22",
+      "name": "Completados",
+      "credentials": {
+        "supabaseApi": {
+          "id": "l6zxJpWglEfkxgXX",
+          "name": "Premia2_Sup"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "tableId": "no_completados",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "commerce_order",
+              "fieldValue": "={{ $json.commerce_order }}"
+            },
+            {
+              "fieldId": "id",
+              "fieldValue": "={{ $json.id }}"
+            },
+            {
+              "fieldId": "ticket_number",
+              "fieldValue": "={{ $json.ticket_number }}"
+            },
+            {
+              "fieldId": "email",
+              "fieldValue": "={{ $json.email }}"
+            },
+            {
+              "fieldId": "buyer_name",
+              "fieldValue": "={{ $json.buyer_name }}"
+            },
+            {
+              "fieldId": "buyer_phone",
+              "fieldValue": "={{ $json.buyer_phone }}"
+            },
+            {
+              "fieldId": "amount",
+              "fieldValue": "={{ $json.amount }}"
+            },
+            {
+              "fieldId": "status",
+              "fieldValue": "={{ $json.status }}"
+            },
+            {
+              "fieldId": "payment_gateway",
+              "fieldValue": "={{ $json.payment_gateway }}"
+            },
+            {
+              "fieldId": "source",
+              "fieldValue": "={{ $json.source }}"
+            },
+            {
+              "fieldId": "pack_id",
+              "fieldValue": "={{ $json.pack_id }}"
+            },
+            {
+              "fieldId": "tickets_count",
+              "fieldValue": "={{ $json.tickets_count }}"
+            },
+            {
+              "fieldId": "paid_at",
+              "fieldValue": "={{ $json.paid_at }}"
+            },
+            {
+              "fieldId": "created_at",
+              "fieldValue": "={{ $json.created_at }}"
+            },
+            {
+              "fieldId": "tenant_id",
+              "fieldValue": "1bf4cdbb-c845-4eb3-930e-2a2613e385bb"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        864,
+        16
+      ],
+      "id": "6dc87e8f-48aa-4f34-b9f2-4d6b7eb66cc6",
+      "name": "No Completados",
+      "credentials": {
+        "supabaseApi": {
+          "id": "l6zxJpWglEfkxgXX",
+          "name": "Premia2_Sup"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "tableId": "pedidos",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "commerce_order",
+              "fieldValue": "={{ $('Edit Fields').item.json.body.ticket.commerce_order }}"
+            },
+            {
+              "fieldId": "id",
+              "fieldValue": "={{ $('Edit Fields').item.json.body.ticket.id }}"
+            },
+            {
+              "fieldId": "ticket_number",
+              "fieldValue": "={{ $('Edit Fields').item.json.body.ticket.ticket_number }}"
+            },
+            {
+              "fieldId": "email",
+              "fieldValue": "={{ $('Edit Fields').item.json.body.ticket.email }}"
+            },
+            {
+              "fieldId": "buyer_name",
+              "fieldValue": "={{ $('Edit Fields').item.json.body.ticket.buyer_name }}"
+            },
+            {
+              "fieldId": "buyer_phone",
+              "fieldValue": "={{ $('Edit Fields').item.json.body.ticket.buyer_phone }}"
+            },
+            {
+              "fieldId": "amount",
+              "fieldValue": "={{ $('Edit Fields').item.json.body.ticket.amount }}"
+            },
+            {
+              "fieldId": "status",
+              "fieldValue": "={{ $('Edit Fields').item.json.body.new_status }}"
+            },
+            {
+              "fieldId": "payment_gateway",
+              "fieldValue": "={{ $('Edit Fields').item.json.body.ticket.payment_gateway }}"
+            },
+            {
+              "fieldId": "source",
+              "fieldValue": "={{ $('Edit Fields').item.json.body.ticket.source }}"
+            },
+            {
+              "fieldId": "pack_id",
+              "fieldValue": "={{ $('Edit Fields').item.json.body.ticket.pack_id }}"
+            },
+            {
+              "fieldId": "tickets_count",
+              "fieldValue": "={{ $('Edit Fields').item.json.body.ticket.tickets_count }}"
+            },
+            {
+              "fieldId": "paid_at",
+              "fieldValue": "={{ $('Edit Fields').item.json.body.ticket.paid_at }}"
+            },
+            {
+              "fieldId": "created_at",
+              "fieldValue": "={{ $('Edit Fields').item.json.body.ticket.created_at }}"
+            },
+            {
+              "fieldId": "tenant_id",
+              "fieldValue": "1bf4cdbb-c845-4eb3-930e-2a2613e385bb"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        448,
+        -16
+      ],
+      "id": "7cdfbb13-7f59-464b-bf64-f8b115db5afd",
+      "name": "Pedidos",
+      "credentials": {
+        "supabaseApi": {
+          "id": "l6zxJpWglEfkxgXX",
+          "name": "Premia2_Sup"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "no_completados",
+        "matchType": "allFilters",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "commerce_order",
+              "condition": "eq",
+              "keyValue": "={{ $('Loop Over Items').item.json.commerce_order }}"
+            },
+            {
+              "keyName": "tenant_id",
+              "condition": "eq",
+              "keyValue": "1bf4cdbb-c845-4eb3-930e-2a2613e385bb"
+            }
+          ]
+        },
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "recipt_msj1",
+              "fieldValue": "={{ 'Enviado' }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        3088,
+        -64
+      ],
+      "id": "a447ac4b-96ef-4eeb-bf6b-ffad1bdeed81",
+      "name": "recipt_msj1",
+      "credentials": {
+        "supabaseApi": {
+          "id": "l6zxJpWglEfkxgXX",
+          "name": "Premia2_Sup"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "tableId": "no_completados",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "commerce_order",
+              "keyValue": "={{ $('Loop Over Items').item.json.commerce_order }}"
+            },
+            {
+              "keyName": "tenant_id",
+              "keyValue": "1bf4cdbb-c845-4eb3-930e-2a2613e385bb"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        2224,
+        112
+      ],
+      "id": "5550339a-4159-4fec-a140-913b12033211",
+      "name": "Get a row",
+      "alwaysOutputData": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "l6zxJpWglEfkxgXX",
+          "name": "Premia2_Sup"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "2729b079-a1f1-4e52-ad5a-bc46a6537398",
+              "leftValue": "={{ $json.status }}",
+              "rightValue": "completed",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        2432,
+        112
+      ],
+      "id": "9510a554-fe46-47f8-ade5-d734746a64e3",
+      "name": "If1"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        2672,
+        -176
+      ],
+      "id": "b8638b36-1a5a-4237-a83d-9cb0c700af60",
+      "name": "No Operation, do nothing1"
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "pedidos",
+        "matchType": "allFilters",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "commerce_order",
+              "condition": "eq",
+              "keyValue": "={{ $json.body.ticket.commerce_order }}"
+            },
+            {
+              "keyName": "tenant_id",
+              "condition": "eq",
+              "keyValue": "1bf4cdbb-c845-4eb3-930e-2a2613e385bb"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        16,
+        0
+      ],
+      "id": "770494eb-0259-4f57-a3d0-75b1d99d78d7",
+      "name": "Get many rows1",
+      "alwaysOutputData": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "l6zxJpWglEfkxgXX",
+          "name": "Premia2_Sup"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "7db676e7-b5f3-41db-aa15-075dd192f7a3",
+              "leftValue": "={{ $json.commerce_order }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "empty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        224,
+        0
+      ],
+      "id": "bb809a77-d601-419f-ab0a-fd2b9322071e",
+      "name": "If2"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        448,
+        192
+      ],
+      "id": "83c029fc-cc76-4142-83ee-1ba2786c989c",
+      "name": "No Operation, do nothing2"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "no_completados",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "buyer_phone",
+              "condition": "eq",
+              "keyValue": "={{ $json.buyer_phone }}"
+            }
+          ]
+        },
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "status",
+              "fieldValue": "={{ $json.status }}"
+            },
+            {
+              "fieldId": "source",
+              "fieldValue": "={{ $json.source }}"
+            },
+            {
+              "fieldId": "amount",
+              "fieldValue": "={{ $json.amount }}"
+            },
+            {
+              "fieldId": "pack_id",
+              "fieldValue": "={{ $json.pack_id }}"
+            },
+            {
+              "fieldId": "tickets_count",
+              "fieldValue": "={{ $json.tickets_count }}"
+            },
+            {
+              "fieldId": "ticket_number",
+              "fieldValue": "={{ $json.ticket_number }}"
+            },
+            {
+              "fieldId": "tenant_id",
+              "fieldValue": "1bf4cdbb-c845-4eb3-930e-2a2613e385bb"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        1248,
+        -416
+      ],
+      "id": "d846c5a2-a658-4e9f-a351-f9ba1b843c92",
+      "name": "Update a row",
+      "credentials": {
+        "supabaseApi": {
+          "id": "l6zxJpWglEfkxgXX",
+          "name": "Premia2_Sup"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        1664,
+        -48
+      ],
+      "id": "58ff5ce1-653a-4a62-a669-41ea297c3b96",
+      "name": "No Operation, do nothing4"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "df375ce8-827d-4409-ad9e-61b1b2e809d4",
+              "leftValue": "={{ $json.source }}",
+              "rightValue": "=wsp_recup",
+              "operator": {
+                "type": "string",
+                "operation": "contains"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1040,
+        -272
+      ],
+      "id": "ce7bb3bd-ee66-47a4-9b50-1065cba15585",
+      "name": "If4"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "no_completados",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "buyer_phone",
+              "condition": "eq",
+              "keyValue": "={{ $('Completados').item.json.buyer_phone }}"
+            }
+          ]
+        },
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "status",
+              "fieldValue": "completed"
+            },
+            {
+              "fieldId": "source",
+              "fieldValue": "={{ $json.source }}"
+            },
+            {
+              "fieldId": "tenant_id",
+              "fieldValue": "1bf4cdbb-c845-4eb3-930e-2a2613e385bb"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        1248,
+        -176
+      ],
+      "id": "320a1ecd-88ec-4201-80dc-cdf82b55e7e0",
+      "name": "Update a row1",
+      "credentials": {
+        "supabaseApi": {
+          "id": "l6zxJpWglEfkxgXX",
+          "name": "Premia2_Sup"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        1504,
+        -208
+      ],
+      "id": "19419065-28dd-4e01-84ed-ca699b556c1d",
+      "name": "No Operation, do nothing5"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Get many rows1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items": {
+      "main": [
+        [
+          {
+            "node": "No Operation, do nothing4",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Get many rows",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait1": {
+      "main": [
+        [
+          {
+            "node": "Get a row",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Wait1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "No Operation, do nothing",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send template": {
+      "main": [
+        [
+          {
+            "node": "recipt_msj1",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Wait4",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get many rows": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait4": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If3": {
+      "main": [
+        [
+          {
+            "node": "Completados",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "No Completados",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Completados": {
+      "main": [
+        [
+          {
+            "node": "If4",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "No Completados": {
+      "main": [
+        [
+          {
+            "node": "Wait",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pedidos": {
+      "main": [
+        [
+          {
+            "node": "If3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get a row": {
+      "main": [
+        [
+          {
+            "node": "If1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If1": {
+      "main": [
+        [
+          {
+            "node": "No Operation, do nothing1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send template",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get many rows1": {
+      "main": [
+        [
+          {
+            "node": "If2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If2": {
+      "main": [
+        [
+          {
+            "node": "Pedidos",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "No Operation, do nothing2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update a row": {
+      "main": [
+        [
+          {
+            "node": "No Operation, do nothing3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If4": {
+      "main": [
+        [
+          {
+            "node": "Update a row",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Update a row1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update a row1": {
+      "main": [
+        [
+          {
+            "node": "No Operation, do nothing5",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": false,
+    "timeSavedMode": "fixed",
+    "timezone": "America/Santiago",
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "versionId": "4fd93b4d-f751-4fd4-bd85-b81408e79e8f",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "8703c87d7b1c4ed56b389ec543c5d3236f6b791bb98b7c699f4931e76a9975db"
+  },
+  "id": "pJK_UTve5hw4N062ZJPRR",
+  "tags": []
+}

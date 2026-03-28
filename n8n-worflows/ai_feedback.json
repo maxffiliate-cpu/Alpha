@@ -1,0 +1,489 @@
+{
+  "name": "ai_feedback",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "feedback-polaris",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "0976329c-52cc-4685-9978-dc4029ff61f7",
+      "name": "Webhook",
+      "webhookId": "d5bfdc91-3fab-4e62-95a0-452785894a0c"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "732853fe-7ba5-4eef-b0fa-70e0337b94ce",
+              "leftValue": "={{ $json.body.record.rating }}",
+              "rightValue": -1,
+              "operator": {
+                "type": "number",
+                "operation": "equals"
+              }
+            },
+            {
+              "id": "0a7af4ea-ab39-4d1b-bf19-53bd6c841ade",
+              "leftValue": "={{ $json.body.record.processed }}",
+              "rightValue": false,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        208,
+        0
+      ],
+      "id": "9a274caf-c1c5-4661-988d-f69e3f8be73b",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "n8n_chat_clientes_historial",
+        "matchType": "allFilters",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "tenant_id",
+              "condition": "eq",
+              "keyValue": "1bf4cdbb-c845-4eb3-930e-2a2613e385bb"
+            },
+            {
+              "keyName": "id",
+              "condition": "gt",
+              "keyValue": "={{ $json.body.record.message_id - 2 }}"
+            },
+            {
+              "keyName": "id",
+              "condition": "lt",
+              "keyValue": "={{ $json.body.record.message_id + 1 }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        416,
+        -96
+      ],
+      "id": "ebc2020a-b7f6-4331-93ff-dbce8f82fd4e",
+      "name": "Get many rows",
+      "credentials": {
+        "supabaseApi": {
+          "id": "l6zxJpWglEfkxgXX",
+          "name": "Premia2_Sup"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// 1. Capturamos los mensajes que trajo Supabase\nlet mensajes = $input.all();\n\n// 2. ORDENAMOS AUTOMÁTICAMENTE: Aseguramos que el ID menor (pregunta) quede primero\nmensajes = mensajes.sort((a, b) => a.json.id - b.json.id);\n\n// Si por alguna razón no trajo ambos mensajes, detenemos el flujo para evitar errores\nif (mensajes.length < 2) {\n  throw new Error(\"No se encontraron los dos mensajes de la conversación.\");\n}\n\n// 3. Extraemos el texto exacto (¡Ruta corregida según tu JSON!)\nconst preguntaCliente = mensajes[0].json.message.content;\nconst respuestaIA = mensajes[1].json.message.content;\n\n// 4. Devolvemos un solo ítem limpio y empaquetado para el LLM\nreturn {\n  json: {\n    pregunta_cliente: preguntaCliente,\n    respuesta_ia: respuestaIA,\n    message_id: mensajes[1].json.id\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        624,
+        -96
+      ],
+      "id": "19ba38a6-a106-4e6c-9241-eb9ac1f68c72",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Aquí está la interacción a evaluar:\n\n**Mensaje del Cliente:** {{ $json.pregunta_cliente }}\n**Respuesta de la IA:** {{ $json.respuesta_ia }}\n\n**INSTRUCCIONES:**\n1. Analiza si la respuesta de la IA fue realmente incorrecta, desactualizada, grosera o si alucinó información.\n2. Si la respuesta de la IA fue correcta y el usuario probablemente se equivocó al dar feedback negativo (ej. un saludo normal, como \"Hola, ¿en qué te ayudo?\"), responde EXACTAMENTE con esta frase: FALSO_NEGATIVO\n3. Si la IA cometió un error real, redacta una \"Corrección Maestra\". Esta debe ser una regla directa, concisa y atemporal que la IA leerá en el futuro para no volver a equivocarse. No des explicaciones ni saludos, solo la directriz. \nEjemplo de formato: \"Problema: Cliente preguntó por X. Solución: La política correcta sobre X es Y.\"\n\n**TU RESPUESTA:**",
+        "messages": {
+          "messageValues": [
+            {
+              "message": "Eres un Auditor de Calidad (QA) de nivel experto para Polaris, un Asistente de IA de atención al cliente. Tu objetivo es analizar un mensaje del cliente, la respuesta de la IA que recibió un feedback negativo (pulgar abajo), y determinar de manera objetiva si la IA realmente cometió un error."
+            }
+          ]
+        },
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [
+        832,
+        -96
+      ],
+      "id": "031ed6e7-13ad-4f44-a711-16c3a4c17b46",
+      "name": "Basic LLM Chain"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-4o-mini",
+          "mode": "list",
+          "cachedResultName": "gpt-4o-mini"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        768,
+        112
+      ],
+      "id": "0bb49e95-2f43-46c0-8b27-8ab4ef666426",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "Gjo4nRFDjCu9iJa5",
+          "name": "Premia2_GPT"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "3e6a9924-85dc-44ac-988b-4d9c005cc6ee",
+              "leftValue": "={{ $json.text }}",
+              "rightValue": "FALSO_NEGATIVO",
+              "operator": {
+                "type": "string",
+                "operation": "contains"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1184,
+        -96
+      ],
+      "id": "340ade70-293b-40bf-b5b4-002ff2aa57a3",
+      "name": "If1"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "ai_feedback",
+        "matchType": "allFilters",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "id",
+              "condition": "eq",
+              "keyValue": "={{ $('Webhook').first().json.body.record.id }}"
+            },
+            {
+              "keyName": "tenant_id",
+              "condition": "eq",
+              "keyValue": "1bf4cdbb-c845-4eb3-930e-2a2613e385bb"
+            }
+          ]
+        },
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "processed",
+              "fieldValue": "=true"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        1456,
+        -240
+      ],
+      "id": "223e4a38-6f5a-4788-be97-db0afbca4111",
+      "name": "Update a row",
+      "credentials": {
+        "supabaseApi": {
+          "id": "l6zxJpWglEfkxgXX",
+          "name": "Premia2_Sup"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "ai_feedback",
+        "matchType": "allFilters",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "id",
+              "condition": "eq",
+              "keyValue": "={{ $('Webhook').first().json.body.record.id }}"
+            },
+            {
+              "keyName": "tenant_id",
+              "condition": "eq",
+              "keyValue": "1bf4cdbb-c845-4eb3-930e-2a2613e385bb"
+            }
+          ]
+        },
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "processed",
+              "fieldValue": "=true"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        1456,
+        16
+      ],
+      "id": "779b003d-3140-47a6-bcc2-756b62dcc4aa",
+      "name": "Update a row1",
+      "credentials": {
+        "supabaseApi": {
+          "id": "l6zxJpWglEfkxgXX",
+          "name": "Premia2_Sup"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "insert",
+        "tableName": {
+          "__rl": true,
+          "value": "knowledge_base_feedback",
+          "mode": "list",
+          "cachedResultName": "knowledge_base_feedback"
+        },
+        "options": {
+          "queryName": "match_documents"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStoreSupabase",
+      "typeVersion": 1.3,
+      "position": [
+        1664,
+        16
+      ],
+      "id": "a1542c71-cf64-43ea-b718-444997d47bdc",
+      "name": "Supabase Vector Store",
+      "credentials": {
+        "supabaseApi": {
+          "id": "l6zxJpWglEfkxgXX",
+          "name": "Premia2_Sup"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.embeddingsOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        1584,
+        288
+      ],
+      "id": "85b87da0-d469-4148-afaf-9c4b3a7aaa02",
+      "name": "Embeddings OpenAI",
+      "credentials": {
+        "openAiApi": {
+          "id": "Gjo4nRFDjCu9iJa5",
+          "name": "Premia2_GPT"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsonMode": "expressionData",
+        "jsonData": "={{ $('Basic LLM Chain').first().json.text }}",
+        "options": {
+          "metadata": {
+            "metadataValues": [
+              {
+                "name": "tenant_id",
+                "value": "1bf4cdbb-c845-4eb3-930e-2a2613e385bb"
+              }
+            ]
+          }
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.documentDefaultDataLoader",
+      "typeVersion": 1.1,
+      "position": [
+        1808,
+        224
+      ],
+      "id": "7d63ab90-0ea5-475e-83a4-5832b784926d",
+      "name": "Default Data Loader"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Get many rows",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get many rows": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Basic LLM Chain": {
+      "main": [
+        [
+          {
+            "node": "If1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If1": {
+      "main": [
+        [
+          {
+            "node": "Update a row",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Update a row1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update a row1": {
+      "main": [
+        [
+          {
+            "node": "Supabase Vector Store",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embeddings OpenAI": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Supabase Vector Store",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Default Data Loader": {
+      "ai_document": [
+        [
+          {
+            "node": "Supabase Vector Store",
+            "type": "ai_document",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": false,
+    "timeSavedMode": "fixed",
+    "timezone": "America/Santiago",
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "versionId": "1d91e77c-cae8-4049-8cf2-649ce4580649",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "8703c87d7b1c4ed56b389ec543c5d3236f6b791bb98b7c699f4931e76a9975db"
+  },
+  "id": "cQ8qsMFGl8Yga-XzYgv9g",
+  "tags": []
+}

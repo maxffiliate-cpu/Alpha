@@ -1,0 +1,120 @@
+{
+  "name": "Intervención Manual",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "polaris-intervencion-manual",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "1c19f126-503f-4519-b2b1-4f3a237eae61",
+      "name": "Webhook",
+      "webhookId": "fdc65499-9811-413c-b48c-4c02ff11ea8d"
+    },
+    {
+      "parameters": {
+        "operation": "send",
+        "phoneNumberId": "711342198729291",
+        "recipientPhoneNumber": "={{ $json.body.phone }}",
+        "textBody": "={{ $json.body.message }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.whatsApp",
+      "typeVersion": 1.1,
+      "position": [
+        208,
+        0
+      ],
+      "id": "38afb769-ab60-4608-b90b-c0892e3548ae",
+      "name": "Send message",
+      "webhookId": "c7a17550-b621-413d-83bb-dc011b70daed",
+      "credentials": {
+        "whatsAppApi": {
+          "id": "RmBILMwqzIaGnJKu",
+          "name": "WhatsApp Premia2_Bot"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "tableId": "n8n_chat_clientes_historial",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "session_id",
+              "fieldValue": "={{ $('Webhook').item.json.body.session_id }}"
+            },
+            {
+              "fieldId": "message",
+              "fieldValue": "={{\n  {\n    \"type\": \"ai\",\n    \"content\": $('Webhook').item.json.body.message,\n    \"additional_kwargs\": {\n      \"is_panic_intervention\": true,\n      \"source\": \"human_manual\"\n    }\n  }\n}}"
+            },
+            {
+              "fieldId": "tenant_id",
+              "fieldValue": "1bf4cdbb-c845-4eb3-930e-2a2613e385bb"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        416,
+        0
+      ],
+      "id": "b1265050-22a6-400f-9a1d-837ada71adb4",
+      "name": "Create a row",
+      "credentials": {
+        "supabaseApi": {
+          "id": "l6zxJpWglEfkxgXX",
+          "name": "Premia2_Sup"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Send message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send message": {
+      "main": [
+        [
+          {
+            "node": "Create a row",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": false,
+    "timeSavedMode": "fixed",
+    "timezone": "America/Santiago",
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "versionId": "d5ab8482-daaf-410d-ab77-950236f7545e",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "8703c87d7b1c4ed56b389ec543c5d3236f6b791bb98b7c699f4931e76a9975db"
+  },
+  "id": "wEt6JhE2QotpZm3daaJZ6",
+  "tags": []
+}

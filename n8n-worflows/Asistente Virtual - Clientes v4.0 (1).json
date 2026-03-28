@@ -1,0 +1,2282 @@
+{
+  "name": "Asistente Virtual - Clientes v4.0",
+  "nodes": [
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $('Concatenar').item.json.chat_id }}",
+        "tableName": "n8n_chat_clientes_historial",
+        "contextWindowLength": 8
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryPostgresChat",
+      "typeVersion": 1.3,
+      "position": [
+        1584,
+        -592
+      ],
+      "id": "1ca345c5-30c3-4161-98d0-b205bcc6121e",
+      "name": "Postgres Chat Memory",
+      "credentials": {
+        "postgres": {
+          "id": "TTrQ0lqgEkJCBCzm",
+          "name": "Premia2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "retrieve-as-tool",
+        "toolDescription": "=Usa la herramienta para extraer la información de tu base de datos ubicada en la tabla 'información' exclusivamente para el el  {{ $json.tenant_id }}",
+        "tableName": {
+          "__rl": true,
+          "value": "información",
+          "mode": "list",
+          "cachedResultName": "información"
+        },
+        "options": {
+          "queryName": "match_información",
+          "metadata": {
+            "metadataValues": [
+              {
+                "name": "tenant_id",
+                "value": "1bf4cdbb-c845-4eb3-930e-2a2613e385bb"
+              }
+            ]
+          }
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStoreSupabase",
+      "typeVersion": 1.3,
+      "position": [
+        1392,
+        -208
+      ],
+      "id": "5993616a-14f3-4afe-b855-4fc96c6943d3",
+      "name": "Supabase Vector Store",
+      "credentials": {
+        "supabaseApi": {
+          "id": "l6zxJpWglEfkxgXX",
+          "name": "Premia2_Sup"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.embeddingsOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        1728,
+        -208
+      ],
+      "id": "8d1b290a-564c-4dfe-8bd4-72b79104f1b8",
+      "name": "Embeddings OpenAI",
+      "credentials": {
+        "openAiApi": {
+          "id": "Gjo4nRFDjCu9iJa5",
+          "name": "Premia2_GPT"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "## ETAPA 3 - AGENTE IA\n**El agente IA se configura de tal manera que envíe la respuesta a cada mensaje del cliente",
+        "height": 816,
+        "width": 832,
+        "color": 5
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        1296,
+        -816
+      ],
+      "typeVersion": 1,
+      "id": "d2ec29db-34a0-4f43-ba8e-132e73ba76dd",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.messages[0].text.body }}",
+                    "rightValue": "",
+                    "operator": {
+                      "type": "string",
+                      "operation": "exists",
+                      "singleValue": true
+                    },
+                    "id": "636887b3-dcc6-4512-88ec-5f1d225d1ce6"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Texto"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "1206f0a8-7646-44c1-b524-93a64fbfea79",
+                    "leftValue": "={{ $json.messages[0].audio }}",
+                    "rightValue": "",
+                    "operator": {
+                      "type": "object",
+                      "operation": "exists",
+                      "singleValue": true
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Audio"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "9ab4b451-12ab-4836-a3de-093e8b3450b4",
+                    "leftValue": "={{ $json.messages[0].image }}",
+                    "rightValue": "",
+                    "operator": {
+                      "type": "object",
+                      "operation": "exists",
+                      "singleValue": true
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Imagen"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        -2304,
+        -16
+      ],
+      "id": "ee0eb8be-7d8f-409e-8eb1-3dc636e7a2ca",
+      "name": "Switch"
+    },
+    {
+      "parameters": {
+        "resource": "audio",
+        "operation": "transcribe",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.8,
+      "position": [
+        -1728,
+        64
+      ],
+      "id": "648ff1e3-d3fd-419f-b079-d2d885706e88",
+      "name": "Transcribe a recording",
+      "credentials": {
+        "openAiApi": {
+          "id": "kQfguftIMyYwMojZ",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "## ETAPA 1 - RECEPCIÓN MSJ\n**Recepción y Segmentación de mensajes según tipo audio / texto**",
+        "height": 672,
+        "width": 1664
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -2640,
+        -224
+      ],
+      "typeVersion": 1,
+      "id": "795255e9-18df-4f42-8299-58d14a566059",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": {
+        "content": "Buffer\n**SOLUCIONADO** ",
+        "height": 752,
+        "width": 944,
+        "color": 3
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -80,
+        -288
+      ],
+      "typeVersion": 1,
+      "id": "0d9104bb-78ab-46ec-87f1-bb7c665fb284",
+      "name": "Sticky Note2"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "loose",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ JSON.parse($json.mensaje_final.last()).sessionid }}",
+                    "rightValue": "={{ $('DatosTextoTlg').item.json.chat_id }}",
+                    "operator": {
+                      "type": "string",
+                      "operation": "notEquals"
+                    },
+                    "id": "06d6accb-9097-458b-8b63-089b49ac8dae"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Ignorar"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "loose",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "94252008-a4e9-4712-844f-772829fa704f",
+                    "leftValue": "={{ JSON.parse($json.mensaje_final.last()).fecha }}",
+                    "rightValue": "={{ $now.minus(7, 'seconds').toLocal() }}\n\n",
+                    "operator": {
+                      "type": "dateTime",
+                      "operation": "before"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Continuar"
+            }
+          ]
+        },
+        "looseTypeValidation": true,
+        "options": {
+          "fallbackOutput": "extra",
+          "renameFallbackOutput": "Esperar"
+        }
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        320,
+        -32
+      ],
+      "id": "694e7ab6-9c04-4c4c-a6a6-7efae14ecf39",
+      "name": "Switch2"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "3bd03d71-1dad-45a3-b855-52fd3b9adeba",
+              "name": "final_message",
+              "value": "={{ $json.messages[0].text.body }}",
+              "type": "string"
+            },
+            {
+              "id": "ff77065b-2f33-4617-bbd4-62820072eac0",
+              "name": "sessionID",
+              "value": "={{ $json.messages[0].from }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -1776,
+        -176
+      ],
+      "id": "5ffadebb-f6bf-4b0c-b8af-8951c53b465e",
+      "name": "final_message_txt"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "9f9f3ea6-4dd0-4f0d-97c7-56f6d51638b5",
+              "name": "final_message",
+              "value": "={{ $json.text }}",
+              "type": "string"
+            },
+            {
+              "id": "22c1b424-5c83-421c-92f0-c2b922c22d9d",
+              "name": "sessionID",
+              "value": "={{ $('WhatsApp Trigger').item.json.messages[0].from }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -1536,
+        64
+      ],
+      "id": "b9fae452-6534-4efa-b9d8-f684a065b80b",
+      "name": "final_message_voice"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "83f459a7-08d4-483c-a8a5-8d1969353c8a",
+              "name": "Nombre",
+              "value": "={{ $('WhatsApp Trigger').item.json.contacts[0].profile.name }}",
+              "type": "string"
+            },
+            {
+              "id": "947928ac-de9c-4405-b48a-62ca87587a0b",
+              "name": "chat_id",
+              "value": "={{ $('WhatsApp Trigger').item.json.messages[0].from }}",
+              "type": "string"
+            },
+            {
+              "id": "5f97fa9b-9a99-4dbd-ad2c-2efb8422afb4",
+              "name": "Text",
+              "value": "={{ $json.final_message }}",
+              "type": "string"
+            },
+            {
+              "id": "f8e42208-fdc0-4b7f-8222-e39abdd34a2a",
+              "name": "messageid",
+              "value": "={{ $('WhatsApp Trigger').item.json.messages[0].id }}",
+              "type": "string"
+            },
+            {
+              "id": "e69227b1-dd89-4c2b-8d23-a521a37404be",
+              "name": "sender",
+              "value": "={{ $('WhatsApp Trigger').item.json.messages[0].timestamp.toDateTime('s').toLocal() }}\n",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -1296,
+        -32
+      ],
+      "id": "27f96086-cf34-41bb-8dd7-f2667b4b7c79",
+      "name": "DatosTextoTlg"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "2e1d4614-b997-43bf-aea7-f96568fed3dc",
+              "name": "chat_id_limpio",
+              "value": "={{ $json.chat_id?.trim() || $json.body?.chat_id?.trim() || '' }}",
+              "type": "string"
+            },
+            {
+              "id": "06d27acb-fa8e-40cf-b005-f11d6da6a2b0",
+              "name": "nombre",
+              "value": "={{ $json.Nombre }}",
+              "type": "string"
+            },
+            {
+              "id": "9cd07e48-1580-4a7e-aab2-426e27f6ab29",
+              "name": "texto",
+              "value": "={{ $json.Text }}",
+              "type": "string"
+            },
+            {
+              "id": "4c5bf269-638c-4b22-ab88-a4b5dab39976",
+              "name": "mensajeid",
+              "value": "={{ $json.messageid }}",
+              "type": "string"
+            },
+            {
+              "id": "8b8083a6-4c40-40cd-a42c-6dc630765849",
+              "name": "sender_fecha",
+              "value": "={{ $json.sender }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -1120,
+        -32
+      ],
+      "id": "d117d9a1-0da1-419e-b85f-be51995a0ee4",
+      "name": "DatosLimpios#"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        528,
+        -272
+      ],
+      "id": "db588303-3490-4ccf-89c7-8cfa65c961be",
+      "name": "No Operation, do nothing1"
+    },
+    {
+      "parameters": {
+        "amount": 7
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        512,
+        224
+      ],
+      "id": "035fc752-6db9-493e-8237-e81ca93bae6a",
+      "name": "Wait1",
+      "webhookId": "0d328a59-b0de-4255-b88d-7f5839d5c825"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "d2e4e05a-3946-41c9-906d-deaba0a07228",
+              "name": "Concat_message",
+              "value": "={{ $json.mensaje_final.map(m=> JSON.parse(m).message).join('\\n') }}",
+              "type": "string"
+            },
+            {
+              "id": "42a87a48-3b9a-4c47-8eb6-afd550e85fb1",
+              "name": "chat_id",
+              "value": "={{(() => {\n  try {\n    const ids = $json.mensaje_final.map(n => {\n      const parsed = typeof n === 'string' ? JSON.parse(n) : n;\n      return parsed.sessionid;\n    });\n    const uniqueIds = [...new Set(ids)];\n    return uniqueIds[0] || null;\n  } catch (e) {\n    return `Error: ${e.message}`;\n  }\n})()}}\n",
+              "type": "string"
+            },
+            {
+              "id": "e3b2b362-0f32-4903-8268-205fa01866a1",
+              "name": "fecha",
+              "value": "={{ JSON.parse($json.mensaje_final).fecha }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        736,
+        -16
+      ],
+      "id": "ba60aa5d-087d-4ca7-9a42-d765f4e5c584",
+      "name": "Concatenar"
+    },
+    {
+      "parameters": {
+        "resource": "order",
+        "operation": "get",
+        "orderId": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Order_ID', ``, 'string') }}"
+      },
+      "type": "n8n-nodes-base.wooCommerceTool",
+      "typeVersion": 1,
+      "position": [
+        1968,
+        -208
+      ],
+      "id": "7077733a-9a04-4d7e-bf9e-d7b725796a6d",
+      "name": "Get an order in WooCommerce",
+      "credentials": {
+        "wooCommerceApi": {
+          "id": "gNF3UdBK4cO7abeL",
+          "name": "Woo_Premia2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "updates": [
+          "messages"
+        ],
+        "options": {}
+      },
+      "type": "n8n-nodes-base.whatsAppTrigger",
+      "typeVersion": 1,
+      "position": [
+        -2528,
+        0
+      ],
+      "id": "4deb246d-29b4-4a21-85a5-8fc381993249",
+      "name": "WhatsApp Trigger",
+      "webhookId": "9bc3a986-741d-4f08-9938-f932c6f219db",
+      "credentials": {
+        "whatsAppTriggerApi": {
+          "id": "yphiMSjJPL9bBoFR",
+          "name": "WhatsApp_Premia2_V2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "media",
+        "operation": "mediaUrlGet",
+        "mediaGetId": "={{ $('WhatsApp Trigger').item.json.messages[0].audio.id }}"
+      },
+      "type": "n8n-nodes-base.whatsApp",
+      "typeVersion": 1,
+      "position": [
+        -2064,
+        64
+      ],
+      "id": "ffc8b070-cd01-4005-8ddf-718f7f767307",
+      "name": "Download media",
+      "webhookId": "dd5aa9d6-94a9-4cfb-aced-373ecac70183",
+      "credentials": {
+        "whatsAppApi": {
+          "id": "Ih6BUZVvQQAfqtGE",
+          "name": "WhatsApp account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "media",
+        "operation": "mediaUrlGet",
+        "mediaGetId": "={{ $('WhatsApp Trigger').item.json.messages[0].image.id }}"
+      },
+      "type": "n8n-nodes-base.whatsApp",
+      "typeVersion": 1,
+      "position": [
+        -2064,
+        272
+      ],
+      "id": "bdca60d7-6d51-4b00-aad4-6de626797778",
+      "name": "Download media1",
+      "webhookId": "a17c29e5-4717-49a7-932e-49018543aa7e",
+      "credentials": {
+        "whatsAppApi": {
+          "id": "Ih6BUZVvQQAfqtGE",
+          "name": "WhatsApp account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.url }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -1904,
+        272
+      ],
+      "id": "daf3deec-e1ee-4156-8c99-62ecba624cbf",
+      "name": "HTTP Request1",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "IZ92IVe0UfLhTIsP",
+          "name": "Header Auth IMG/AUD"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.url }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -1904,
+        64
+      ],
+      "id": "0670a289-3b62-4c5b-9721-bdce210823bc",
+      "name": "Wsp_Audio_Imagenes",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "IZ92IVe0UfLhTIsP",
+          "name": "Header Auth IMG/AUD"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "image",
+        "operation": "analyze",
+        "modelId": {
+          "__rl": true,
+          "value": "chatgpt-4o-latest",
+          "mode": "list",
+          "cachedResultName": "CHATGPT-4O-LATEST"
+        },
+        "text": "Describe esta imagen en detalle ",
+        "inputType": "base64",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.8,
+      "position": [
+        -1728,
+        272
+      ],
+      "id": "27fe8d1a-299f-4056-aa97-866ddf5fff29",
+      "name": "Analyze image",
+      "credentials": {
+        "openAiApi": {
+          "id": "kQfguftIMyYwMojZ",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "aa445650-06ef-4f1c-99b5-57f5d2717e95",
+              "name": "final_message",
+              "value": "=#Descripción Imagen: {{ $json.content }}\n\n# {{ $('WhatsApp Trigger').item.json.messages[0].image.caption || \"Describe la imagen\" }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -1536,
+        272
+      ],
+      "id": "8dcf7a76-7c13-4aed-9bef-1fc22c44e26c",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "operation": "send",
+        "phoneNumberId": "={{ $('WhatsApp Trigger').item.json.metadata.phone_number_id }}",
+        "recipientPhoneNumber": "={{ $('WhatsApp Trigger').item.json.messages[0].from }}",
+        "textBody": "={{ $json.output }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.whatsApp",
+      "typeVersion": 1,
+      "position": [
+        2000,
+        -544
+      ],
+      "id": "db372c13-0b19-421e-a5fe-4021c53fcf21",
+      "name": "Send message",
+      "webhookId": "ccef9499-cdda-4e8a-aa73-0e2e2f33c8a0",
+      "credentials": {
+        "whatsAppApi": {
+          "id": "RmBILMwqzIaGnJKu",
+          "name": "WhatsApp Premia2_Bot"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "amount": 3
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        1776,
+        -464
+      ],
+      "id": "53019367-032d-4064-bfba-10a8d131dea6",
+      "name": "Wait",
+      "webhookId": "ec65b6fe-a028-405d-831f-746a63c274fb"
+    },
+    {
+      "parameters": {
+        "inputText": "={{ $json.Clasificar_mensaje }}",
+        "categories": {
+          "categories": [
+            {
+              "category": "FAQ's",
+              "description": "=Preguntas generales sobre el funcionamiento del sorteo. Incluye: cuándo es la fecha del sorteo, bases legales, qué auto se sortea, ubicación de la empresa, métodos de pago aceptados y cómo funciona la compra de tickets."
+            },
+            {
+              "category": "=Estado Pedido",
+              "description": "=El usuario ya compró pero reclama no haber recibido sus tickets digitales. Incluye: \"no me llegó el correo\", \"quiero ver mis números\", \"confirmar si estoy participando\" o dudas sobre si su compra se procesó correctamente."
+            },
+            {
+              "category": "Fake",
+              "description": "=Consultas sobre seguridad y fraudes. El usuario pregunta si un perfil de redes sociales, mensaje de WhatsApp o correo electrónico pertenece realmente a Premia2. Muy común cuando les dicen falsamente que \"ya ganaron\"."
+            },
+            {
+              "category": "Promo",
+              "description": "=El usuario pregunta por descuentos activos, promociones, ofertas 2x1, o precios de los paquetes de tickets. Muestra intención de comprar si recibe un incentivo."
+            },
+            {
+              "category": "Problema",
+              "description": "=Fallos técnicos DURANTE el proceso de compra o navegación. Incluye: \"la página se cae\", \"no me deja pagar\", \"me rechazó la tarjeta\", \"error en el carrito\" o bugs en el sitio web."
+            }
+          ]
+        },
+        "options": {
+          "fallback": "other",
+          "systemPromptTemplate": "=Actúa como un experto en clasificación de intenciones para el soporte al cliente de \"Premia2\".\nTu tarea es analizar el texto del usuario (que puede incluir varios mensajes recientes) y determinar su intención principal.\n\n#CONTEXTO DEL NEGOCIO (IMPORTANTE):\n- Premia2 es una plataforma chilena de sorteos de autos 0km.\n- NO vendemos productos físicos. Vendemos \"Tickets\" (activos digitales).\n- NO hay envíos por paquetería. La \"entrega\" es inmediata vía correo electrónico (comprobante + números de tickets).\n- El canal de comunicación es WhatsApp.\n- El lenguaje del usuario es informal y puede contener errores ortográficos, abreviaciones o poca estructura gramatical.\n- No todos los usuarios saludan ni se despiden, y algunos no explican bien su problema.\n\n#CATEGORIAS DISPONIBLES:\n- FAQ's\n- Estado Pedido\n- Fake\n- Promo\n- Problema\n- Otra: Cuando el mensaje no encaje claramente con ninguna categoría anterior o carezca de información suficiente.\n\n\nREGLAS DE INTERPRETACIÓN:\n1. Si el usuario pregunta \"dónde está mi pedido\", se refiere a que NO le ha llegado el correo con los tickets. Clasifícalo como \"Estado Pedido\".\n2. Si el usuario pregunta si es verdad que ganó un premio o si una cuenta de Instagram es real, es CRÍTICO clasificarlo como \"Fake\".\n3. Prioriza problemas de pago (transbank, tarjetas) como \"Problema\".\n\n\nTu tarea es devolver únicamente la categoría que más se ajuste al contenido del mensaje. Si hay ambigüedad o no hay suficiente información, responde con: **\"Otra\"**.\n"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.textClassifier",
+      "typeVersion": 1.1,
+      "position": [
+        2256,
+        528
+      ],
+      "id": "e27b8f9e-bd46-4678-a990-2c1fa1a0a376",
+      "name": "Text Classifier",
+      "alwaysOutputData": false
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4.1-mini"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        2256,
+        816
+      ],
+      "id": "df19c858-3c06-4fef-ad4e-2226a6e2823e",
+      "name": "OpenAI Chat Model1",
+      "credentials": {
+        "openAiApi": {
+          "id": "Gjo4nRFDjCu9iJa5",
+          "name": "Premia2_GPT"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "loose",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "fb6fae95-f735-4c93-aeb0-412b39b727d3",
+                    "leftValue": "={{ JSON.parse($json.ClasificarMensaje.last()).sessionid }}",
+                    "rightValue": "={{ $('Concatenar').item.json.chat_id }}",
+                    "operator": {
+                      "type": "string",
+                      "operation": "notEquals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Ignorar"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "loose",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ (() => {\n  try {\n    const mensajes = $json.ClasificarMensaje;\n    if (!mensajes || !Array.isArray(mensajes) || mensajes.length === 0) return new Date(0);\n\n    // Buscar el último mensaje con fecha válida\n    const ultimoConFecha = [...mensajes].reverse().find(m => {\n      const data = typeof m === 'string' ? JSON.parse(m) : m;\n      return data.fecha && data.fecha !== 'null' && data.fecha.trim() !== '';\n    });\n\n    if (!ultimoConFecha) return new Date(0);\n\n    const data = typeof ultimoConFecha === 'string' ? JSON.parse(ultimoConFecha) : ultimoConFecha;\n\n    const fechaValida = new Date(data.fecha);\n    return isNaN(fechaValida.getTime()) ? new Date(0) : fechaValida;\n  } catch (error) {\n    return new Date(0);\n  }\n})() }}\n",
+                    "rightValue": "={{ $now.minus(2, 'minutes').toLocal() }}",
+                    "operator": {
+                      "type": "dateTime",
+                      "operation": "before"
+                    },
+                    "id": "452eec8a-d2e2-4022-95a7-8118e89985bd"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Clasificar"
+            }
+          ]
+        },
+        "looseTypeValidation": true,
+        "options": {
+          "fallbackOutput": "extra",
+          "renameFallbackOutput": "Esperar"
+        }
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        1616,
+        560
+      ],
+      "id": "71422b23-1d31-459d-b0fb-8364cd3d1d81",
+      "name": "Switch1"
+    },
+    {
+      "parameters": {
+        "amount": 2,
+        "unit": "minutes"
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        1840,
+        768
+      ],
+      "id": "03d8b3f6-220b-4475-90f2-60ccddc89a08",
+      "name": "Wait2",
+      "webhookId": "5f7f73a2-4667-4dff-af5f-89a8f2b81564"
+    },
+    {
+      "parameters": {
+        "content": "## Clasificador de Consultas \n",
+        "height": 1216,
+        "width": 2224,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        960,
+        256
+      ],
+      "typeVersion": 1,
+      "id": "8986d82c-d7c5-4144-a8b9-2845515a953b",
+      "name": "Sticky Note3"
+    },
+    {
+      "parameters": {
+        "operation": "push",
+        "list": "={{ $('DatosLimpios#').item.json.chat_id_limpio }}",
+        "messageData": "={{ JSON.stringify({\n  'message': $('DatosLimpios#').item.json.texto,\n  'sessionid': $('DatosLimpios#').item.json.chat_id_limpio,\n  'fecha': $('DatosLimpios#').item.json.sender_fecha\n}) }}",
+        "tail": true
+      },
+      "type": "n8n-nodes-base.redis",
+      "typeVersion": 1,
+      "position": [
+        -48,
+        -32
+      ],
+      "id": "9c3c4f8b-5978-428f-b50d-b1ee9b5372ad",
+      "name": "Buffer1",
+      "credentials": {
+        "redis": {
+          "id": "yNdY0tHCcqX8wc39",
+          "name": "Redis_Premia2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "propertyName": "mensaje_final",
+        "key": "={{ $('DatosLimpios#').item.json.chat_id_limpio }}",
+        "options": {
+          "dotNotation": false
+        }
+      },
+      "type": "n8n-nodes-base.redis",
+      "typeVersion": 1,
+      "position": [
+        144,
+        -16
+      ],
+      "id": "cd024fad-697d-4c37-9ac9-b55ae559b39d",
+      "name": "GetBufferData1",
+      "credentials": {
+        "redis": {
+          "id": "yNdY0tHCcqX8wc39",
+          "name": "Redis_Premia2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "delete",
+        "key": "={{ $('DatosLimpios#').item.json.chat_id_limpio }}"
+      },
+      "type": "n8n-nodes-base.redis",
+      "typeVersion": 1,
+      "position": [
+        528,
+        -16
+      ],
+      "id": "79e485c5-d9e8-419c-80ce-a509ae7d5a29",
+      "name": "Delete1",
+      "credentials": {
+        "redis": {
+          "id": "yNdY0tHCcqX8wc39",
+          "name": "Redis_Premia2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "push",
+        "list": "={{ $json.chat_id }}",
+        "messageData": "={{ JSON.stringify({   'message_class': $json.Concat_message,   'sessionid': $json.chat_id,   'fecha': $json.fecha }) }}"
+      },
+      "type": "n8n-nodes-base.redis",
+      "typeVersion": 1,
+      "position": [
+        1232,
+        576
+      ],
+      "id": "b2d11484-8e45-47b8-97d9-f68c373cdae8",
+      "name": "Buffer2",
+      "credentials": {
+        "redis": {
+          "id": "yNdY0tHCcqX8wc39",
+          "name": "Redis_Premia2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "propertyName": "ClasificarMensaje",
+        "key": "={{ $('Concatenar').item.json.chat_id }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.redis",
+      "typeVersion": 1,
+      "position": [
+        1440,
+        576
+      ],
+      "id": "c79a9187-0c96-40d2-b7fa-188e03272805",
+      "name": "GetBufferData2",
+      "credentials": {
+        "redis": {
+          "id": "yNdY0tHCcqX8wc39",
+          "name": "Redis_Premia2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "delete",
+        "key": "={{ $('Concatenar').item.json.chat_id }}"
+      },
+      "type": "n8n-nodes-base.redis",
+      "typeVersion": 1,
+      "position": [
+        1856,
+        576
+      ],
+      "id": "e61fc2f8-17f4-43cd-bc3c-a20f071d8fae",
+      "name": "Redis",
+      "credentials": {
+        "redis": {
+          "id": "yNdY0tHCcqX8wc39",
+          "name": "Redis_Premia2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "ee76f92c-4eae-48de-af1e-62521ef3baba",
+              "name": "Clasificar_mensaje",
+              "value": "={{ $json.ClasificarMensaje.map(m=> JSON.parse(m).message_class).join('\\n') }}",
+              "type": "string"
+            },
+            {
+              "id": "0164da8a-56f0-4ae1-9913-4f6b7494becb",
+              "name": "Chat_Id",
+              "value": "={{(() => {   try {     const ids = $json.ClasificarMensaje.map(n => {       const parsed = typeof n === 'string' ? JSON.parse(n) : n;       return parsed.sessionid;     });     const uniqueIds = [...new Set(ids)];     return uniqueIds[0] || null;   } catch (e) {     return `Error: ${e.message}`;   } })()}}",
+              "type": "string"
+            },
+            {
+              "id": "ae83ed2d-db5d-4ff1-8582-32122a42c616",
+              "name": "Fecha",
+              "value": "={{ (() => {\n  try {\n    const mensajes = $json.ClasificarMensaje;\n    if (!mensajes || !Array.isArray(mensajes) || mensajes.length === 0) return null;\n\n    const ultimo = mensajes[mensajes.length - 1];\n    const data = typeof ultimo === 'string' ? JSON.parse(ultimo) : ultimo;\n\n    return data.fecha || null;\n  } catch (error) {\n    return null;\n  }\n})() }}\n",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        2064,
+        576
+      ],
+      "id": "83563f7b-33a6-4442-b071-b4d4f6f417d2",
+      "name": "Edit Fields2"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        1840,
+        384
+      ],
+      "id": "c6f5ec01-19f6-4b89-bb4f-cd3c93e711f8",
+      "name": "No Operation, do nothing"
+    },
+    {
+      "parameters": {
+        "content": "## I'm a note \nAgregar un filtro para saber si un mismo ID habla < 4 veces para poder tomar acción. "
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        3248,
+        992
+      ],
+      "typeVersion": 1,
+      "id": "b1066c6d-a838-40d2-8563-698d77c19f9d",
+      "name": "Sticky Note4"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1AbIMMIh31To3IJ1dEkZa0jI9PH_9h67vXMk3SqzKCCk",
+          "mode": "list",
+          "cachedResultName": "Monitoreo AV",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1AbIMMIh31To3IJ1dEkZa0jI9PH_9h67vXMk3SqzKCCk/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Hoja 1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1AbIMMIh31To3IJ1dEkZa0jI9PH_9h67vXMk3SqzKCCk/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Fecha/Hora": "={{ $now.format('dd-MM-yyyy | HH:mm:ss') }}",
+            "#ID": "={{ $json.ID }}",
+            "Motivo": "={{ $json.Categoria }}"
+          },
+          "matchingColumns": [
+            "ID"
+          ],
+          "schema": [
+            {
+              "id": "Fecha/Hora",
+              "displayName": "Fecha/Hora",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "#ID",
+              "displayName": "#ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Motivo",
+              "displayName": "Motivo",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        3136,
+        576
+      ],
+      "id": "6ea0d509-d03a-4cad-a397-ec5435ceb19c",
+      "name": "Append row in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "IhHBm706ESO6xODB",
+          "name": "Sheets_Premia2"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "e8eeddbe-92ff-451c-b543-c1f2b80de638",
+              "name": "ID",
+              "value": "={{ $json.Chat_Id }}",
+              "type": "string"
+            },
+            {
+              "id": "654aaf9d-4d16-43fb-876c-e4a7900e6727",
+              "name": "Fecha",
+              "value": "={{ $json.Fecha }}",
+              "type": "string"
+            },
+            {
+              "id": "bf3c1d00-e703-4f90-a595-fabcdd496cd6",
+              "name": "Categoria",
+              "value": "FAQ's",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        2752,
+        288
+      ],
+      "id": "292aed50-705b-4c99-a9dc-5779f7073d28",
+      "name": "FAQ's"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "e8eeddbe-92ff-451c-b543-c1f2b80de638",
+              "name": "ID",
+              "value": "={{ $json.Chat_Id }}",
+              "type": "string"
+            },
+            {
+              "id": "654aaf9d-4d16-43fb-876c-e4a7900e6727",
+              "name": "Fecha",
+              "value": "={{ $json.Fecha }}",
+              "type": "string"
+            },
+            {
+              "id": "bf3c1d00-e703-4f90-a595-fabcdd496cd6",
+              "name": "Categoria",
+              "value": "Est. Pedido",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        2752,
+        464
+      ],
+      "id": "9fd1e5cf-23d5-4e33-b851-a3e254c0da11",
+      "name": "Estado Pedido"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "e8eeddbe-92ff-451c-b543-c1f2b80de638",
+              "name": "ID",
+              "value": "={{ $json.Chat_Id }}",
+              "type": "string"
+            },
+            {
+              "id": "654aaf9d-4d16-43fb-876c-e4a7900e6727",
+              "name": "Fecha",
+              "value": "={{ $json.Fecha }}",
+              "type": "string"
+            },
+            {
+              "id": "bf3c1d00-e703-4f90-a595-fabcdd496cd6",
+              "name": "Categoria",
+              "value": "Fake",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        2752,
+        640
+      ],
+      "id": "ae887156-3373-4887-a2ea-602d159de117",
+      "name": "FAKE"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "e8eeddbe-92ff-451c-b543-c1f2b80de638",
+              "name": "ID",
+              "value": "={{ $json.Chat_Id }}",
+              "type": "string"
+            },
+            {
+              "id": "654aaf9d-4d16-43fb-876c-e4a7900e6727",
+              "name": "Fecha",
+              "value": "={{ $json.Fecha }}",
+              "type": "string"
+            },
+            {
+              "id": "bf3c1d00-e703-4f90-a595-fabcdd496cd6",
+              "name": "Categoria",
+              "value": "Promo",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        2752,
+        800
+      ],
+      "id": "14738ee5-cd99-4ec3-a147-36a65ac3efff",
+      "name": "PROMO"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "e8eeddbe-92ff-451c-b543-c1f2b80de638",
+              "name": "ID",
+              "value": "={{ $json.Chat_Id }}",
+              "type": "string"
+            },
+            {
+              "id": "654aaf9d-4d16-43fb-876c-e4a7900e6727",
+              "name": "Fecha",
+              "value": "={{ $json.Fecha }}",
+              "type": "string"
+            },
+            {
+              "id": "bf3c1d00-e703-4f90-a595-fabcdd496cd6",
+              "name": "Categoria",
+              "value": "Problema",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        2752,
+        976
+      ],
+      "id": "221a462b-c91d-45d0-a27f-68abe96fe68e",
+      "name": "PROBLEMA"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "e8eeddbe-92ff-451c-b543-c1f2b80de638",
+              "name": "ID",
+              "value": "={{ $json.Chat_Id }}",
+              "type": "string"
+            },
+            {
+              "id": "654aaf9d-4d16-43fb-876c-e4a7900e6727",
+              "name": "Fecha",
+              "value": "={{ $json.Fecha }}",
+              "type": "string"
+            },
+            {
+              "id": "bf3c1d00-e703-4f90-a595-fabcdd496cd6",
+              "name": "Categoria",
+              "value": "Otro",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        2752,
+        1152
+      ],
+      "id": "6b983d4d-1750-4cef-9b52-3f97d49aff5a",
+      "name": "OTRO"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-4.1",
+          "mode": "list",
+          "cachedResultName": "gpt-4.1"
+        },
+        "builtInTools": {},
+        "options": {
+          "temperature": "={{ $json.temperature }}",
+          "serviceTier": "auto"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        1408,
+        -592
+      ],
+      "id": "6d60ab1b-413b-4cef-896b-65bb31bca60d",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "Gjo4nRFDjCu9iJa5",
+          "name": "Premia2_GPT"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "==Mensaje_Cliente: {{ $('Concatenar').item.json.Concat_message }}",
+        "options": {
+          "systemMessage": "=Eres el Asistente Virtual oficial de **Premia2**, la plataforma chilena de sorteos digitales. Tu misión es resolver dudas de forma eficiente, cordial y segura.\n\nFECHA Y HORA ACTUAL: {{ $now.setZone('America/Santiago').toFormat('dd/MM/yyyy HH:mm') }}\n\nSomos Premia2 😎✌️ **\n\n## 🛑 DIRECTRIZ CERO (CONSULTA OBLIGATORIA)\nAntes de generar respuestas que impliquen dar información, responder dudas sobre sorteos, precios, premios, o resolver problemas, es TU OBLIGACIÓN ESTRICTA utilizar la herramienta conectada a la tabla 'knowledge_base_feedback'. Si la herramienta te devuelve una regla, debes obedecerla de forma absoluta, ignorando cualquier otra instrucción general.\nExcepción: Puedes omitir el uso de esta herramienta ÚNICAMENTE si el mensaje del cliente es un saludo básico, un agradecimiento o una despedida que no requiera información (ej. 'Hola', 'Gracias', 'Chao').\n\n\n## ℹ️ INFORMACIÓN GENERAL ACTUALIZADA (SEGUNDA PRIORIDAD)\nUsa estos datos como **fuente principal** antes de consultar la base de datos.\n\nSomos Premia2 😎✌️\n\n- **Estado Actual:**Venta oficial**.\n- **Próximo Sorteo:** 16 de Mayo del 2026 (16/05/2026).\n- **Premio (Auto):**Suzuki Jimny full equipo**\n- **Venta de Tickets:**DISPONIBLE**\n- **Precio de Tickets:** \n  - 1 = $5.000 CLP\n  - 3X2 = $10.000 CLP\n  - 5X3 = $15.000 CLP\n- **Ganador Sorteo Primera edicion (Jimny):** Andres Bugueño Bugueño (Alto Hospicio, Iquique), Ticket 60607 🚗.\n\n**Ganador Sorteo Segundo edicion (Rav4):**Ligia Villa Urbano (Chillan), Ticket 66067 🚗.\n- **Descuentos:**Actualmente no hay descuentos**\n- **Promociones:** No hay promociones disponibles actualmente. **\n- **Enlaces Oficiales:**\n  - Web Compra: https://premiado.cl/comprar/v3?src=chatbot_wsp\n  - Verificar Tickets: https://premiado.cl/recuperar-tickets\n  - Instagram (@premia2_cl): https://www.instagram.com/premia2.cl/\n  - TikTok (@premia2.sorteo): https://www.tiktok.com/@premia2.cl?_r=1&_t=ZS-94R4dkxo4Bt\n  - YouTube (@premia2.sorteo): https://www.youtube.com/@premia2.sorteo\n  - Bio: https://hopp.bio/premia2\n- **Transferencias Bancarias:** El cliente debe contactar al ejecutivo aquí: [https://wa.me/56941083605].\n\n---\n\n## 👋 PROTOCOLO DE Conversacion. (Tercera PRIORIDAD)\nEn caso de tu segunda intervención, debes cumplir 3 requisitos:\n1. Saludar usando el nombre del cliente (si está disponible).\n2. Identificarte explícitamente como el **\"Asistente Virtual de Premia2\"**.\n3. Preguntar en qué puedes ayudar al cliente.\n\n> **Ejemplo de Saludo Ideal:**\n> \"Hola [{{ $('DatosLimpios#').item.json.nombre }}] ✌️, soy el Asistente Virtual de Premia2. ¿En qué te puedo ayudar?  \"\n---\n\n## 💬 ESTILO DE RESPUESTA: CORTA Y DIRECTA\nTu prioridad es la brevedad. Basa tu estilo en el formato `## A_SHORT` de la base de datos.\n- Responde solo lo que se pregunta.\n- Evita explicaciones largas innecesarias.\n- Usa lenguaje semiformal chileno (\"tú\").\n- Utiliza máximo 1 emoji por mensaje, solo si encuentras pertinente.\n\n### 🧪 EJEMPLOS DE RESPUESTA (FEW-SHOT LEARNING)\nImita este estilo de respuesta directa:\n\n**Usuario:** \"¿Cuándo es el sorteo?\"\n**Tú:** \"El próximo sorteo se realizará el 16/05/2026 🚗\"\n\n**Usuario:** \"¿Como sé cuales son mis tickets?\"\n**Tú:** \"Para recuperar tus tickets o imágen 🎟️, ingresa tu correo o teléfono en el siguinte enlace: https://premiado.cl/recuperar-tickets - Allí podrás ver el estado de tu pedido y los tickets con los que estás participando.\"\n\n**Usuario:** \"¿Compré tickets, pero no me llego el correo?\"\n**Tú:** \"Si no te llegó el correo con el comprobante y tus tickets, puedes verificarlos haciendo click en el siguiente enlace https://premiado.cl/recuperar-tickets o bien podrás comunicarte con uno de nuestros ejecutivos aqui: [https://wa.me/56941083605] 📱 \"\n\n**Usuario:** \"¿Cuántos tickets puedo comprar?\"\n**Tú:** \"Puedes comprar la cantidad de tickets que quieras; no hay límite. Mientras más tickets, más posibilidades tienes de ganar. 🎟️\"\n\n**Usuario:** \"¿Qué auto van a sortear?\"\n**Tú:** \"Aun estamos en el periodo de seleccion. recuerda ¡votar si aun no lo haces en nuestro instagram!\"\n\n**Usuario:** \"¿Cuál es su Instagram?\"\n**Tú:** \"Nuestro Instagram oficial es @premia2_cl. También estamos en TikTok como @premia2.sorteo.\"\n\n**Usuario:** \"¿Dónde puedo comprar?\"\n**Tú:** \"Haz clic aquí para adquirir tus tickets: https://premiado.cl/comprar/v3?src=chatbot_wsp ¡Mucha suerte!\"\n\n**Usuario:** \"¿Puedo pagar con transferencia?\"\n**Tú:** \"Para transferencias, por favor comunícate directamente con nuestros ejecutivos aquí: [https://wa.me/56941083605] 📱.\"\n\n**Usuario:** \"¿Quién ganó el sorteo anterior?\"\n**Tú: 🎉 *Resultados Premia2* 🎉\n\n🚗 Jimny primer sorteo:\nAndrés Bugueño Bugueño  \nAlto Hospicio, Iquique  \nTicket 60607\n\n🚙 RAV4 Segundo sorteo:\nLigia Villa Urbano  \nChillán  \nTicket 66067\n\nPuedes ver la entrega en nuestro Instagram @premia2_cl.\"\n\n---\n\n## 🛡️ REGLAS DE SEGURIDAD Y DERIVACIÓN\n1. **Atención Humana / Fallo al resolver:** Si no puedes resolver la duda, la información no está en la base de datos, o el cliente pide un humano, envía SIEMPRE este enlace:\n   > \"Para esta solicitud, por favor contacta a nuestro equipo de Atención al Cliente aquí: [https://wa.me/56941083605]\"\n2. **Datos Personales:** NUNCA entregues datos sensibles de pedidos. Deriva al enlace de WhatsApp anterior.\n\n---\n\n## 🔄 FLUJO DE CIERRE Y CONTINUIDAD\n\nTu objetivo es ser servicial hasta el final. Sigue estrictamente estas reglas de interacción:\n\n### 1. REGLA GENERAL: EL CIERRE ESTÁNDAR\n**Solo cuando identifiques que ha finalizado la conversación con el cliente** , luego de haber respondido sus dudas o necesidades (ej: info de sorteos, estado de pedido, precios), **siempre** finaliza tu mensaje preguntando:\n> *\"¿Te puedo ayudar en algo más? 🤖\"*\n\n**🚫 EXCEPCIONES (NO USAR ESTA PREGUNTA SI):**\n- Estás saludando en el primer mensaje.\n- Estás pidiendo un dato necesario para continuar (ej: *\"Por favor, indícame tu número de orden\"*).\n- Estás derivando a un humano.\n- La conversación no ha terminado. \n\n---\n\n### 2. LÓGICA DE RESPUESTA DEL USUARIO\n\n**SI EL CLIENTE DICE \"SÍ\" (QUIERE MÁS AYUDA):**\n- Responde amablemente: *\"¡Claro! Cuéntame, ¿qué otra duda tienes?\"* y espera su input.\n\n**SI EL CLIENTE DICE \"NO\" (YA NO TIENE DUDAS):**\n- Si el cliente responde \"No\", \"ok\" , \"Eso es todo\", o \"Gracias\", cierra la conversación con este mensaje exacto:\n> *\"¡Perfecto! Me alegra haberte ayudado 🙌. Te invitamos a participar en los sorteos activos en nuestro Instagram [@premia2_cl]. ¡Mucha suerte! 🍀\"*\n\n---\n\n### 3. PROTOCOLO DE INACTIVIDAD (TIMEOUT 15 MINUTOS)\nSi el contexto o el sistema te indican que el usuario ha dejado de responder por un tiempo prolongado, intenta reactivar o cerrar el ticket con esta pregunta específica:\n> *\"¿He logrado resolver tu consulta? 🤖\"*\n\n**Lógica para esta pregunta de inactividad:**\n- Si responden **SÍ**: Envía el mensaje de despedida de Instagram (ver punto 2).\n- Si responden **NO**: Deriva al equipo humano en WhatsApp.\n\n---\n\n**SI EL CLIENTE RESPONDE \"SÍ\" A LA PREGUNTA FINAL:**\nCierra invitando a los sorteos: *\"¡Perfecto! Me alegra haberte ayudado 🙌. Te invitamos a participar en los sorteos activos en nuestro Instagram [@premia2_cl]. ¡Mucha suerte! 🍀\"*\n\n**SI EL CLIENTE RESPONDE \"NO\":**\nDeriva al humano: *\"Entiendo. Para ayudarte mejor, por favor contacta a nuestro equipo humano aquí: [https://wa.me/56941083605] 📱.\"*\n\n---\n\n## 🛠️ USO DE HERRAMIENTAS\n1. **Consultas Generales:** Revisa primero la sección \"INFORMACIÓN GENERAL\" de este prompt. Si no está ahí, usa la **Vector Store (Supabase)**.\n2. **Consultas de Pedidos:** \nEl asistente NO debe consultar pedidos en WooCommerce ni usar herramientas para obtener información de pedidos.\n3. **Reglas Maestras:** Antes de dar cualquier información sobre precios o datos específicos, revisa la herramienta de knowledge_base_feedback para asegurarte de no cometer errores históricos.\n\nSi un usuario pregunta por:\n- estado de su pedido\n- número de pedido\n- seguimiento del pedido\n- confirmación de compra\n- cualquier información relacionada con pedidos\n\nEl A.V (Agente Virtual) debe responder amablemente indicando que las consultas de pedidos se gestionan exclusivamente por el canal de Atención al Cliente aquí: [https://wa.me/56941083605]\"\nRecuerda que la página oficial es www.premia2.cl\n\n---\n## 🎭 PERSONALIDAD Y TONO DE RESPUESTA (DIRECTRIZ DE ESTILO)\nAdopta estrictamente la siguiente personalidad para redactar tus respuestas, pero NUNCA permitas que esta personalidad rompa las reglas de negocio, precios o enlaces mencionadas arriba:\n\n\"{{ $json.system_prompt }}\""
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        1408,
+        -400
+      ],
+      "id": "e1565231-ccd0-49d4-b013-00267cd42cc4",
+      "name": "AI Agent1"
+    },
+    {
+      "parameters": {
+        "mode": "retrieve-as-tool",
+        "toolDescription": "=Obligatorio: Busca SIEMPRE en esta base de datos con el {{ $json.tenant_id }} antes de responder a CUALQUIER mensaje del usuario, sin importar el tema. Contiene reglas críticas de negocio y correcciones de errores que sobrescriben tus instrucciones básicas.",
+        "tableName": {
+          "__rl": true,
+          "value": "knowledge_base_feedback",
+          "mode": "list",
+          "cachedResultName": "knowledge_base_feedback"
+        },
+        "options": {
+          "queryName": "match_documents",
+          "metadata": {
+            "metadataValues": [
+              {
+                "name": "tenant_id",
+                "value": "1bf4cdbb-c845-4eb3-930e-2a2613e385bb"
+              }
+            ]
+          }
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStoreSupabase",
+      "typeVersion": 1.3,
+      "position": [
+        1392,
+        -96
+      ],
+      "id": "460e384f-88f9-4940-9b8e-3e021fcfd57e",
+      "name": "Feedback",
+      "credentials": {
+        "supabaseApi": {
+          "id": "l6zxJpWglEfkxgXX",
+          "name": "Premia2_Sup"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.embeddingsOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        1728,
+        -80
+      ],
+      "id": "d326cd87-2611-475f-8854-0637bff33a17",
+      "name": "Embeddings OpenAI1",
+      "credentials": {
+        "openAiApi": {
+          "id": "Gjo4nRFDjCu9iJa5",
+          "name": "Premia2_GPT"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "tableId": "session_control",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "session_id",
+              "keyValue": "={{ $('DatosLimpios#').item.json.chat_id_limpio }}"
+            },
+            {
+              "keyName": "tenant_id",
+              "keyValue": "1bf4cdbb-c845-4eb3-930e-2a2613e385bb"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        -912,
+        -32
+      ],
+      "id": "4edea83b-4ab1-4bac-882c-53df3cd495fb",
+      "name": "Get a row",
+      "alwaysOutputData": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "l6zxJpWglEfkxgXX",
+          "name": "Premia2_Sup"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "9d415683-1fcc-445b-967a-39ac4dfe6acb",
+              "leftValue": "={{ $json.is_manual || false }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "false",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -704,
+        -32
+      ],
+      "id": "f18a95e9-0ab5-4797-a7fb-5a6c13c16d8b",
+      "name": "If"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        -304,
+        96
+      ],
+      "id": "1347a4a8-2cfe-4cc9-bb1c-b1226f8eda75",
+      "name": "No Operation, do nothing2"
+    },
+    {
+      "parameters": {
+        "tableId": "n8n_chat_clientes_historial",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "session_id",
+              "fieldValue": "={{ $json.session_id }}"
+            },
+            {
+              "fieldId": "message",
+              "fieldValue": "={{\n  {\n    \"type\": \"human\",\n    \"content\": $('DatosLimpios#').item.json.texto,\n  }\n}}"
+            },
+            {
+              "fieldId": "tenant_id",
+              "fieldValue": "1bf4cdbb-c845-4eb3-930e-2a2613e385bb"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        -512,
+        96
+      ],
+      "id": "906985c4-c561-4fa0-8ae2-451b45c2e95d",
+      "name": "Create a row",
+      "credentials": {
+        "supabaseApi": {
+          "id": "l6zxJpWglEfkxgXX",
+          "name": "Premia2_Sup"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "agent_config",
+        "limit": 1,
+        "matchType": "allFilters",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "tenant_id",
+              "condition": "eq",
+              "keyValue": "1bf4cdbb-c845-4eb3-930e-2a2613e385bb"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        1008,
+        -160
+      ],
+      "id": "1b743347-9e61-4249-b3a6-f0018e22e82e",
+      "name": "Get config",
+      "credentials": {
+        "supabaseApi": {
+          "id": "l6zxJpWglEfkxgXX",
+          "name": "Premia2_Sup"
+        }
+      }
+    }
+  ],
+  "pinData": {
+    "WhatsApp Trigger": [
+      {
+        "json": {
+          "messaging_product": "whatsapp",
+          "metadata": {
+            "display_phone_number": "56978738487",
+            "phone_number_id": "711342198729291"
+          },
+          "contacts": [
+            {
+              "profile": {
+                "name": "Max"
+              },
+              "wa_id": "56975277456"
+            }
+          ],
+          "messages": [
+            {
+              "from": "56975277456",
+              "id": "wamid.HBgLNTY5NzUyNzc0NTYVAgASGBQzQTQzRkNDRjczNDQwMTVDNDA0MQA=",
+              "timestamp": "1773840222",
+              "text": {
+                "body": "Hola, qué auto están sorteando y cuánto cuesta el ticket?"
+              },
+              "type": "text"
+            }
+          ],
+          "field": "messages"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      }
+    ]
+  },
+  "connections": {
+    "Postgres Chat Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent1",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Supabase Vector Store": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent1",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embeddings OpenAI": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Supabase Vector Store",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch": {
+      "main": [
+        [
+          {
+            "node": "final_message_txt",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Download media",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Download media1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Transcribe a recording": {
+      "main": [
+        [
+          {
+            "node": "final_message_voice",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch2": {
+      "main": [
+        [
+          {
+            "node": "No Operation, do nothing1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Delete1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Wait1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "final_message_txt": {
+      "main": [
+        [
+          {
+            "node": "DatosTextoTlg",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "final_message_voice": {
+      "main": [
+        [
+          {
+            "node": "DatosTextoTlg",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "DatosTextoTlg": {
+      "main": [
+        [
+          {
+            "node": "DatosLimpios#",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "DatosLimpios#": {
+      "main": [
+        [
+          {
+            "node": "Get a row",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait1": {
+      "main": [
+        [
+          {
+            "node": "GetBufferData1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Concatenar": {
+      "main": [
+        [
+          {
+            "node": "Buffer2",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Get config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get an order in WooCommerce": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent1",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "WhatsApp Trigger": {
+      "main": [
+        [
+          {
+            "node": "Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download media": {
+      "main": [
+        [
+          {
+            "node": "Wsp_Audio_Imagenes",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download media1": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wsp_Audio_Imagenes": {
+      "main": [
+        [
+          {
+            "node": "Transcribe a recording",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request1": {
+      "main": [
+        [
+          {
+            "node": "Analyze image",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Analyze image": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "DatosTextoTlg",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait": {
+      "main": [
+        [
+          {
+            "node": "Send message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Text Classifier",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Text Classifier": {
+      "main": [
+        [
+          {
+            "node": "FAQ's",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Estado Pedido",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "FAKE",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "PROMO",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "PROBLEMA",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "OTRO",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch1": {
+      "main": [
+        [
+          {
+            "node": "No Operation, do nothing",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Redis",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Wait2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait2": {
+      "main": [
+        [
+          {
+            "node": "GetBufferData2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buffer1": {
+      "main": [
+        [
+          {
+            "node": "GetBufferData1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GetBufferData1": {
+      "main": [
+        [
+          {
+            "node": "Switch2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Delete1": {
+      "main": [
+        [
+          {
+            "node": "Concatenar",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buffer2": {
+      "main": [
+        [
+          {
+            "node": "GetBufferData2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GetBufferData2": {
+      "main": [
+        [
+          {
+            "node": "Switch1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Redis": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields2": {
+      "main": [
+        [
+          {
+            "node": "Text Classifier",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "FAQ's": {
+      "main": [
+        [
+          {
+            "node": "Append row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Estado Pedido": {
+      "main": [
+        [
+          {
+            "node": "Append row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "FAKE": {
+      "main": [
+        [
+          {
+            "node": "Append row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "PROMO": {
+      "main": [
+        [
+          {
+            "node": "Append row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "PROBLEMA": {
+      "main": [
+        [
+          {
+            "node": "Append row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OTRO": {
+      "main": [
+        [
+          {
+            "node": "Append row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent1",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent1": {
+      "main": [
+        [
+          {
+            "node": "Wait",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Feedback": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent1",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embeddings OpenAI1": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Feedback",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get a row": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Buffer1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Create a row",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create a row": {
+      "main": [
+        [
+          {
+            "node": "No Operation, do nothing2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get config": {
+      "main": [
+        [
+          {
+            "node": "AI Agent1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "America/Santiago",
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "versionId": "2f35155c-dcea-48d6-a765-3a182bfc0e0c",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "8703c87d7b1c4ed56b389ec543c5d3236f6b791bb98b7c699f4931e76a9975db"
+  },
+  "id": "sEhr6VCXV7cxpOpS",
+  "tags": []
+}

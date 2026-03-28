@@ -1,0 +1,507 @@
+{
+  "name": "Alpha_msj3",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes",
+              "minutesInterval": 20
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        -480,
+        0
+      ],
+      "id": "d41e6e3f-c40f-465f-9b07-6560f80806c8",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "estrategia_recuperacion",
+        "limit": 1,
+        "matchType": "allFilters",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "is_active",
+              "condition": "eq",
+              "keyValue": "true"
+            },
+            {
+              "keyName": "tenant_id",
+              "condition": "eq",
+              "keyValue": "1bf4cdbb-c845-4eb3-930e-2a2613e385bb"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        -272,
+        0
+      ],
+      "id": "821a002f-303b-46bd-b4a6-3cf96344a80a",
+      "name": "Get many rows",
+      "credentials": {
+        "supabaseApi": {
+          "id": "l6zxJpWglEfkxgXX",
+          "name": "Premia2_Sup"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        928,
+        -32
+      ],
+      "id": "b4279eb5-a7af-4e42-819a-eae6e05f9180",
+      "name": "Loop Over Items"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "ad925ec5-e788-40fe-8135-04e5d34a439b",
+              "leftValue": "={{ $json.msg3_active }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -64,
+        0
+      ],
+      "id": "4f692ace-a887-4f18-a68a-553c1ff6a0e4",
+      "name": "If"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        128,
+        256
+      ],
+      "id": "a04fc721-538b-4201-b3fa-3dda2f2af717",
+      "name": "No Operation, do nothing"
+    },
+    {
+      "parameters": {
+        "phoneNumberId": "711342198729291",
+        "recipientPhoneNumber": "={{ $json.buyer_phone }}",
+        "template": "={{ $('Get many rows').item.json.msg3_template }}",
+        "components": {
+          "component": [
+            {
+              "type": "header",
+              "headerParameters": {
+                "parameter": [
+                  {
+                    "type": "image",
+                    "imageLink": "https://i.postimg.cc/Cx9ZdP5F/Premia2Logo1.png"
+                  }
+                ]
+              }
+            },
+            {
+              "bodyParameters": {
+                "parameter": [
+                  {
+                    "text": "={{ $json.buyer_name }}"
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.whatsApp",
+      "typeVersion": 1.1,
+      "position": [
+        1184,
+        80
+      ],
+      "id": "2dfb32ce-f4c6-46b6-831d-e66a50f1ebab",
+      "name": "Send template",
+      "webhookId": "b78af442-8b36-411f-a65a-817445ba9ea5",
+      "credentials": {
+        "whatsAppApi": {
+          "id": "RmBILMwqzIaGnJKu",
+          "name": "WhatsApp Premia2_Bot"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        1600,
+        80
+      ],
+      "id": "e186b9fb-4566-4569-aacb-67cc9fae9a2e",
+      "name": "Wait",
+      "webhookId": "b09d53cb-4889-4e91-9160-c6dbb685ab87"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        1168,
+        -128
+      ],
+      "id": "80c237f8-ea56-4503-b7c6-f267949b3a2b",
+      "name": "No Operation, do nothing1"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "no_completados",
+        "matchType": "allFilters",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "commerce_order",
+              "condition": "eq",
+              "keyValue": "={{ $('Loop Over Items').item.json.commerce_order }}"
+            },
+            {
+              "keyName": "tenant_id",
+              "condition": "eq",
+              "keyValue": "1bf4cdbb-c845-4eb3-930e-2a2613e385bb"
+            }
+          ]
+        },
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "recipt_msj3",
+              "fieldValue": "={{ 'Enviado' }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        1392,
+        80
+      ],
+      "id": "a150bb85-841b-444c-9ed2-0feb54949e80",
+      "name": "Recipt_msj3",
+      "credentials": {
+        "supabaseApi": {
+          "id": "l6zxJpWglEfkxgXX",
+          "name": "Premia2_Sup"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "02b0e35f-4988-45dc-b64f-ead3f5a3726b",
+              "leftValue": "={{ $('Get many rows').item.json.msg2_active }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        192,
+        -16
+      ],
+      "id": "1bfa1ded-c828-4a5d-9957-85b0e5037a2b",
+      "name": "IF_Bypass_Msj2"
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "no_completados",
+        "matchType": "allFilters",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "status",
+              "condition": "eq",
+              "keyValue": "cancelled"
+            },
+            {
+              "keyName": "recipt_msj3",
+              "condition": "is",
+              "keyValue": "NULL"
+            },
+            {
+              "keyName": "created_at",
+              "condition": "lte",
+              "keyValue": "={{ $now.minus({ minutes: $json.msg3_delay_min }).toISO() }}"
+            },
+            {
+              "keyName": "recipt_msj2",
+              "condition": "eq",
+              "keyValue": "Enviado"
+            },
+            {
+              "keyName": "tenant_id",
+              "condition": "eq",
+              "keyValue": "1bf4cdbb-c845-4eb3-930e-2a2613e385bb"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        512,
+        -128
+      ],
+      "id": "004a95c2-305b-4e02-91d8-4d753ef5e8d4",
+      "name": "Ruta Estricta",
+      "credentials": {
+        "supabaseApi": {
+          "id": "l6zxJpWglEfkxgXX",
+          "name": "Premia2_Sup"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "no_completados",
+        "matchType": "allFilters",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "status",
+              "condition": "eq",
+              "keyValue": "cancelled"
+            },
+            {
+              "keyName": "recipt_msj3",
+              "condition": "is",
+              "keyValue": "NULL"
+            },
+            {
+              "keyName": "created_at",
+              "condition": "lte",
+              "keyValue": "={{ $now.minus({ minutes: $json.msg3_delay_min }).toISO() }}"
+            },
+            {
+              "keyName": "tenant_id",
+              "condition": "eq",
+              "keyValue": "1bf4cdbb-c845-4eb3-930e-2a2613e385bb"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        512,
+        80
+      ],
+      "id": "d8f7aea1-f41a-4e01-aa3c-a6ab87b8854b",
+      "name": "Ruta Libre",
+      "credentials": {
+        "supabaseApi": {
+          "id": "l6zxJpWglEfkxgXX",
+          "name": "Premia2_Sup"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Get many rows",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get many rows": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items": {
+      "main": [
+        [
+          {
+            "node": "No Operation, do nothing1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send template",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "IF_Bypass_Msj2",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "No Operation, do nothing",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send template": {
+      "main": [
+        [
+          {
+            "node": "Recipt_msj3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Recipt_msj3": {
+      "main": [
+        [
+          {
+            "node": "Wait",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF_Bypass_Msj2": {
+      "main": [
+        [
+          {
+            "node": "Ruta Estricta",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Ruta Libre",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ruta Estricta": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ruta Libre": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": false,
+    "timeSavedMode": "fixed",
+    "timezone": "America/Santiago",
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "versionId": "d831ef13-0ad3-4f9a-82b4-bb0a3936cc4a",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "8703c87d7b1c4ed56b389ec543c5d3236f6b791bb98b7c699f4931e76a9975db"
+  },
+  "id": "nuW9hg7jPwG7vdgh",
+  "tags": []
+}

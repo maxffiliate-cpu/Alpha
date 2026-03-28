@@ -1,0 +1,325 @@
+{
+  "name": "Chat Insights",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "polaris-analisis-conversacion",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -320,
+        0
+      ],
+      "id": "5067ae2f-006a-4453-9d2b-29b608047357",
+      "name": "Webhook",
+      "webhookId": "b1ca4ddf-86e6-42bc-bd2b-fc2dbd04afff"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "66f7a052-d886-485e-bbd5-63847d8aceea",
+              "leftValue": "={{ $json.body.record.status }}",
+              "rightValue": "pending",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -112,
+        0
+      ],
+      "id": "e86194b5-cb06-4bfc-9b05-82b70a5267d6",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "n8n_chat_clientes_historial",
+        "returnAll": true,
+        "matchType": "allFilters",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "session_id",
+              "condition": "eq",
+              "keyValue": "={{ $('Webhook').item.json.body.record.session_id }}"
+            },
+            {
+              "keyName": "tenant_id",
+              "condition": "eq",
+              "keyValue": "1bf4cdbb-c845-4eb3-930e-2a2613e385bb"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        96,
+        -96
+      ],
+      "id": "47b2d5d5-72ab-4add-84c5-005df507b39c",
+      "name": "Get many rows",
+      "credentials": {
+        "supabaseApi": {
+          "id": "l6zxJpWglEfkxgXX",
+          "name": "Premia2_Sup"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// 1. Obtener todos los mensajes que devolvió Supabase\nlet mensajes = $input.all();\n\n// 2. Si no hay mensajes, detenemos el flujo\nif (mensajes.length === 0) return [];\n\n// 3. Ordenar TODOS los mensajes por su 'id' de mayor a menor (del más nuevo al más viejo)\nmensajes.sort((a, b) => b.json.id - a.json.id);\n\n// 4. Recortar solo los primeros 15 de esa lista ordenada (los 15 más recientes)\nlet ultimos15 = mensajes.slice(0, 15);\n\n// 5. Invertir esos 15 para que queden en orden cronológico (del más antiguo al más nuevo para que la IA entienda la charla)\nultimos15.reverse();\n\n// 6. Formatear el texto limpio para el LLM evaluador\nlet contextoTexto = \"\";\n\nultimos15.forEach(item => {\n  const tipoMensaje = item.json.message.type;\n  let contenido = item.json.message.content;\n  let emisor = \"\";\n\n  // Clasificamos quién está hablando\n  if (tipoMensaje === 'human_manual') {\n    emisor = \"Ejecutivo Humano\";\n  } else if (tipoMensaje === 'ai') {\n    emisor = \"Polaris (IA)\";\n  } else if (tipoMensaje === 'human') {\n    emisor = \"Cliente\";\n    // Limpiamos el prefijo sucio para ahorrar tokens y dar claridad\n    contenido = contenido.replace(\"=Mensaje_Cliente: \", \"\").trim();\n  }\n\n  // Armamos el guion de la obra\n  if (emisor !== \"\") {\n    contextoTexto += `${emisor}: ${contenido}\\n`;\n  }\n});\n\n// 7. Entregar el paquete final\nreturn {\n  session_id: $('Webhook').first().json.body.record.session_id,\n  contexto_formateado: contextoTexto\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        304,
+        -96
+      ],
+      "id": "b6c65e44-c7aa-44bd-8192-65178240107f",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Eres un Analista de Calidad de Atención al Cliente (QA) y Especialista en Business Intelligence para Premia2, una plataforma donde se sortean autos 0km mediante la venta de stickers, similar a una rifa.\nTu objetivo es auditar una conversación reciente entre un Cliente y un Agente IA, evaluando el desempeño del agente y el estado emocional del cliente para extraer métricas accionables.\n\nREGLAS ESTRICTAS DE FORMATO:\n1. Devuelve ÚNICAMENTE un objeto JSON válido y parseable.\n2. Cero texto adicional, cero saludos, cero explicaciones fuera del JSON.\n3. No envuelvas la respuesta en bloques de código markdown (no uses ```json).\n\nCONVERSACIÓN A ANALIZAR:\n{{ $json.contexto_formateado }}\n\nRÚBRICA DE EVALUACIÓN Y ESTRUCTURA DEL JSON ESPERADO:\n{\n  \"sentiment_category\": \"Excelente\" | \"Bueno\" | \"Neutral\" | \"Malo\",\n  \"sentiment_score\": <float>, // Escala 0.0 a 1.0. (0.0 a 0.25: Enojado/Frustrado | 0.26 a 0.50: Cortante/Neutral | 0.51 a 0.75: Satisfecho | 0.76 a 1.0: Entusiasta/Agradecido).\n  \"user_intent\": \"<string>\", // Intención principal en máximo 4 palabras. Ejemplos: \"Problema con pago\", \"Duda sobre sorteo\", \"Recuperación de carrito\", \"Reclamo general\".\n  \"csat_score\": <int>, // Satisfacción estimada de 1 a 5. [1: Frustrado, sin solución | 2: Molesto, solución ineficiente | 3: Dudas resueltas parcialmente | 4: Satisfecho con la atención | 5: Problema resuelto completamente y feliz].\n  \"response_accuracy\": <float>, // Escala 0.0 a 1.0 sobre la precisión de la IA. [0.0: La IA alucinó o ignoró la duda | 0.5: Dio información genérica pero útil | 1.0: Respuesta exacta, rápida y resolutiva].\n  \"urgency_level\": \"Muy Alta\" | \"Alta\" | \"Media\" | \"Baja\", // [Baja: Consulta general | Media: Dudas antes de comprar | Alta: Fallo técnico o problema con un pago | Muy Alta: Exige reembolso, insultos o amenaza legal].\n  \"escalation_required\": <boolean>, // true si el bot falló, no supo responder o el cliente exige hablar con un humano. false si la IA manejó bien la situación.\n  \"actionable_insight\": \"<string>\" // Recomendación de BI en máximo 15 palabras. Ej: \"Actualizar prompt sobre pasarelas de pago\" o \"Contactar urgente para confirmar ticket.\"\n}\n",
+        "hasOutputParser": true,
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [
+        512,
+        -96
+      ],
+      "id": "137c4d8c-09f7-4fcf-ae78-99ae0205ee77",
+      "name": "Basic LLM Chain"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-4o-mini",
+          "mode": "list",
+          "cachedResultName": "gpt-4o-mini"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        512,
+        112
+      ],
+      "id": "6d23430d-5a66-4975-930e-bceccdd60781",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "Gjo4nRFDjCu9iJa5",
+          "name": "Premia2_GPT"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\n  \"sentiment_category\": \"Bueno\",\n  \"sentiment_score\": 0.85,\n  \"user_intent\": \"Duda sobre sorteo\",\n  \"csat_score\": 4,\n  \"response_accuracy\": 0.9,\n  \"urgency_level\": \"Baja\",\n  \"escalation_required\": false,\n  \"actionable_insight\": \"Aclarar fecha del sorteo en el mensaje inicial\"\n}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        656,
+        112
+      ],
+      "id": "83ec7332-7293-4e84-8047-88e600a0091c",
+      "name": "Structured Output Parser"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "conversation_insights",
+        "matchType": "allFilters",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "session_id",
+              "condition": "eq",
+              "keyValue": "={{ $('Webhook').first().json.body.record.session_id }}"
+            },
+            {
+              "keyName": "tenant_id",
+              "condition": "eq",
+              "keyValue": "1bf4cdbb-c845-4eb3-930e-2a2613e385bb"
+            }
+          ]
+        },
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "sentiment",
+              "fieldValue": "={{ $json.output.sentiment_category }}"
+            },
+            {
+              "fieldId": "sentiment_score",
+              "fieldValue": "={{ $json.output.sentiment_score }}"
+            },
+            {
+              "fieldId": "user_intent",
+              "fieldValue": "={{ $json.output.user_intent }}"
+            },
+            {
+              "fieldId": "csat_score",
+              "fieldValue": "={{ $json.output.csat_score }}"
+            },
+            {
+              "fieldId": "response_accuracy",
+              "fieldValue": "={{ $json.output.response_accuracy }}"
+            },
+            {
+              "fieldId": "response_urgency",
+              "fieldValue": "={{ $json.output.urgency_level }}"
+            },
+            {
+              "fieldId": "status",
+              "fieldValue": "analyzed"
+            },
+            {
+              "fieldId": "escalation_required",
+              "fieldValue": "={{ $json.output.escalation_required }}"
+            },
+            {
+              "fieldId": "actionable_insight",
+              "fieldValue": "={{ $json.output.actionable_insight }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        912,
+        -96
+      ],
+      "id": "10b7f3ba-9641-4236-bc7b-82bd21534d20",
+      "name": "Update a row",
+      "credentials": {
+        "supabaseApi": {
+          "id": "l6zxJpWglEfkxgXX",
+          "name": "Premia2_Sup"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Get many rows",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get many rows": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Basic LLM Chain": {
+      "main": [
+        [
+          {
+            "node": "Update a row",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": false
+  },
+  "versionId": "fe1b4f2b-1659-4ac6-a985-80b09f2175b2",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "8703c87d7b1c4ed56b389ec543c5d3236f6b791bb98b7c699f4931e76a9975db"
+  },
+  "id": "oQNlps-1Wkz9Z1I5Pl84N",
+  "tags": []
+}
