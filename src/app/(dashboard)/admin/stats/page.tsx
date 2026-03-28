@@ -31,7 +31,10 @@ export default function AdminStatsPage() {
     async function fetchMetrics() {
       try {
         const { data, error } = await supabase.rpc('get_admin_macro_metrics');
-        if (error) throw error;
+        if (error) {
+          console.error('Supabase RPC Error:', error);
+          throw new Error(error.message || 'Error de permisos o ejecución en el servidor');
+        }
         setMetrics(data as MacroMetrics);
       } catch (err: any) {
         console.error('Error fetching admin metrics:', err);
