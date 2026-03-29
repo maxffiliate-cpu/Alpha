@@ -89,7 +89,7 @@ export default function AgentSettings() {
               <textarea 
                 value={config.system_prompt}
                 onChange={(e) => setConfig({...config, system_prompt: e.target.value})}
-                className="w-full h-80 bg-slate-900/40 border border-slate-800 rounded-2xl p-6 text-base text-slate-200 focus:outline-none focus:ring-2 focus:ring-primary/40 transition-all resize-none shadow-inner"
+                className="w-full h-80 bg-[#eef1f3] dark:bg-slate-900/40 border-0 rounded-2xl p-6 text-base text-[var(--foreground)] focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all resize-none"
                 placeholder="Ingresa las instrucciones del sistema para el agente de IA..."
               />
               <div className="absolute top-4 right-4 text-[10px] font-bold text-slate-600 uppercase tracking-widest pointer-events-none">
@@ -103,7 +103,7 @@ export default function AgentSettings() {
               <ShieldCheck className="w-6 h-6 text-emerald-400 group-hover:scale-110 transition-transform" />
               Libertad Creativa (Temperatura)
             </h2>
-            <div className="space-y-6 bg-slate-900/30 p-6 rounded-2xl border border-slate-800/50">
+            <div className="space-y-6 bg-[#eef1f3] dark:bg-slate-900/30 p-6 rounded-2xl border-0">
               <input 
                 type="range" 
                 min="0" 
@@ -111,7 +111,7 @@ export default function AgentSettings() {
                 step="0.1" 
                 value={config.temperature}
                 onChange={(e) => setConfig({...config, temperature: parseFloat(e.target.value)})}
-                className="w-full h-2.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-primary hover:accent-violet-400 transition-all"
+                className="stitch-slider w-full h-2 rounded-lg appearance-none cursor-pointer transition-all bg-white dark:bg-slate-700"
               />
               <div className="flex justify-between items-center text-xs font-bold uppercase tracking-widest">
                 <span className="text-slate-500">PRECISO (0.0)</span>
@@ -156,7 +156,7 @@ export default function AgentSettings() {
             </h2>
             <select 
               value={config.model}
-              className="w-full bg-slate-900/60 border border-slate-800 rounded-xl p-4 text-base text-slate-200 outline-none focus:ring-2 focus:ring-primary/40 appearance-none cursor-not-allowed opacity-80"
+              className="w-full bg-[#eef1f3] dark:bg-slate-900/60 border-0 rounded-xl p-4 text-base text-[var(--foreground)] outline-none appearance-none cursor-not-allowed opacity-80"
               disabled
             >
               <option value="gemini-3-flash">Gemini 3 Flash (Alpha Optimized)</option>
