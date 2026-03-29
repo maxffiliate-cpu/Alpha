@@ -317,25 +317,15 @@ export default function RecuperadorView() {
     };
   }, [loadData]);
 
-  // ── Select a strategy card (also toggles is_active in DB) ─────────────────
-  async function handleSelectStrategy(s: Estrategia) {
+  // ── Select a strategy card (solo carga en el editor, NO modifica DB) ────────
+  function handleSelectStrategy(s: Estrategia) {
     if (estrategiaActiva?.id === s.id) {
-      // Deselect → la config base (fallback) vuelve a ser activa
+      // Deseleccionar → volver a la config base en el editor
       setEstrategiaActiva(null);
       setEditorState(fallback);
-      const { error: e1 } = await supabase.from('estrategia_recuperacion').update({ is_active: false }).neq('id', fallback?.id ?? '').eq('tenant_id', tenantId);
-      if (e1) console.error('Supabase Error (deactivate named):', e1);
-      if (fallback?.id) {
-        const { error: e2 } = await supabase.from('estrategia_recuperacion').update({ is_active: true }).eq('id', fallback.id).eq('tenant_id', tenantId);
-        if (e2) console.error('Supabase Error (activate fallback):', e2);
-      }
     } else {
       setEstrategiaActiva(s);
       setEditorState(s);
-      const { error: e1 } = await supabase.from('estrategia_recuperacion').update({ is_active: false }).neq('id', s.id).eq('tenant_id', tenantId);
-      if (e1) console.error('Supabase Error (deactivate others):', e1);
-      const { error: e2 } = await supabase.from('estrategia_recuperacion').update({ is_active: true }).eq('id', s.id).eq('tenant_id', tenantId);
-      if (e2) console.error('Supabase Error (activate selected):', e2);
     }
     setSaved(false);
   }
@@ -354,17 +344,19 @@ export default function RecuperadorView() {
     }
 
     setNamedStrategies((prev) => prev.filter((x) => x.id !== s.id));
+    // Limpiar editor si estaba seleccionada
     if (estrategiaActiva?.id === s.id) {
       setEstrategiaActiva(null);
       setEditorState(fallback);
-      if (fallback?.id) {
-        const { error: e2 } = await supabase
-          .from('estrategia_recuperacion')
-          .update({ is_active: true })
-          .eq('id', fallback.id)
-          .eq('tenant_id', tenantId);
-        if (e2) console.error('Supabase Error (activate fallback after delete):', e2);
-      }
+    }
+    // Si la estrategia eliminada era la activa en DB → activar la config base automáticamente
+    if (s.is_active && fallback?.id) {
+      const { error: e2 } = await supabase
+        .from('estrategia_recuperacion')
+        .update({ is_active: true })
+        .eq('id', fallback.id)
+        .eq('tenant_id', tenantId);
+      if (e2) console.error('Supabase Error (activate fallback after delete):', e2);
     }
   }
 
@@ -426,6 +418,15 @@ export default function RecuperadorView() {
     // Si hay un ID real (estrategia existente en DB) → update; si no → insert nueva config base
     const targetId = estrategiaActiva?.id || fallback?.id;
     if (targetId) {
+      // Exclusividad: si esta estrategia se marca como activa, desactivar todas las demás del tenant
+      if (editorState.is_active) {
+        const { error: eExcl } = await supabase
+          .from('estrategia_recuperacion')
+          .update({ is_active: false })
+          .neq('id', targetId)
+          .eq('tenant_id', tenantId);
+        if (eExcl) console.error('Supabase Error (exclusivity deactivate):', eExcl);
+      }
       const { error } = await supabase
         .from('estrategia_recuperacion')
         .update(payload)
@@ -497,7 +498,10 @@ export default function RecuperadorView() {
           <p className="text-[#595c5e] dark:text-slate-400 max-w-2xl">Gestiona y automatiza la recuperación de ventas perdidas mediante estrategias personalizadas de contacto y recordatorios inteligentes.</p>
         </div>
         <div className="flex items-center gap-4 bg-white dark:bg-slate-900/60 p-3 px-5 rounded-xl shadow-sm border border-[#eef1f3] dark:border-slate-800/50 shrink-0 ml-6">
-          <span className="text-sm font-semibold text-[#595c5e] dark:text-slate-400">{editorState.is_active ? 'Motor Activo' : 'Motor Inactivo'}</span>
+          <div className="text-right">
+            <p className="text-sm font-semibold text-[#595c5e] dark:text-slate-400">{editorState.is_active ? 'Estrategia Activa' : 'Estrategia Inactiva'}</p>
+            <p className="text-[10px] text-[#abadaf] dark:text-slate-600">Guardar para aplicar</p>
+          </div>
           <Toggle checked={editorState.is_active} onChange={() => update('is_active', !editorState.is_active)} />
         </div>
       </div>
@@ -585,7 +589,7 @@ export default function RecuperadorView() {
               >
                 <p className="text-xs font-bold truncate max-w-[120px]">{s.nombre}</p>
                 <p className="text-[9px] opacity-60">{[s.msg1_active && 'M1', s.msg2_active && 'M2', s.msg3_active && 'M3'].filter(Boolean).join(' · ')}</p>
-                {estrategiaActiva?.id === s.id && <span className="text-[9px] font-black uppercase tracking-widest">Activa</span>}
+                {s.is_active && <span className="text-[9px] font-black uppercase tracking-widest text-emerald-500 dark:text-emerald-400">● Activa</span>}
               </button>
               <button
                 onClick={(e) => handleDelete(s, e)}
