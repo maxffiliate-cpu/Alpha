@@ -457,10 +457,18 @@ export default function RecuperadorView() {
     const name = newName.trim();
     if (!name || !editorState || !tenantId) return;
     setCreating(true);
+
+    // La nueva estrategia siempre nace activa → desactivar todas las existentes primero
+    const { error: eExcl } = await supabase
+      .from('estrategia_recuperacion')
+      .update({ is_active: false })
+      .eq('tenant_id', tenantId);
+    if (eExcl) console.error('Supabase Error (exclusivity on create):', eExcl);
+
     const { data, error } = await supabase.from('estrategia_recuperacion').insert({
       nombre:         name,
       tenant_id:      tenantId,
-      is_active:      editorState.is_active,
+      is_active:      true,
       msg1_active:    editorState.msg1_active,
       msg1_template:  editorState.msg1_template,
       msg1_delay_min: editorState.msg1_delay_min,
