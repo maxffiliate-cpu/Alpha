@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { createClient } from '@/utils/supabase/client';
 import {
   User,
@@ -9,7 +9,6 @@ import {
   Bell,
   Plug,
   Shield,
-  BrainCircuit,
   Save,
   CheckCircle2,
   Loader2,
@@ -23,9 +22,8 @@ import {
   Link2,
   AlertTriangle,
   Sparkles,
-  MessageSquareCode,
+  BrainCircuit,
 } from 'lucide-react';
-import { supabase as supabaseSingleton } from '@/lib/supabase';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -36,17 +34,10 @@ interface UserProfile {
   role: string;
 }
 
-interface AgentConfig {
-  id: string;
-  system_prompt: string;
-  temperature: number;
-}
-
 // ─── Tab definitions ──────────────────────────────────────────────────────────
 
 const TABS = [
   { id: 'perfil',           label: 'Perfil del Negocio',  icon: Building2,        live: true  },
-  { id: 'agente',           label: 'Agente IA',           icon: BrainCircuit,     live: true  },
   { id: 'notificaciones',   label: 'Notificaciones',      icon: Bell,             live: false },
   { id: 'integraciones',    label: 'Integraciones',       icon: Plug,             live: false },
   { id: 'facturacion',      label: 'Facturación',         icon: CreditCard,       live: false },
@@ -188,113 +179,6 @@ function PerfilTab({ profile }: { profile: UserProfile }) {
             Región gestionada por Polaris Infrastructure. Contacta a soporte para cambiarla.
           </p>
         </SectionCard>
-      </div>
-
-      <div className="flex justify-end pt-2">
-        <SaveButton saving={saving} saved={saved} onClick={handleSave} />
-      </div>
-    </div>
-  );
-}
-
-// ─── Tab: Agente IA ───────────────────────────────────────────────────────────
-
-function AgenteTab({ tenantId }: { tenantId: string }) {
-  const [config, setConfig]   = useState<AgentConfig>({ id: '', system_prompt: '', temperature: 0.7 });
-  const [saving, setSaving]   = useState(false);
-  const [saved, setSaved]     = useState(false);
-  const [loaded, setLoaded]   = useState(false);
-
-  useEffect(() => {
-    async function load() {
-      const { data } = await supabaseSingleton
-        .from('agent_config')
-        .select('*')
-        .eq('tenant_id', tenantId)
-        .limit(1);
-      if (data?.[0]) setConfig({ id: data[0].id, system_prompt: data[0].system_prompt, temperature: data[0].temperature });
-      setLoaded(true);
-    }
-    if (tenantId) load();
-  }, [tenantId]);
-
-  const handleSave = async () => {
-    setSaving(true);
-    const { error } = await supabaseSingleton
-      .from('agent_config')
-      .upsert({ id: config.id, system_prompt: config.system_prompt, temperature: config.temperature, tenant_id: tenantId });
-    if (error) console.error('Supabase Error (agent config):', error);
-    setSaving(false);
-    setSaved(true);
-    setTimeout(() => setSaved(false), 3000);
-  };
-
-  if (!loaded) return (
-    <div className="flex items-center justify-center py-20 gap-3 text-[var(--text-muted)]">
-      <Loader2 className="w-5 h-5 animate-spin" />
-      <span className="text-sm">Cargando configuración del agente…</span>
-    </div>
-  );
-
-  return (
-    <div className="space-y-6">
-      <div>
-        <h2 className="text-xl font-black text-[var(--foreground)] tracking-tight">Agente IA</h2>
-        <p className="text-sm text-[var(--text-muted)] mt-1">Personalidad y comportamiento de tu agente de recuperación y chat.</p>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-        {/* System prompt */}
-        <SectionCard className="lg:col-span-2">
-          <div className="flex items-center gap-2 text-violet-400 mb-1">
-            <BrainCircuit className="w-4 h-4" />
-            <span className="text-xs font-black uppercase tracking-widest">Instrucciones del Sistema</span>
-          </div>
-          <FieldLabel>System Prompt</FieldLabel>
-          <textarea
-            value={config.system_prompt}
-            onChange={(e) => { setConfig({ ...config, system_prompt: e.target.value }); setSaved(false); }}
-            rows={10}
-            placeholder="Ej: Eres un asistente de ventas amigable para Premia2. Responde siempre en español…"
-            className="w-full px-4 py-3 rounded-xl bg-[var(--surface-2)] border border-[var(--border)] focus:border-[var(--primary)]/40 focus:ring-2 focus:ring-[var(--primary)]/10 outline-none text-sm text-[var(--foreground)] resize-none transition-all leading-relaxed"
-          />
-        </SectionCard>
-
-        {/* Temperatura + Modelo */}
-        <div className="space-y-5">
-          <SectionCard>
-            <div className="flex items-center gap-2 text-emerald-400 mb-1">
-              <Sparkles className="w-4 h-4" />
-              <span className="text-xs font-black uppercase tracking-widest">Creatividad</span>
-            </div>
-            <FieldLabel>Temperatura</FieldLabel>
-            <input
-              type="range" min="0" max="1.5" step="0.1"
-              value={config.temperature}
-              onChange={(e) => { setConfig({ ...config, temperature: parseFloat(e.target.value) }); setSaved(false); }}
-              className="stitch-slider w-full h-2 rounded-lg appearance-none cursor-pointer"
-            />
-            <div className="flex justify-between items-center mt-3">
-              <span className="text-[10px] font-bold text-[var(--text-muted)] uppercase">Preciso</span>
-              <span className="px-3 py-1 rounded-full bg-[var(--primary-subtle)] border border-[var(--primary)]/20 text-[var(--primary)] text-sm font-black tabular-nums">
-                {config.temperature.toFixed(1)}
-              </span>
-              <span className="text-[10px] font-bold text-[var(--text-muted)] uppercase">Creativo</span>
-            </div>
-          </SectionCard>
-
-          <SectionCard>
-            <div className="flex items-center gap-2 text-cyan-400 mb-1">
-              <MessageSquareCode className="w-4 h-4" />
-              <span className="text-xs font-black uppercase tracking-widest">Modelo</span>
-            </div>
-            <div className="px-4 py-3 rounded-xl bg-[var(--surface-2)] border border-[var(--border)]">
-              <p className="text-sm font-bold text-[var(--foreground)]">Gemini 3 Flash</p>
-              <p className="text-[10px] text-[var(--text-muted)] mt-0.5">Alpha Optimized · Polaris Infra</p>
-            </div>
-            <p className="text-[10px] text-[var(--text-muted)]">El modelo es gestionado por Polaris Infrastructure y no es modificable.</p>
-          </SectionCard>
-        </div>
       </div>
 
       <div className="flex justify-end pt-2">
@@ -479,7 +363,6 @@ export default function ConfigPage() {
         {/* Content area */}
         <div className="flex-1 min-w-0">
           {activeTab === 'perfil'         && <PerfilTab    profile={profile} />}
-          {activeTab === 'agente'         && <AgenteTab    tenantId={profile.tenantId} />}
           {activeTab === 'notificaciones' && <ComingSoon />}
           {activeTab === 'integraciones'  && <IntegracionesTab />}
           {activeTab === 'facturacion'    && <FacturacionTab />}
