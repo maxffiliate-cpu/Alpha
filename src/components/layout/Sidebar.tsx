@@ -15,6 +15,7 @@ import {
   ShieldCheck,
   PanelLeftClose,
   PanelLeftOpen,
+  SlidersHorizontal,
 } from 'lucide-react';
 import { createClient } from '@/utils/supabase/client';
 import ThemeToggle from '@/components/ui/ThemeToggle';
@@ -222,7 +223,39 @@ export default function Sidebar() {
       </div>
 
       {/* ── Footer ─────────────────────────────────────────────────────────── */}
-      <div className={`mt-auto p-3 space-y-2`}>
+      <div className={`mt-auto p-3 space-y-1`}>
+
+        {/* Configuración — acceso directo al panel de cuenta */}
+        <div className="pt-2 border-t border-[var(--border)] mb-1">
+          <NavTooltip label="Configuración" collapsed={collapsed}>
+            <Link
+              href="/config"
+              className={`
+                flex items-center py-3 rounded-xl transition-all group w-full
+                ${collapsed ? 'justify-center px-0' : 'justify-between px-3'}
+                ${pathname === '/config' || pathname.startsWith('/config/')
+                  ? 'bg-[var(--primary-subtle)] text-[var(--primary)] border border-[var(--primary)]/20'
+                  : 'text-[var(--text-muted)] hover:text-[var(--foreground)] hover:bg-[var(--surface-2)]'
+                }
+              `}
+            >
+              <div className={`flex items-center ${collapsed ? '' : 'gap-3'}`}>
+                <SlidersHorizontal className={`w-5 h-5 shrink-0 transition-colors ${
+                  pathname === '/config' || pathname.startsWith('/config/')
+                    ? 'text-[var(--primary)]'
+                    : 'text-[var(--text-muted)] group-hover:text-[var(--foreground)]'
+                }`} />
+                {!collapsed && <span className="text-sm font-bold tracking-tight">Configuración</span>}
+              </div>
+              {!collapsed && !(pathname === '/config' || pathname.startsWith('/config/')) && (
+                <ChevronRight className="w-4 h-4 text-[var(--border)] opacity-0 group-hover:opacity-100 -translate-x-2 group-hover:translate-x-0 transition-all duration-300" />
+              )}
+              {!collapsed && (pathname === '/config' || pathname.startsWith('/config/')) && (
+                <div className="w-1.5 h-1.5 rounded-full bg-[var(--primary)] shadow-[0_0_8px_var(--primary-glow)]" />
+              )}
+            </Link>
+          </NavTooltip>
+        </div>
 
         {/* Sign out + theme toggle */}
         <div className={`flex items-center ${collapsed ? 'flex-col gap-1' : 'justify-between px-1'}`}>
