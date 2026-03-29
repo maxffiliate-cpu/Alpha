@@ -1,4 +1,4 @@
-import RecuperadorView from '@/components/Recuperador/RecuperadorView';
+import RecuperadorView from '@/features/recuperador/RecuperadorView';
 
 export const metadata = {
   title: 'Recuperador de Carritos — Alpha',

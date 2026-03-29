@@ -1,6 +1,6 @@
 'use client';
 
-import AgentSettings from '@/components/AgentSettings/AgentSettings';
+import AgentSettings from '@/features/agent-settings/AgentSettings';
 
 export default function SettingsPage() {
   return <AgentSettings />;

@@ -1,9 +1,9 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import ChatWindow from '@/components/LiveChat/ChatWindow';
-import PhoneMockup from '@/components/LiveChat/PhoneMockup';
-import ChatInsights from '@/components/LiveChat/ChatInsights';
+import ChatWindow from '@/features/live-chat/ChatWindow';
+import PhoneMockup from '@/features/live-chat/PhoneMockup';
+import ChatInsights from '@/features/live-chat/ChatInsights';
 import { supabase } from '@/lib/supabase';
 import Skeleton from '@/components/ui/Skeleton';
 import { Search, Filter, MessageSquare, User, Activity, AlertTriangle } from 'lucide-react';
