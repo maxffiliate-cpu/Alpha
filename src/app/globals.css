@@ -3,36 +3,69 @@
 @tailwind utilities;
 
 @layer base {
+  /* ── Light Mode (Aurora) ── */
   :root {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
-    --primary: 217.2 91.2% 59.8%;
+    --background: #f1f5f9;
+    --foreground: #0f172a;
+    --surface: #ffffff;
+    --surface-2: #f8fafc;
+    --border: rgba(15, 23, 42, 0.08);
+    --primary: #8B5CF6;
+    --primary-glow: rgba(139, 92, 246, 0.25);
+    --primary-subtle: rgba(139, 92, 246, 0.08);
+    --text-muted: #64748b;
+    --radius: 0.75rem;
+  }
+
+  /* ── Dark Mode (Midnight Intelligence) ── */
+  .dark {
+    --background: #030711;
+    --foreground: #e2e8f0;
+    --surface: #0f172a;
+    --surface-2: #1e293b;
+    --border: rgba(255, 255, 255, 0.06);
+    --primary: #8B5CF6;
+    --primary-glow: rgba(139, 92, 246, 0.3);
+    --primary-subtle: rgba(139, 92, 246, 0.08);
+    --text-muted: #64748b;
     --radius: 0.75rem;
   }
 }
 
 body {
-  background-color: #020617; /* slate-950 */
+  background-color: var(--background);
+  color: var(--foreground);
+  transition: background-color 300ms ease, color 300ms ease;
 }
 
-/* Premium Styles */
+/* ── Glass Panel ── */
 .glass-panel {
-  background: rgba(15, 23, 42, 0.6);
+  background: rgba(255, 255, 255, 0.04);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  box-shadow: 0 4px 24px -1px rgba(0, 0, 0, 0.2);
+  border: 1px solid var(--border);
+  box-shadow: 0 4px 24px -1px rgba(0, 0, 0, 0.15);
 }
 
+.dark .glass-panel {
+  background: rgba(15, 23, 42, 0.6);
+}
+
+/* ── Sidebar Gradient ── */
 .sidebar-gradient {
-  background: linear-gradient(180deg, rgba(15, 23, 42, 0.95) 0%, rgba(2, 6, 23, 1) 100%);
+  background: linear-gradient(180deg, var(--surface) 0%, var(--background) 100%);
 }
 
+/* ── Aurora Primary Gradient ── */
 .primary-gradient {
-  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  background: linear-gradient(135deg, #8B5CF6 0%, #6D28D9 100%);
 }
 
-/* Custom Scrollbar */
+.aurora-gradient {
+  background: linear-gradient(135deg, #8B5CF6 0%, #06b6d4 50%, #10b981 100%);
+}
+
+/* ── Custom Scrollbar ── */
 ::-webkit-scrollbar {
   width: 6px;
 }
@@ -42,15 +75,15 @@ body {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(59, 130, 246, 0.2);
+  background: var(--primary-glow);
   border-radius: 10px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(59, 130, 246, 0.4);
+  background: rgba(139, 92, 246, 0.5);
 }
 
-/* Animations */
+/* ── Animations ── */
 @keyframes float {
   0% { transform: translateY(0px); }
   50% { transform: translateY(-5px); }

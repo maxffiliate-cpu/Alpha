@@ -142,7 +142,7 @@ export default function AdminStatsPage() {
                 </div>
                 <div className="w-full h-2 bg-slate-800/50 rounded-full overflow-hidden border border-slate-700/30">
                   <div 
-                    className="h-full primary-gradient shadow-[0_0_10px_rgba(59,130,246,0.5)] transition-all duration-1000 ease-out"
+                    className="h-full primary-gradient shadow-[0_0_10px_rgba(139,92,246,0.5)] transition-all duration-1000 ease-out"
                     style={{ 
                       width: `${(tenant.volumen_pedidos / (metrics.ranking_tenants[0]?.volumen_pedidos || 1)) * 100}%`,
                       transitionDelay: `${idx * 150}ms`

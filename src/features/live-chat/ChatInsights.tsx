@@ -257,7 +257,7 @@ export default function ChatInsights({ sessionId }: ChatInsightsProps) {
                <span className="text-[9px] font-bold text-slate-400">URGENCIA:</span>
                <span className={`text-[9px] font-black uppercase tracking-widest ${
                  insights?.response_urgency === 'Muy Alta' ? 'text-rose-500' : 
-                 insights?.response_urgency === 'Alta' ? 'text-orange-500' : 'text-blue-500'
+                 insights?.response_urgency === 'Alta' ? 'text-orange-500' : 'text-violet-400'
                }`}>
                  {insights?.response_urgency ?? '—'}
                </span>
@@ -277,7 +277,7 @@ export default function ChatInsights({ sessionId }: ChatInsightsProps) {
               </>
             ) : (
               <>
-                <CircleGauge value={insights?.response_accuracy ?? 0} color="#3b82f6" label="Precisión IA" />
+                <CircleGauge value={insights?.response_accuracy ?? 0} color="#8B5CF6" label="Precisión IA" />
                 <CircleGauge value={insights?.sentiment_score ?? 0} color="#10b981" label="Empatía" />
               </>
             )}

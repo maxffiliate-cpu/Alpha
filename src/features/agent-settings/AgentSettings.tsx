@@ -111,7 +111,7 @@ export default function AgentSettings() {
                 step="0.1" 
                 value={config.temperature}
                 onChange={(e) => setConfig({...config, temperature: parseFloat(e.target.value)})}
-                className="w-full h-2.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-primary hover:accent-blue-400 transition-all"
+                className="w-full h-2.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-primary hover:accent-violet-400 transition-all"
               />
               <div className="flex justify-between items-center text-xs font-bold uppercase tracking-widest">
                 <span className="text-slate-500">PRECISO (0.0)</span>
@@ -149,9 +149,9 @@ export default function AgentSettings() {
             </ul>
           </div>
 
-          <div className="glass-panel p-8 rounded-3xl border border-slate-800/50 hover:border-blue-500/30 transition-all group">
+          <div className="glass-panel p-8 rounded-3xl border border-slate-800/50 hover:border-violet-500/30 transition-all group">
             <h2 className="text-xl font-bold text-white mb-6 flex items-center gap-3">
-              <MessageSquareCode className="w-6 h-6 text-blue-400 group-hover:scale-110 transition-transform" />
+              <MessageSquareCode className="w-6 h-6 text-violet-400 group-hover:scale-110 transition-transform" />
               Versión del Modelo
             </h2>
             <select 
@@ -185,7 +185,7 @@ export default function AgentSettings() {
         <button 
           onClick={handleSave}
           disabled={saving}
-          className="w-full sm:w-auto flex items-center justify-center gap-3 px-10 py-4 rounded-2xl bg-primary text-white text-lg font-black hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-xl shadow-blue-500/20 active:scale-95 group overflow-hidden relative"
+          className="w-full sm:w-auto flex items-center justify-center gap-3 px-10 py-4 rounded-2xl bg-primary text-white text-lg font-black hover:bg-violet-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-xl shadow-violet-500/20 active:scale-95 group overflow-hidden relative"
         >
           <div className="absolute inset-0 bg-white/10 translate-y-full group-hover:translate-y-0 transition-transform duration-300" />
           <Save className={`w-5 h-5 relative z-10 ${saving ? 'animate-bounce' : ''}`} />
