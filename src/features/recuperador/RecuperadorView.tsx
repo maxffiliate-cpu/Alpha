@@ -400,9 +400,14 @@ export default function RecuperadorView() {
     if (!editorState || !tenantId) return;
     setSaving(true);
 
+    // Si ninguna estrategia del tenant está activa (ni la actual ni otras), forzar is_active = true
+    const hayOtraActiva = namedStrategies.some((s) => s.is_active && s.id !== (estrategiaActiva?.id || fallback?.id))
+      || (fallback?.is_active && !estrategiaActiva);
+    const effectiveIsActive = editorState.is_active || !hayOtraActiva;
+
     const payload = {
       nombre:         editorState.nombre,
-      is_active:      editorState.is_active,
+      is_active:      effectiveIsActive,
       msg1_active:    editorState.msg1_active,
       msg1_template:  editorState.msg1_template,
       msg1_delay_min: editorState.msg1_delay_min,
@@ -418,8 +423,8 @@ export default function RecuperadorView() {
     // Si hay un ID real (estrategia existente en DB) → update; si no → insert nueva config base
     const targetId = estrategiaActiva?.id || fallback?.id;
     if (targetId) {
-      // Exclusividad: si esta estrategia se marca como activa, desactivar todas las demás del tenant
-      if (editorState.is_active) {
+      // Exclusividad: si esta estrategia queda activa, desactivar todas las demás del tenant
+      if (effectiveIsActive) {
         const { error: eExcl } = await supabase
           .from('estrategia_recuperacion')
           .update({ is_active: false })
