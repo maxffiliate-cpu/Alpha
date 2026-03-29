@@ -43,9 +43,9 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen w-full flex items-center justify-center bg-[#020617] p-4 relative overflow-hidden">
+    <div className="min-h-screen w-full flex items-center justify-center bg-[var(--background)] p-4 relative overflow-hidden">
       {/* Background Decorative Elements */}
-      <div className="absolute top-[-10%] left-[-5%] w-[40%] h-[40%] bg-primary/20 blur-[120px] rounded-full" />
+      <div className="absolute top-[-10%] left-[-5%] w-[40%] h-[40%] bg-primary/10 blur-[120px] rounded-full" />
       <div className="absolute bottom-[-10%] right-[-5%] w-[40%] h-[40%] bg-violet-500/10 blur-[120px] rounded-full" />
 
       <motion.div 
@@ -58,37 +58,37 @@ export default function LoginPage() {
           <div className="inline-flex p-3 rounded-2xl bg-primary/10 border border-primary/20 mb-4 animate-float">
             <LogIn className="w-8 h-8 text-primary" />
           </div>
-          <h1 className="text-3xl font-bold text-white mb-2">Alpha Login</h1>
-          <p className="text-slate-400">Introduce tus credenciales para acceder al panel</p>
+          <h1 className="text-3xl font-bold text-[var(--foreground)] mb-2">Alpha Login</h1>
+          <p className="text-[var(--text-muted)]">Introduce tus credenciales para acceder al panel</p>
         </div>
 
         <form onSubmit={handleLogin} className="space-y-6">
           <div className="space-y-2">
-            <label className="text-sm font-medium text-slate-300 ml-1">Email</label>
+            <label className="text-sm font-medium text-[var(--foreground)] ml-1">Email</label>
             <div className="relative group">
-              <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500 group-focus-within:text-primary transition-colors" />
-              <input 
-                type="email" 
+              <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[var(--text-muted)] group-focus-within:text-primary transition-colors" />
+              <input
+                type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
                 placeholder="tu@email.com"
-                className="w-full bg-slate-900/50 border border-slate-800 rounded-xl py-3 pl-11 pr-4 text-white placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all"
+                className="w-full bg-[#eef1f3] dark:bg-slate-900/50 border-0 rounded-xl py-3 pl-11 pr-4 text-[var(--foreground)] placeholder:text-[var(--text-muted)] focus:outline-none focus:ring-2 focus:ring-primary/30 transition-all"
               />
             </div>
           </div>
 
           <div className="space-y-2">
-            <label className="text-sm font-medium text-slate-300 ml-1">Contraseña</label>
+            <label className="text-sm font-medium text-[var(--foreground)] ml-1">Contraseña</label>
             <div className="relative group">
-              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500 group-focus-within:text-primary transition-colors" />
-              <input 
-                type="password" 
+              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[var(--text-muted)] group-focus-within:text-primary transition-colors" />
+              <input
+                type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 placeholder="••••••••"
-                className="w-full bg-slate-900/50 border border-slate-800 rounded-xl py-3 pl-11 pr-4 text-white placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all"
+                className="w-full bg-[#eef1f3] dark:bg-slate-900/50 border-0 rounded-xl py-3 pl-11 pr-4 text-[var(--foreground)] placeholder:text-[var(--text-muted)] focus:outline-none focus:ring-2 focus:ring-primary/30 transition-all"
               />
             </div>
           </div>
@@ -120,8 +120,8 @@ export default function LoginPage() {
           </button>
         </form>
 
-        <div className="mt-8 pt-6 border-t border-slate-800 text-center">
-          <p className="text-sm text-slate-500">
+        <div className="mt-8 pt-6 border-t border-[var(--border)] text-center">
+          <p className="text-sm text-[var(--text-muted)]">
             ¿Problemas para acceder? Contacta con soporte técnico.
           </p>
         </div>
