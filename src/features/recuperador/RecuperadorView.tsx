@@ -15,6 +15,8 @@ import {
   Check,
   Clock,
   ChevronRight,
+  Trash2,
+  Zap,
 } from 'lucide-react';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -243,10 +245,10 @@ export default function RecuperadorView() {
         setFallback(fb);
         setNamedStrategies(named);
 
-        // Si no existe configuración previa (nuevo tenant), estado vacío sin ID falso.
+        // Preservar la selección actual tras un refresh (ej. después de guardar)
         if (!fb && named.length === 0) {
           const initialState: Estrategia = {
-            id: '',   // aún no guardado — la DB asignará UUID al hacer insert
+            id: '',
             nombre: null,
             is_active: false,
             msg1_active: true,
@@ -260,8 +262,15 @@ export default function RecuperadorView() {
             msg3_delay_min: 60,
           };
           setEditorState(initialState);
+          setEstrategiaActiva(null);
         } else {
-          setEditorState(fb || named[0]);
+          // Buscar versión fresca de lo que se estaba editando; si no, usar fallback
+          setEstrategiaActiva((prev) => prev ? named.find((s) => s.id === prev.id) ?? null : null);
+          setEditorState((prev) => {
+            if (!prev || !prev.id) return fb || named[0] || null;
+            const fresh = eData.find((e) => e.id === prev.id);
+            return fresh || fb || named[0] || null;
+          });
         }
       }
 
@@ -505,18 +514,9 @@ export default function RecuperadorView() {
     <div className="p-8 lg:p-12 space-y-10 animate-in fade-in duration-500">
 
       {/* 1. HEADER */}
-      <div className="flex justify-between items-start">
-        <div>
-          <h2 className="text-3xl font-extrabold tracking-tight text-[#2c2f31] dark:text-white mb-2">Recuperación de Carritos</h2>
-          <p className="text-[#595c5e] dark:text-slate-400 max-w-2xl">Gestiona y automatiza la recuperación de ventas perdidas mediante estrategias personalizadas de contacto y recordatorios inteligentes.</p>
-        </div>
-        <div className="flex items-center gap-4 bg-white dark:bg-slate-900/60 p-3 px-5 rounded-xl shadow-sm border border-[#eef1f3] dark:border-slate-800/50 shrink-0 ml-6">
-          <div className="text-right">
-            <p className="text-sm font-semibold text-[#595c5e] dark:text-slate-400">{editorState.is_active ? 'Estrategia Activa' : 'Estrategia Inactiva'}</p>
-            <p className="text-[10px] text-[#abadaf] dark:text-slate-600">Guardar para aplicar</p>
-          </div>
-          <Toggle checked={editorState.is_active} onChange={() => update('is_active', !editorState.is_active)} />
-        </div>
+      <div>
+        <h2 className="text-3xl font-extrabold tracking-tight text-[#2c2f31] dark:text-white mb-2">Recuperación de Carritos</h2>
+        <p className="text-[#595c5e] dark:text-slate-400 max-w-2xl">Gestiona y automatiza la recuperación de ventas perdidas mediante estrategias personalizadas de contacto y recordatorios inteligentes.</p>
       </div>
 
       {/* 2. KPI GRID - 4 white cards */}
@@ -582,104 +582,149 @@ export default function RecuperadorView() {
       </div>
 
       {/* 3. SEQUENCE SECTION */}
-      <div className="space-y-6">
-        <h3 className="text-xl font-bold text-[#2c2f31] dark:text-white flex items-center gap-2">
-          <Clock className="w-5 h-5 text-[var(--primary)]" />
-          Secuencia de Recuperación Automática
-        </h3>
+      <div className="space-y-4">
 
-        {/* Strategy selector */}
-        <div className="flex gap-3 overflow-x-auto pb-2">
-          {namedStrategies.map((s) => (
-            <div key={s.id} className="relative group/card flex-shrink-0">
-              <button
-                onClick={() => handleSelectStrategy(s)}
-                className={`min-w-[140px] flex flex-col gap-0.5 px-4 py-3 rounded-xl border text-left transition-all ${
-                  estrategiaActiva?.id === s.id
-                    ? 'bg-[var(--primary-subtle)] border-[var(--primary)]/30 text-[var(--primary)] dark:bg-violet-500/10 dark:border-violet-500/30 dark:text-violet-400'
-                    : 'bg-white dark:bg-slate-800/40 border-[#abadaf]/15 dark:border-slate-700/30 text-[#595c5e] dark:text-slate-300 hover:border-[var(--primary)]/20'
-                }`}
-              >
-                <p className="text-xs font-bold truncate max-w-[120px]">{s.nombre}</p>
-                <p className="text-[9px] opacity-60">{[s.msg1_active && 'M1', s.msg2_active && 'M2', s.msg3_active && 'M3'].filter(Boolean).join(' · ')}</p>
-                {s.is_active && <span className="text-[9px] font-black uppercase tracking-widest text-emerald-500 dark:text-emerald-400">● Activa</span>}
-              </button>
-              <button
-                onClick={(e) => handleDelete(s, e)}
-                className="absolute -top-2 -right-2 w-5 h-5 rounded-full bg-white dark:bg-slate-700 border border-[#abadaf]/20 dark:border-slate-600 flex items-center justify-center text-[#595c5e] dark:text-slate-400 hover:bg-rose-50 hover:text-rose-500 hover:border-rose-200 dark:hover:bg-rose-500/80 dark:hover:text-white dark:hover:border-rose-500 transition-all opacity-0 group-hover/card:opacity-100 shadow-sm"
-              >
-                <X className="w-2.5 h-2.5" />
-              </button>
-            </div>
-          ))}
-          {/* Create strategy button */}
+        {/* Section header */}
+        <div className="flex items-center justify-between">
+          <h3 className="text-xl font-bold text-[#2c2f31] dark:text-white flex items-center gap-2">
+            <Clock className="w-5 h-5 text-[var(--primary)]" />
+            Secuencia de Recuperación Automática
+          </h3>
+          {/* Nueva estrategia — fuera del strip para no confundir */}
           {!showCreate ? (
             <button
               onClick={() => { setShowCreate(true); setTimeout(() => inputRef.current?.focus(), 50); }}
-              className="flex-shrink-0 min-w-[140px] flex flex-col items-center justify-center gap-1.5 px-4 py-3 rounded-xl border border-dashed border-[#abadaf]/30 dark:border-slate-700 text-[#595c5e] dark:text-slate-500 hover:border-[var(--primary)]/30 hover:text-[var(--primary)] hover:bg-[var(--primary-subtle)] dark:hover:bg-violet-500/5 transition-all"
+              className="flex items-center gap-2 px-4 py-2 rounded-xl border border-dashed border-[#abadaf]/40 dark:border-slate-700 text-[#595c5e] dark:text-slate-400 hover:border-[var(--primary)]/40 hover:text-[var(--primary)] hover:bg-[var(--primary-subtle)] dark:hover:bg-violet-500/5 text-sm font-semibold transition-all"
             >
               <Plus className="w-4 h-4" />
-              <span className="text-[11px] font-bold">Crear Estrategia</span>
+              Nueva estrategia
             </button>
           ) : (
-            <div className="flex-shrink-0 min-w-[200px] flex flex-col gap-3 p-4 rounded-xl border border-[var(--primary)]/20 bg-[var(--primary-subtle)] dark:border-violet-500/30 dark:bg-violet-500/5">
-              <p className="text-[10px] font-bold text-[var(--primary)] dark:text-violet-400 uppercase tracking-widest">Nueva estrategia</p>
+            <div className="flex items-center gap-2 p-2 rounded-xl border border-[var(--primary)]/20 bg-[var(--primary-subtle)] dark:border-violet-500/30 dark:bg-violet-500/5">
               <input
                 ref={inputRef}
                 value={newName}
                 onChange={(e) => setNewName(e.target.value)}
                 onKeyDown={(e) => { if (e.key === 'Enter') handleCreate(); if (e.key === 'Escape') { setShowCreate(false); setNewName(''); } }}
-                placeholder="Nombre..."
-                className="w-full bg-white dark:bg-slate-800/80 border border-[#abadaf]/20 dark:border-slate-700/50 rounded-lg px-3 py-2 text-xs text-[#2c2f31] dark:text-white placeholder-[#abadaf] dark:placeholder-slate-600 focus:outline-none focus:ring-1 focus:ring-[var(--primary)]/30"
+                placeholder="Nombre de la estrategia..."
+                className="bg-white dark:bg-slate-800/80 border border-[#abadaf]/20 dark:border-slate-700/50 rounded-lg px-3 py-2 text-sm text-[#2c2f31] dark:text-white placeholder-[#abadaf] dark:placeholder-slate-600 focus:outline-none focus:ring-1 focus:ring-[var(--primary)]/30 w-52"
               />
-              <div className="flex gap-2">
-                <button onClick={handleCreate} disabled={creating || !newName.trim()} className="flex-1 flex items-center justify-center gap-1 py-1.5 aurora-gradient hover:opacity-90 text-white rounded-lg text-[10px] font-bold transition-all disabled:opacity-50">
-                  {creating ? <Loader2 className="w-3 h-3 animate-spin" /> : <Check className="w-3 h-3" />}
-                  Guardar
-                </button>
-                <button onClick={() => { setShowCreate(false); setNewName(''); }} className="w-8 flex items-center justify-center py-1.5 bg-white dark:bg-slate-800 hover:bg-[#eef1f3] dark:hover:bg-slate-700 text-[#595c5e] dark:text-slate-400 rounded-lg border border-[#abadaf]/20 dark:border-transparent transition-all">
-                  <X className="w-3 h-3" />
-                </button>
-              </div>
+              <button onClick={handleCreate} disabled={creating || !newName.trim()} className="flex items-center gap-1.5 px-3 py-2 aurora-gradient hover:opacity-90 text-white rounded-lg text-sm font-bold transition-all disabled:opacity-50">
+                {creating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
+                Crear
+              </button>
+              <button onClick={() => { setShowCreate(false); setNewName(''); }} className="p-2 bg-white dark:bg-slate-800 hover:bg-[#eef1f3] dark:hover:bg-slate-700 text-[#595c5e] dark:text-slate-400 rounded-lg border border-[#abadaf]/20 dark:border-transparent transition-all">
+                <X className="w-3.5 h-3.5" />
+              </button>
             </div>
           )}
         </div>
 
-        {/* 3 Message Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <MessageCard label="Mensaje 1" active={editorState.msg1_active} template={editorState.msg1_template} delay={editorState.msg1_delay_min} maxDelay={60} plantillas={plantillas}
-            onToggle={() => update('msg1_active', !editorState.msg1_active)}
-            onDelayChange={(v) => update('msg1_delay_min', v)}
-            onTemplateChange={(v) => update('msg1_template', v)}
-          />
-          <MessageCard label="Mensaje 2" active={editorState.msg2_active} template={editorState.msg2_template} delay={editorState.msg2_delay_min} maxDelay={120} plantillas={plantillas}
-            onToggle={() => update('msg2_active', !editorState.msg2_active)}
-            onDelayChange={(v) => update('msg2_delay_min', v)}
-            onTemplateChange={(v) => update('msg2_template', v)}
-          />
-          <MessageCard label="Mensaje 3" active={editorState.msg3_active} template={editorState.msg3_template} delay={editorState.msg3_delay_min} maxDelay={240} plantillas={plantillas}
-            onToggle={() => update('msg3_active', !editorState.msg3_active)}
-            onDelayChange={(v) => update('msg3_delay_min', v)}
-            onTemplateChange={(v) => update('msg3_template', v)}
-          />
+        {/* Strategy tabs strip — Config Base siempre primero */}
+        <div className="flex gap-2 overflow-x-auto pb-1">
+          {/* Config Base tab */}
+          {fallback && (
+            <button
+              onClick={() => { setEstrategiaActiva(null); setEditorState(fallback); setSaved(false); }}
+              className={`flex-shrink-0 flex flex-col gap-0.5 px-4 py-3 rounded-xl border text-left transition-all ${
+                !estrategiaActiva
+                  ? 'bg-[var(--primary-subtle)] border-[var(--primary)]/30 text-[var(--primary)] dark:bg-violet-500/10 dark:border-violet-500/30 dark:text-violet-400'
+                  : 'bg-white dark:bg-slate-800/40 border-[#abadaf]/15 dark:border-slate-700/30 text-[#595c5e] dark:text-slate-300 hover:border-[var(--primary)]/20'
+              }`}
+            >
+              <p className="text-xs font-bold">Config Base</p>
+              <p className="text-[9px] opacity-60">{[fallback.msg1_active && 'M1', fallback.msg2_active && 'M2', fallback.msg3_active && 'M3'].filter(Boolean).join(' · ') || 'Sin mensajes'}</p>
+              {fallback.is_active && <span className="text-[9px] font-black uppercase tracking-widest text-emerald-500 dark:text-emerald-400">● Activa</span>}
+            </button>
+          )}
+
+          {/* Named strategy tabs */}
+          {namedStrategies.map((s) => (
+            <button
+              key={s.id}
+              onClick={() => handleSelectStrategy(s)}
+              className={`flex-shrink-0 flex flex-col gap-0.5 px-4 py-3 rounded-xl border text-left transition-all ${
+                estrategiaActiva?.id === s.id
+                  ? 'bg-[var(--primary-subtle)] border-[var(--primary)]/30 text-[var(--primary)] dark:bg-violet-500/10 dark:border-violet-500/30 dark:text-violet-400'
+                  : 'bg-white dark:bg-slate-800/40 border-[#abadaf]/15 dark:border-slate-700/30 text-[#595c5e] dark:text-slate-300 hover:border-[var(--primary)]/20'
+              }`}
+            >
+              <p className="text-xs font-bold truncate max-w-[140px]">{s.nombre}</p>
+              <p className="text-[9px] opacity-60">{[s.msg1_active && 'M1', s.msg2_active && 'M2', s.msg3_active && 'M3'].filter(Boolean).join(' · ') || 'Sin mensajes'}</p>
+              {s.is_active && <span className="text-[9px] font-black uppercase tracking-widest text-emerald-500 dark:text-emerald-400">● Activa</span>}
+            </button>
+          ))}
         </div>
 
-        {/* Save button - right aligned, Stitch style */}
-        <div className="flex justify-end pt-2">
-          <button
-            onClick={handleSave}
-            disabled={saving}
-            className={`flex items-center gap-2 px-8 py-4 rounded-xl font-bold transition-all active:scale-[0.98] ${
-              saved
-                ? 'bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20'
-                : 'aurora-gradient text-white shadow-[0_10px_20px_-5px_rgba(139,92,246,0.35)] hover:opacity-90 hover:scale-[1.02]'
-            }`}
-          >
-            {saving ? <><Loader2 className="w-4 h-4 animate-spin" /> Guardando...</>
-              : saved ? <><CheckCircle2 className="w-4 h-4" /> ¡Estrategia Guardada!</>
-              : <><Save className="w-4 h-4" /> {estrategiaActiva ? `Guardar "${estrategiaActiva.nombre}"` : 'Guardar Configuración Base'}</>
-            }
-          </button>
+        {/* Editor panel */}
+        <div className="bg-white dark:bg-slate-900/60 rounded-2xl border border-[#abadaf]/10 dark:border-slate-800/50 shadow-[0px_4px_20px_rgba(139,92,246,0.04)] overflow-hidden">
+
+          {/* Editor header — identifica qué se está editando + eliminar para estrategias nombradas */}
+          <div className="flex items-center justify-between px-6 py-4 border-b border-[#abadaf]/10 dark:border-slate-800/40 bg-[#eef1f3]/40 dark:bg-slate-800/20">
+            <div>
+              <p className="text-[10px] font-bold uppercase tracking-widest text-[#abadaf] dark:text-slate-500 mb-0.5">Editando</p>
+              <p className="text-sm font-bold text-[#2c2f31] dark:text-white">
+                {estrategiaActiva ? estrategiaActiva.nombre : 'Configuración Base'}
+              </p>
+            </div>
+            {estrategiaActiva && (
+              <button
+                onClick={(e) => handleDelete(estrategiaActiva, e)}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-rose-500 hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-rose-500/10 border border-transparent hover:border-rose-200 dark:hover:border-rose-500/20 transition-all"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                Eliminar estrategia
+              </button>
+            )}
+          </div>
+
+          {/* 3 Message Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 p-6">
+            <MessageCard label="Mensaje 1" active={editorState.msg1_active} template={editorState.msg1_template} delay={editorState.msg1_delay_min} maxDelay={60} plantillas={plantillas}
+              onToggle={() => update('msg1_active', !editorState.msg1_active)}
+              onDelayChange={(v) => update('msg1_delay_min', v)}
+              onTemplateChange={(v) => update('msg1_template', v)}
+            />
+            <MessageCard label="Mensaje 2" active={editorState.msg2_active} template={editorState.msg2_template} delay={editorState.msg2_delay_min} maxDelay={120} plantillas={plantillas}
+              onToggle={() => update('msg2_active', !editorState.msg2_active)}
+              onDelayChange={(v) => update('msg2_delay_min', v)}
+              onTemplateChange={(v) => update('msg2_template', v)}
+            />
+            <MessageCard label="Mensaje 3" active={editorState.msg3_active} template={editorState.msg3_template} delay={editorState.msg3_delay_min} maxDelay={240} plantillas={plantillas}
+              onToggle={() => update('msg3_active', !editorState.msg3_active)}
+              onDelayChange={(v) => update('msg3_delay_min', v)}
+              onTemplateChange={(v) => update('msg3_template', v)}
+            />
+          </div>
+
+          {/* Editor footer — activación + guardar en la misma fila */}
+          <div className="flex items-center justify-between px-6 py-4 border-t border-[#abadaf]/10 dark:border-slate-800/40 bg-[#eef1f3]/40 dark:bg-slate-800/20">
+            <label className="flex items-center gap-3 cursor-pointer select-none">
+              <Toggle checked={editorState.is_active} onChange={() => update('is_active', !editorState.is_active)} />
+              <div>
+                <p className="text-sm font-semibold text-[#2c2f31] dark:text-white leading-tight">
+                  {editorState.is_active ? <span className="flex items-center gap-1.5"><Zap className="w-3.5 h-3.5 text-emerald-500" />Estrategia activa</span> : 'Marcar como activa'}
+                </p>
+                <p className="text-[10px] text-[#abadaf] dark:text-slate-500">Solo una puede estar activa a la vez</p>
+              </div>
+            </label>
+            <button
+              onClick={handleSave}
+              disabled={saving}
+              className={`flex items-center gap-2 px-6 py-3 rounded-xl font-bold transition-all active:scale-[0.98] ${
+                saved
+                  ? 'bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20'
+                  : 'aurora-gradient text-white shadow-[0_8px_20px_-5px_rgba(139,92,246,0.35)] hover:opacity-90 hover:scale-[1.01]'
+              }`}
+            >
+              {saving
+                ? <><Loader2 className="w-4 h-4 animate-spin" /> Guardando...</>
+                : saved
+                  ? <><CheckCircle2 className="w-4 h-4" /> ¡Guardado!</>
+                  : <><Save className="w-4 h-4" /> Guardar cambios</>
+              }
+            </button>
+          </div>
         </div>
       </div>
 
