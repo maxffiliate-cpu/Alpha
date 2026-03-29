@@ -16,16 +16,23 @@ import {
   PanelLeftClose,
   PanelLeftOpen,
   SlidersHorizontal,
+  Bot,
+  User as UserIcon,
+  ChevronDown,
 } from 'lucide-react';
 import { createClient } from '@/utils/supabase/client';
 import ThemeToggle from '@/components/ui/ThemeToggle';
 
 const navItems = [
-  { href: '/',             label: 'Resumen',               icon: LayoutDashboard },
-  { href: '/conversations',label: 'Chats en Vivo',          icon: MessageSquare   },
-  { href: '/recuperador',  label: 'Recuperador de Carritos', icon: ShoppingCart    },
-  { href: '/analytics',    label: 'Analíticas',             icon: BarChart3       },
-  { href: '/settings',     label: 'Ajustes del Agente',     icon: Settings2       },
+  { href: '/',            label: 'Resumen',                icon: LayoutDashboard },
+  { href: '/recuperador', label: 'Recuperador de Carritos', icon: ShoppingCart    },
+  { href: '/analytics',   label: 'Analíticas',             icon: BarChart3       },
+  { href: '/settings',    label: 'Ajustes del Agente',     icon: Settings2       },
+];
+
+const chatSubItems = [
+  { href: '/conversations?origin=bot',     label: 'Asistente Virtual', icon: Bot      },
+  { href: '/conversations?origin=support', label: 'Atención Directa',  icon: UserIcon },
 ];
 
 const ADMIN_TENANT_ID = 'd568b898-9942-47cd-b31e-5f0b1f34ab01';
@@ -47,6 +54,87 @@ function NavTooltip({ label, collapsed, children }: { label: string; collapsed: 
         {label}
         <span className="absolute right-full top-1/2 -translate-y-1/2 border-4 border-transparent border-r-[var(--border)]" />
       </span>
+    </div>
+  );
+}
+
+// ─── Chat Accordion ───────────────────────────────────────────────────────────
+
+function ChatAccordion({ pathname, collapsed }: { pathname: string; collapsed: boolean }) {
+  const isOnChats = pathname.startsWith('/conversations');
+  const [open, setOpen] = useState(isOnChats);
+
+  // Auto-expand when navigating to conversations
+  useEffect(() => { if (isOnChats) setOpen(true); }, [isOnChats]);
+
+  const activeOrigin = pathname.startsWith('/conversations')
+    ? (typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('origin') : null)
+    : null;
+
+  if (collapsed) {
+    return (
+      <NavTooltip label="Chats" collapsed={collapsed}>
+        <Link
+          href="/conversations?origin=bot"
+          className={`
+            flex items-center justify-center py-3 rounded-xl transition-all w-full
+            ${isOnChats
+              ? 'bg-[var(--primary-subtle)] text-[var(--primary)] border border-[var(--primary)]/20 shadow-[0_0_15px_var(--primary-glow)]'
+              : 'text-[var(--text-muted)] hover:text-[var(--foreground)] hover:bg-[var(--surface-2)]'
+            }
+          `}
+        >
+          <MessageSquare className={`w-5 h-5 shrink-0 ${isOnChats ? 'text-[var(--primary)]' : 'text-[var(--text-muted)]'}`} />
+        </Link>
+      </NavTooltip>
+    );
+  }
+
+  return (
+    <div>
+      {/* Accordion trigger */}
+      <button
+        onClick={() => setOpen((v) => !v)}
+        className={`
+          flex items-center justify-between px-3 py-3 rounded-xl transition-all w-full group
+          ${isOnChats
+            ? 'bg-[var(--primary-subtle)] text-[var(--primary)] border border-[var(--primary)]/20 shadow-[0_0_15px_var(--primary-glow)]'
+            : 'text-[var(--text-muted)] hover:text-[var(--foreground)] hover:bg-[var(--surface-2)]'
+          }
+        `}
+      >
+        <div className="flex items-center gap-3">
+          <MessageSquare className={`w-5 h-5 shrink-0 ${isOnChats ? 'text-[var(--primary)]' : 'text-[var(--text-muted)] group-hover:text-[var(--foreground)]'}`} />
+          <span className="text-sm font-bold tracking-tight">Chats</span>
+        </div>
+        <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${open ? 'rotate-180' : ''} ${isOnChats ? 'text-[var(--primary)]' : 'text-[var(--border)]'}`} />
+      </button>
+
+      {/* Sub-items */}
+      {open && (
+        <div className="mt-1 ml-4 pl-3 border-l border-[var(--border)] space-y-0.5">
+          {chatSubItems.map((sub) => {
+            const subOrigin = new URL('http://x' + sub.href).searchParams.get('origin');
+            const isActive  = isOnChats && activeOrigin === subOrigin;
+            return (
+              <Link
+                key={sub.href}
+                href={sub.href}
+                className={`
+                  flex items-center gap-2.5 px-3 py-2 rounded-xl transition-all text-sm font-semibold
+                  ${isActive
+                    ? 'bg-[var(--primary-subtle)] text-[var(--primary)]'
+                    : 'text-[var(--text-muted)] hover:text-[var(--foreground)] hover:bg-[var(--surface-2)]'
+                  }
+                `}
+              >
+                <sub.icon className={`w-4 h-4 shrink-0 ${isActive ? 'text-[var(--primary)]' : 'text-[var(--text-muted)]'}`} />
+                {sub.label}
+              </Link>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }
@@ -150,6 +238,9 @@ export default function Sidebar() {
             Menú Principal
           </p>
         )}
+
+        {/* Chats accordion */}
+        <ChatAccordion pathname={pathname} collapsed={collapsed} />
 
         {navItems.map((item) => {
           const isActive = pathname === item.href;

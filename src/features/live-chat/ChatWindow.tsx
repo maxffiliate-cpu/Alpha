@@ -28,11 +28,14 @@ const formatMessageContent = (content: string) => {
   return formatted.trim();
 };
 
-export default function ChatWindow({ sessionId, isManualMode, setIsManualMode }: {
+export default function ChatWindow({ sessionId, origin = 'bot', isManualMode, setIsManualMode }: {
   sessionId: string;
+  origin?: 'bot' | 'support';
   isManualMode: boolean;
   setIsManualMode: (v: boolean) => void;
 }) {
+  // In 'support' mode the operator always has direct input — bypass bot lock
+  const inputEnabled = origin === 'support' || isManualMode;
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputValue, setInputValue] = useState('');
   const [loading, setLoading] = useState(true);
@@ -153,6 +156,7 @@ export default function ChatWindow({ sessionId, isManualMode, setIsManualMode }:
       .from('n8n_chat_clientes_historial')
       .insert({
         session_id: sessionId,
+        origin_type: origin,
         message: {
           type: 'human_manual',
           content: messageContent,
@@ -177,6 +181,7 @@ export default function ChatWindow({ sessionId, isManualMode, setIsManualMode }:
           session_id: sessionId,
           phone: phoneNumber,
           message: messageContent,
+          origin_type: origin,
           source: 'alpha_manual_intervention'
         })
       });
@@ -339,7 +344,7 @@ export default function ChatWindow({ sessionId, isManualMode, setIsManualMode }:
 
       {/* ── Footer ── */}
       <footer className="p-4 bg-white dark:bg-slate-900/80 border-t border-[#eef1f3] dark:border-white/[0.03]">
-        {isManualMode ? (
+        {inputEnabled ? (
           <form onSubmit={handleSendMessage} className="flex items-center gap-3">
             <input
               type="text"
