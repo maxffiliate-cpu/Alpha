@@ -64,7 +64,7 @@ export default function AdminStatsPage() {
         <p className="text-slate-400 text-sm mb-6">{error}</p>
         <button 
           onClick={() => window.location.href = '/'}
-          className="px-6 py-2 rounded-xl primary-gradient text-white font-bold text-sm shadow-lg shadow-primary/20"
+          className="px-6 py-2 rounded-xl aurora-gradient text-white font-bold text-sm shadow-lg shadow-primary/20 hover:opacity-90"
         >
           Volver al Inicio
         </button>
@@ -221,7 +221,7 @@ export default function AdminStatsPage() {
               </span>
             </div>
             <button 
-              className="w-full py-4 rounded-xl primary-gradient text-white font-black text-sm shadow-xl shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-2 mt-4"
+              className="w-full py-4 rounded-xl aurora-gradient text-white font-black text-sm shadow-xl shadow-primary/20 hover:opacity-90 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-2 mt-4"
             >
               Exportar Reporte Global <ArrowUpRight className="w-4 h-4" />
             </button>

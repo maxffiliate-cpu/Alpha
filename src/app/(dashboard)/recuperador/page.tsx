@@ -7,7 +7,7 @@ export const metadata = {
 
 export default function RecuperadorPage() {
   return (
-    <div className="p-8">
+    <div className="min-h-screen">
       <RecuperadorView />
     </div>
   );

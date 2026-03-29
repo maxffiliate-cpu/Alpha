@@ -56,21 +56,14 @@ body {
   background: linear-gradient(180deg, var(--surface) 0%, var(--background) 100%);
 }
 
-/* ── Aurora Primary Gradient ── */
+/* ── Primary Gradient (logo icon box, progress bars) ── */
 .primary-gradient {
   background: linear-gradient(135deg, #8B5CF6 0%, #6D28D9 100%);
 }
 
+/* ── Aurora Gradient (CTA buttons, accent elements) ── */
 .aurora-gradient {
-  background: linear-gradient(135deg, #8B5CF6 0%, #06b6d4 50%, #10b981 100%);
-}
-
-/* ── Aurora Gradient Text ── */
-.aurora-text {
-  background: linear-gradient(135deg, #8B5CF6 0%, #06b6d4 60%, #10b981 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  background: linear-gradient(135deg, #8B5CF6 0%, #6366f1 40%, #06b6d4 100%);
 }
 
 /* ═══════════════════════════════════════════════════════════
@@ -78,11 +71,11 @@ body {
    Target dark-mode hardcoded classes when .dark is absent
    ═══════════════════════════════════════════════════════════ */
 
-/* Glass panel: white bg + subtle shadow */
+/* Glass panel: crisp white with violet-tinted border and shadow */
 :root:not(.dark) .glass-panel {
-  background: rgba(255, 255, 255, 0.92) !important;
-  border: 1px solid rgba(15, 23, 42, 0.09) !important;
-  box-shadow: 0 2px 20px rgba(0, 0, 0, 0.06) !important;
+  background: #ffffff !important;
+  border: 1px solid rgba(139, 92, 246, 0.12) !important;
+  box-shadow: 0 2px 20px rgba(139, 92, 246, 0.06), 0 1px 4px rgba(0, 0, 0, 0.04) !important;
 }
 
 /* text-white / light grays → readable dark text */
@@ -96,30 +89,30 @@ body {
 
 /* White-tinted borders → visible in light mode */
 :root:not(.dark) [class*="border-white"] {
-  border-color: rgba(15, 23, 42, 0.09) !important;
+  border-color: rgba(139, 92, 246, 0.12) !important;
 }
 
 /* White-tinted dividers → visible separators */
 :root:not(.dark) [class*="divide-white"] > * + * {
-  border-color: rgba(15, 23, 42, 0.07) !important;
+  border-color: rgba(139, 92, 246, 0.08) !important;
 }
 
-/* Hover bg overlay → subtle light surface */
-:root:not(.dark) .hover\:bg-white\/\[0\.02\]:hover {
-  background-color: rgba(15, 23, 42, 0.03) !important;
-}
-
-/* Dark slate borders → subtle light borders */
+/* Dark slate borders → subtle violet-tinted borders */
 :root:not(.dark) [class*="border-slate-8"],
 :root:not(.dark) [class*="border-slate-7"] {
-  border-color: rgba(15, 23, 42, 0.1) !important;
+  border-color: rgba(139, 92, 246, 0.1) !important;
 }
 
-/* Dark icon/container backgrounds → light tint */
+/* Dark icon/container backgrounds → violet-tinted light surfaces */
 :root:not(.dark) .bg-slate-800\/80,
 :root:not(.dark) .bg-slate-800\/40,
 :root:not(.dark) .bg-slate-800\/30 {
-  background-color: rgba(15, 23, 42, 0.06) !important;
+  background-color: rgba(139, 92, 246, 0.07) !important;
+}
+
+/* Hover row bg → very subtle */
+:root:not(.dark) .hover\:bg-white\/\[0\.02\]:hover {
+  background-color: rgba(139, 92, 246, 0.03) !important;
 }
 
 /* Page-level dark backgrounds → use CSS var */
@@ -143,6 +136,28 @@ body {
 
 ::-webkit-scrollbar-thumb:hover {
   background: rgba(139, 92, 246, 0.5);
+}
+
+/* ── Stitch Slider Custom Thumb ── */
+.stitch-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  background: var(--primary);
+  cursor: pointer;
+  border-radius: 50%;
+  border: 2px solid white;
+  box-shadow: 0 2px 4px rgba(139, 92, 246, 0.3);
+}
+.stitch-slider::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  background: var(--primary);
+  cursor: pointer;
+  border-radius: 50%;
+  border: 2px solid white;
+  box-shadow: 0 2px 4px rgba(139, 92, 246, 0.3);
 }
 
 /* ── Animations ── */

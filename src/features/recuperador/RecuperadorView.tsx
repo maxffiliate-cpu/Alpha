@@ -7,14 +7,14 @@ import {
   TrendingUp,
   TrendingDown,
   DollarSign,
-  Mail,
   Save,
   Loader2,
   CheckCircle2,
   Plus,
   X,
   Check,
-  FileText,
+  Clock,
+  ChevronRight,
 } from 'lucide-react';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -83,39 +83,36 @@ interface TableRow {
 }
 
 const STATUS_MAP: Record<string, { label: string; cls: string }> = {
-  completed: { label: 'Recuperado', cls: 'bg-emerald-500/10 text-emerald-400' },
-  cancelled:  { label: 'Cancelado',  cls: 'bg-rose-500/10 text-rose-400' },
-  abandoned:  { label: 'Abandonado', cls: 'bg-orange-500/10 text-orange-400' },
-  pending:    { label: 'Pendiente',  cls: 'bg-violet-500/10 text-violet-400' },
+  completed: { label: 'Recuperado', cls: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400' },
+  cancelled:  { label: 'Cancelado',  cls: 'bg-rose-100 text-rose-700 dark:bg-rose-500/10 dark:text-rose-400' },
+  abandoned:  { label: 'Abandonado', cls: 'bg-orange-100 text-orange-700 dark:bg-orange-500/10 dark:text-orange-400' },
+  pending:    { label: 'Pendiente',  cls: 'bg-[#eef1f3] text-[#595c5e] dark:bg-violet-500/10 dark:text-violet-400' },
 };
 
 function statusStyle(s: string | null) {
-  return STATUS_MAP[s ?? ''] ?? { label: s ?? '—', cls: 'bg-slate-700/30 text-slate-400' };
+  return STATUS_MAP[s ?? ''] ?? { label: s ?? '—', cls: 'bg-[#eef1f3] text-[#595c5e] dark:bg-slate-700/30 dark:text-slate-400' };
 }
 
 function msgBadge(ts: string | null) {
-  if (!ts) return <span className="text-[10px] text-slate-600 font-medium">—</span>;
+  if (!ts) return <span className="text-xs text-[#abadaf] dark:text-slate-600">—</span>;
   return (
-    <span className="px-3 py-1 rounded-full bg-violet-500/10 text-violet-400 text-[10px] font-black uppercase tracking-widest whitespace-nowrap">
+    <span className="px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400 text-[10px] font-bold uppercase tracking-wide whitespace-nowrap">
       ✓ Enviado
     </span>
   );
 }
 
-
 const SOURCE_MAP: Record<string, { label: string; cls: string }> = {
-  web:    { label: 'Web Store', cls: 'bg-violet-500/10 text-violet-400' },
-  mobile: { label: 'Mobile',    cls: 'bg-indigo-500/10 text-indigo-400' },
-  ads:    { label: 'Facebook Ads', cls: 'bg-sky-500/10 text-sky-400' },
-  manual: { label: 'Manual',    cls: 'bg-slate-700/30 text-slate-300' },
+  web:    { label: 'Web Store',    cls: 'bg-violet-100 text-violet-700 dark:bg-violet-500/10 dark:text-violet-400' },
+  mobile: { label: 'Mobile',      cls: 'bg-indigo-100 text-indigo-700 dark:bg-indigo-500/10 dark:text-indigo-400' },
+  ads:    { label: 'Facebook Ads', cls: 'bg-sky-100 text-sky-700 dark:bg-sky-500/10 dark:text-sky-400' },
+  manual: { label: 'Manual',      cls: 'bg-[#eef1f3] text-[#595c5e] dark:bg-slate-700/30 dark:text-slate-400' },
 };
 
 function sourceStyle(s: string | null) {
   const norm = s?.toLowerCase().trim() ?? '';
-  return SOURCE_MAP[norm] ?? { label: s ?? '—', cls: 'bg-slate-700/30 text-slate-400' };
+  return SOURCE_MAP[norm] ?? { label: s ?? '—', cls: 'bg-[#eef1f3] text-[#595c5e] dark:bg-slate-700/30 dark:text-slate-400' };
 }
-
-
 
 const FALLBACK_ID = '00000000-0000-0000-0000-000000000001';
 
@@ -123,13 +120,10 @@ const FALLBACK_ID = '00000000-0000-0000-0000-000000000001';
 
 function Toggle({ checked, onChange }: { checked: boolean; onChange: () => void }) {
   return (
-    <button
-      onClick={onChange}
-      className={`relative w-12 h-6 rounded-full transition-colors duration-300 ${checked ? 'bg-violet-500' : 'bg-slate-700'}`}
-      aria-label="toggle"
-    >
-      <span className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform duration-300 ${checked ? 'translate-x-6' : 'translate-x-0'}`} />
-    </button>
+    <label className="relative inline-flex items-center cursor-pointer">
+      <input type="checkbox" checked={checked} onChange={onChange} className="sr-only peer" readOnly />
+      <div className="w-11 h-6 bg-[#dfe3e6] dark:bg-slate-700 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[var(--primary)]" />
+    </label>
   );
 }
 
@@ -141,33 +135,49 @@ function MessageCard({
   maxDelay: number; plantillas: Plantilla[];
   onToggle: () => void; onDelayChange: (v: number) => void; onTemplateChange: (v: string) => void;
 }) {
+  const subtitles: Record<string, string> = {
+    'Mensaje 1': 'Primer contacto',
+    'Mensaje 2': 'Recordatorio intermedio',
+    'Mensaje 3': 'Último intento',
+  };
   return (
-    <div className={`glass-panel p-6 rounded-2xl flex flex-col gap-6 transition-opacity duration-300 ${!active ? 'opacity-50' : ''}`}>
-      <div className="flex justify-between items-center">
-        <h4 className="text-sm font-bold text-white">{label}</h4>
+    <div className={`bg-white dark:bg-slate-900/60 rounded-xl p-8 border border-[#abadaf]/10 dark:border-slate-800/50 shadow-[0px_4px_20px_rgba(139,92,246,0.05)] hover:border-[var(--primary)]/20 dark:hover:border-violet-500/30 transition-all ${!active ? 'opacity-60 grayscale-[0.3]' : ''}`}>
+      <div className="flex justify-between items-start mb-6">
+        <div>
+          <h4 className="font-bold text-lg text-[#2c2f31] dark:text-white">{label}</h4>
+          <span className="text-xs text-[#595c5e] dark:text-slate-400">{subtitles[label]}</span>
+        </div>
         <Toggle checked={active} onChange={onToggle} />
       </div>
-      <div>
-        <label className="text-[10px] text-slate-500 font-bold uppercase tracking-widest block mb-2">Plantilla</label>
-        <select
-          value={template}
-          onChange={(e) => onTemplateChange(e.target.value)}
-          disabled={!active}
-          className="w-full bg-slate-800/60 border border-slate-700/50 rounded-xl px-4 py-3 text-xs text-slate-200 font-medium focus:ring-1 focus:ring-violet-500/40 focus:outline-none disabled:cursor-not-allowed"
-          style={{ backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%2364748b' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")`, backgroundPosition: 'right 0.75rem center', backgroundRepeat: 'no-repeat', backgroundSize: '1.2em 1.2em', appearance: 'none' }}
-        >
-          {plantillas.map((p) => <option key={p.id} value={p.nombre}>{p.nombre.split('|')[0]}{p.idioma ? ` (${IDIOMA_CODES[p.idioma] ?? p.idioma})` : ''}</option>)}
-        </select>
-      </div>
-      <div>
-        <div className="flex justify-between text-[10px] text-slate-500 font-bold uppercase tracking-widest mb-2">
-          <span>Delay</span>
-          <span className="text-violet-400">{delay} min</span>
+      <div className="space-y-6">
+        <div>
+          <label className="block text-xs font-bold uppercase tracking-wider text-[#595c5e] dark:text-slate-500 mb-2">Plantilla</label>
+          <select
+            value={template}
+            onChange={(e) => onTemplateChange(e.target.value)}
+            disabled={!active}
+            className="w-full bg-[#eef1f3] dark:bg-slate-800/60 border-none dark:border dark:border-slate-700/50 rounded-lg text-sm px-4 py-2.5 text-[#2c2f31] dark:text-slate-200 focus:ring-2 focus:ring-[var(--primary)]/20 appearance-none cursor-pointer disabled:cursor-not-allowed"
+          >
+            {plantillas.map((p) => (
+              <option key={p.id} value={p.nombre}>
+                {p.nombre.split('|')[0]}{p.idioma ? ` (${IDIOMA_CODES[p.idioma] ?? p.idioma})` : ''}
+              </option>
+            ))}
+          </select>
         </div>
-        <input type="range" min={1} max={maxDelay} value={delay} disabled={!active}
-          onChange={(e) => onDelayChange(Number(e.target.value))}
-          className="w-full h-1.5 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-violet-500 disabled:cursor-not-allowed"
-        />
+        <div>
+          <div className="flex justify-between items-center mb-3">
+            <label className="text-xs font-bold uppercase tracking-wider text-[#595c5e] dark:text-slate-500">Delay</label>
+            <span className="text-sm font-bold text-[var(--primary)]">
+              {delay < 60 ? `${delay} min` : `${Math.floor(delay / 60)}h ${delay % 60 > 0 ? `${delay % 60}m` : ''}`}
+            </span>
+          </div>
+          <input
+            type="range" min={1} max={maxDelay} value={delay} disabled={!active}
+            onChange={(e) => onDelayChange(Number(e.target.value))}
+            className="w-full h-1.5 bg-[#e5e9eb] dark:bg-slate-700 rounded-lg appearance-none cursor-pointer stitch-slider disabled:cursor-not-allowed"
+          />
+        </div>
       </div>
     </div>
   );
@@ -193,7 +203,6 @@ export default function RecuperadorView() {
   const [kpis, setKpis] = useState({ totalRecuperado: 0, rescatados: 0, perdidos: 0, tasa: 0, totalRows: 0 });
   // Table rows
   const [tableRows, setTableRows] = useState<TableRow[]>([]);
-
 
   // Modal "Crear Estrategia"
   const [showCreate, setShowCreate] = useState(false);
@@ -232,8 +241,8 @@ export default function RecuperadorView() {
         const named = eData.filter((e) => e.id !== FALLBACK_ID && e.nombre !== null);
         setFallback(fb);
         setNamedStrategies(named);
-        
-        // Si no existe configuración previa (como en un nuevo tenant), 
+
+        // Si no existe configuración previa (como en un nuevo tenant),
         // proporcionamos un estado inicial por defecto para evitar el bloqueo.
         if (!fb && named.length === 0) {
           const initialState: Estrategia = {
@@ -262,13 +271,13 @@ export default function RecuperadorView() {
       const rescatados = Number(stats.rescatados_count);
       const perdidos = Number(stats.perdidos_count);
       const dinero = Number(stats.total_dinero);
-      
+
       const tasa = perdidos > 0 ? (rescatados / perdidos) * 100 : 0;
-      setKpis({ 
-        totalRecuperado: dinero, 
-        rescatados: rescatados, 
-        perdidos: perdidos, 
-        tasa, 
+      setKpis({
+        totalRecuperado: dinero,
+        rescatados: rescatados,
+        perdidos: perdidos,
+        tasa,
         totalRows: perdidos // Use perdidos as total rows context
       });
     }
@@ -452,213 +461,148 @@ export default function RecuperadorView() {
   }
 
   return (
-    <div className="space-y-10 animate-in fade-in duration-500">
+    <div className="p-8 lg:p-12 space-y-10 animate-in fade-in duration-500">
 
-      {/* ── Hero ──────────────────────────────────────────── */}
-      <section className="flex flex-col md:flex-row md:items-end justify-between gap-6">
-        <div className="max-w-2xl">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="p-2 rounded-xl bg-violet-500/10 border border-violet-500/20">
-              <ShoppingCart className="w-6 h-6 text-violet-400" />
-            </div>
-            <h1 className="text-3xl font-extrabold tracking-tight aurora-text">Recuperación de Carritos</h1>
-          </div>
-          <p className="text-slate-400 text-base leading-relaxed">
-            Convierte el abandono en ingresos automáticos vía WhatsApp con inteligencia predictiva.
-          </p>
+      {/* 1. HEADER */}
+      <div className="flex justify-between items-start">
+        <div>
+          <h2 className="text-3xl font-extrabold tracking-tight text-[#2c2f31] dark:text-white mb-2">Recuperación de Carritos</h2>
+          <p className="text-[#595c5e] dark:text-slate-400 max-w-2xl">Gestiona y automatiza la recuperación de ventas perdidas mediante estrategias personalizadas de contacto y recordatorios inteligentes.</p>
         </div>
-        <div className="glass-panel flex items-center gap-5 px-6 py-4 rounded-2xl shrink-0">
-          <div className="flex flex-col">
-            <span className="text-[10px] uppercase font-bold tracking-widest text-slate-500">Estado del Sistema</span>
-            <span className={`text-sm font-semibold ${editorState.is_active ? 'text-emerald-400' : 'text-slate-500'}`}>
-              {editorState.is_active ? 'Motor Activo' : 'Motor Inactivo'}
-            </span>
-          </div>
+        <div className="flex items-center gap-4 bg-white dark:bg-slate-900/60 p-3 px-5 rounded-xl shadow-sm border border-[#eef1f3] dark:border-slate-800/50 shrink-0 ml-6">
+          <span className="text-sm font-semibold text-[#595c5e] dark:text-slate-400">{editorState.is_active ? 'Motor Activo' : 'Motor Inactivo'}</span>
           <Toggle checked={editorState.is_active} onChange={() => update('is_active', !editorState.is_active)} />
         </div>
-      </section>
+      </div>
 
-      {/* ── KPI Cards ─────────────────────────────────────── */}
-      {(() => {
-        const { totalRecuperado, rescatados, perdidos, tasa } = kpis;
-        // Donut SVG math
-        const R = 40;
-        const circ = 2 * Math.PI * R;
-        const filled = (tasa / 100) * circ;
-        return (
-          <section className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-5">
-
-            {/* 1 — Dinero Recuperado */}
-            <div className="glass-panel rounded-2xl p-6 relative overflow-hidden group col-span-1 md:col-span-2 xl:col-span-1">
-              <div className="absolute -right-8 -top-8 w-36 h-36 bg-emerald-500/8 rounded-full blur-3xl group-hover:bg-emerald-500/15 transition-colors" />
-              <div className="flex items-center justify-between mb-3">
-                <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Dinero Total Recuperado</span>
-                <DollarSign className="w-5 h-5 text-emerald-400" />
-              </div>
-              <p className="text-4xl font-black text-emerald-400 tracking-tight leading-none mb-1">
-                {formatCLP(totalRecuperado)}
-              </p>
-              <p className="text-xs text-slate-500 mt-3 flex items-center gap-1">
-                <TrendingUp className="w-3 h-3 text-emerald-500" />
-                <span>Ventas recuperadas por el bot</span>
-              </p>
-            </div>
-
-            {/* 2 — Carritos Rescatados */}
-            <div className="glass-panel rounded-2xl p-6 relative overflow-hidden group">
-              <div className="absolute -right-6 -top-6 w-28 h-28 bg-violet-500/5 rounded-full blur-3xl group-hover:bg-violet-500/10 transition-colors" />
-              <div className="flex items-center justify-between mb-3">
-                <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Carritos Rescatados</span>
-                <div className="flex items-center gap-1">
-                  <ShoppingCart className="w-4 h-4 text-violet-400" />
-                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
-                </div>
-              </div>
-              <p className="text-4xl font-black text-white tracking-tight leading-none mb-1">{rescatados}</p>
-              <p className="text-xs text-slate-500 mt-3">Ventas salvadas por el bot</p>
-            </div>
-
-            {/* 3 — Carritos Perdidos */}
-            <div className="glass-panel rounded-2xl p-6 relative overflow-hidden group">
-              <div className="absolute -right-6 -top-6 w-28 h-28 bg-orange-500/5 rounded-full blur-3xl group-hover:bg-orange-500/10 transition-colors" />
-              <div className="flex items-center justify-between mb-3">
-                <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Carritos Perdidos</span>
-                <TrendingDown className="w-5 h-5 text-orange-400" />
-              </div>
-              <p className="text-4xl font-black text-orange-400 tracking-tight leading-none mb-1">{perdidos}</p>
-              <p className="text-xs text-slate-500 mt-3">Oportunidad de mejora</p>
-            </div>
-
-            {/* 4 — Tasa de Recuperación (Donut SVG) */}
-            <div className="glass-panel rounded-2xl p-6 relative overflow-hidden group">
-              <div className="flex items-center justify-between mb-3">
-                <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Tasa de Recuperación</span>
-              </div>
-              <div className="flex items-center justify-center">
-                <svg width="100" height="100" viewBox="0 0 100 100">
-                  {/* Track */}
-                  <circle cx="50" cy="50" r={R} fill="none" stroke="rgba(71,85,105,0.4)" strokeWidth="12" />
-                  {/* Fill */}
-                  <circle
-                    cx="50" cy="50" r={R}
-                    fill="none"
-                    stroke={tasa > 0 ? '#10b981' : 'rgba(71,85,105,0.2)'}
-                    strokeWidth="12"
-                    strokeDasharray={`${filled} ${circ}`}
-                    strokeLinecap="round"
-                    transform="rotate(-90 50 50)"
-                    style={{ transition: 'stroke-dasharray 0.6s ease' }}
-                  />
-                  <text x="50" y="54" textAnchor="middle" fontSize="14" fontWeight="800" fill="white">
-                    {tasa.toFixed(1)}%
-                  </text>
-                </svg>
-              </div>
-              <p className="text-xs text-slate-500 text-center mt-1">de carritos convertidos</p>
-            </div>
-
-          </section>
-        );
-      })()}
-
-
-      {/* ── Gestionar Mensajes ────────────────────────────── */}
-      <section className="bg-slate-900/60 border border-slate-800/50 rounded-3xl p-8">
-        <div className="flex items-center gap-3 mb-8">
-          <div className="w-10 h-10 rounded-xl bg-violet-500/10 border border-violet-500/20 flex items-center justify-center">
-            <Mail className="w-5 h-5 text-violet-400" />
+      {/* 2. KPI GRID - 4 white cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        {/* Card 1: Dinero Recuperado */}
+        <div className="bg-white dark:bg-slate-900/60 p-6 rounded-2xl shadow-[0px_4px_20px_rgba(139,92,246,0.05)] border border-[#abadaf]/10 dark:border-slate-800/50 relative overflow-hidden group">
+          <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+            <DollarSign className="w-12 h-12 text-emerald-500" />
           </div>
-          <div>
-            <h2 className="text-xl font-bold text-white">Gestionar Mensajes</h2>
-            {estrategiaActiva && (
-              <p className="text-xs text-violet-400 font-medium mt-0.5">
-                Editando: <span className="font-bold">{estrategiaActiva.nombre}</span>
-              </p>
-            )}
+          <p className="text-[10px] font-bold uppercase tracking-widest text-[#595c5e] dark:text-slate-500 mb-1">Dinero Total Recuperado</p>
+          <h3 className="text-3xl font-extrabold text-[#2c2f31] dark:text-white">{formatCLP(kpis.totalRecuperado)}</h3>
+          <div className="mt-4 flex items-center gap-1 text-xs font-semibold text-emerald-600 dark:text-emerald-400">
+            <TrendingUp className="w-4 h-4" />
+            <span>Ventas recuperadas por el bot</span>
           </div>
         </div>
-
-        {/* ── Estrategias Predeterminadas ── */}
-        <div className="mb-8">
-          <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest block mb-4">
-            Estrategias Predeterminadas
-          </span>
-
-          <div className="flex gap-3 overflow-x-auto pb-2">
-            {/* Strategy cards (only if named strategies exist) */}
-            {namedStrategies.map((s) => (
-              <div key={s.id} className="relative group/card flex-shrink-0">
-                <button
-                  onClick={() => handleSelectStrategy(s)}
-                  className={`min-w-[160px] w-full flex flex-col gap-1 p-4 rounded-xl border transition-all text-left ${
-                    estrategiaActiva?.id === s.id
-                      ? 'bg-violet-500/10 border-violet-500/30 text-violet-400'
-                      : 'bg-slate-800/40 border-slate-700/30 text-slate-300 hover:bg-slate-800/70'
-                  }`}
-                >
-                  <p className="text-[11px] font-bold truncate max-w-[130px]">{s.nombre}</p>
-                  <p className="text-[9px] text-slate-500">
-                    {[s.msg1_active && 'M1', s.msg2_active && 'M2', s.msg3_active && 'M3'].filter(Boolean).join(' · ')}
-                  </p>
-                  {estrategiaActiva?.id === s.id && (
-                    <span className="text-[9px] text-violet-400 font-black uppercase tracking-widest mt-1">Activa</span>
-                  )}
-                </button>
-                {/* Delete X button */}
-                <button
-                  onClick={(e) => handleDelete(s, e)}
-                  className="absolute -top-2 -right-2 w-5 h-5 rounded-full bg-slate-700 border border-slate-600 flex items-center justify-center text-slate-400 hover:bg-rose-500/80 hover:text-white hover:border-rose-500 transition-all opacity-0 group-hover/card:opacity-100 scale-75 group-hover/card:scale-100"
-                  title="Eliminar estrategia"
-                >
-                  <X className="w-2.5 h-2.5" />
-                </button>
+        {/* Card 2: Carritos Rescatados */}
+        <div className="bg-white dark:bg-slate-900/60 p-6 rounded-2xl shadow-[0px_4px_20px_rgba(139,92,246,0.05)] border border-[#abadaf]/10 dark:border-slate-800/50 relative overflow-hidden group">
+          <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+            <ShoppingCart className="w-12 h-12 text-[var(--primary)]" />
+          </div>
+          <p className="text-[10px] font-bold uppercase tracking-widest text-[#595c5e] dark:text-slate-500 mb-1">Carritos Rescatados</p>
+          <h3 className="text-3xl font-extrabold text-[#2c2f31] dark:text-white">{kpis.rescatados}</h3>
+          <div className="mt-4 flex items-center gap-1 text-xs font-semibold text-[var(--primary)]">
+            <CheckCircle2 className="w-4 h-4" />
+            <span>Meta alcanzada</span>
+          </div>
+        </div>
+        {/* Card 3: Carritos Perdidos */}
+        <div className="bg-white dark:bg-slate-900/60 p-6 rounded-2xl shadow-[0px_4px_20px_rgba(139,92,246,0.05)] border border-[#abadaf]/10 dark:border-slate-800/50 relative overflow-hidden group">
+          <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+            <TrendingDown className="w-12 h-12 text-rose-500" />
+          </div>
+          <p className="text-[10px] font-bold uppercase tracking-widest text-[#595c5e] dark:text-slate-500 mb-1">Carritos Perdidos</p>
+          <h3 className="text-3xl font-extrabold text-[#2c2f31] dark:text-white">{kpis.perdidos}</h3>
+          <div className="mt-4 flex items-center gap-1 text-xs font-semibold text-rose-600 dark:text-rose-400">
+            <TrendingDown className="w-4 h-4" />
+            <span>Requiere atención</span>
+          </div>
+        </div>
+        {/* Card 4: Tasa Donut */}
+        {(() => {
+          const R = 48; const circ = 2 * Math.PI * R;
+          const filled = (kpis.tasa / 100) * circ;
+          return (
+            <div className="bg-white dark:bg-slate-900/60 p-6 rounded-2xl shadow-[0px_4px_20px_rgba(139,92,246,0.05)] border border-[#abadaf]/10 dark:border-slate-800/50 flex flex-col">
+              <p className="text-[10px] font-bold uppercase tracking-widest text-[#595c5e] dark:text-slate-500 mb-4">Tasa de Recuperación</p>
+              <div className="flex-1 flex items-center justify-center">
+                <div className="relative w-28 h-28">
+                  <svg className="w-full h-full -rotate-90" viewBox="0 0 112 112">
+                    <circle cx="56" cy="56" r={R} fill="transparent" stroke="#eef1f3" strokeWidth="8" className="dark:stroke-slate-700" />
+                    <circle cx="56" cy="56" r={R} fill="transparent" stroke="var(--primary)" strokeWidth="8" strokeDasharray={`${filled} ${circ}`} strokeLinecap="round" style={{ transition: 'stroke-dasharray 0.6s ease' }} />
+                  </svg>
+                  <div className="absolute inset-0 flex items-center justify-center flex-col">
+                    <span className="text-xl font-bold text-[#2c2f31] dark:text-white">{kpis.tasa.toFixed(1)}%</span>
+                    <span className="text-[10px] text-[#595c5e] dark:text-slate-400 font-semibold">GLOBAL</span>
+                  </div>
+                </div>
               </div>
-            ))}
+            </div>
+          );
+        })()}
+      </div>
 
-            {/* Botón "Crear Estrategia" — siempre al final */}
-            {!showCreate ? (
+      {/* 3. SEQUENCE SECTION */}
+      <div className="space-y-6">
+        <h3 className="text-xl font-bold text-[#2c2f31] dark:text-white flex items-center gap-2">
+          <Clock className="w-5 h-5 text-[var(--primary)]" />
+          Secuencia de Recuperación Automática
+        </h3>
+
+        {/* Strategy selector */}
+        <div className="flex gap-3 overflow-x-auto pb-2">
+          {namedStrategies.map((s) => (
+            <div key={s.id} className="relative group/card flex-shrink-0">
               <button
-                onClick={() => { setShowCreate(true); setTimeout(() => inputRef.current?.focus(), 50); }}
-                className="flex-shrink-0 min-w-[160px] flex flex-col items-center justify-center gap-2 p-4 rounded-xl border border-dashed border-slate-700 text-slate-500 hover:border-violet-500/40 hover:text-violet-400 hover:bg-violet-500/5 transition-all"
+                onClick={() => handleSelectStrategy(s)}
+                className={`min-w-[140px] flex flex-col gap-0.5 px-4 py-3 rounded-xl border text-left transition-all ${
+                  estrategiaActiva?.id === s.id
+                    ? 'bg-[var(--primary-subtle)] border-[var(--primary)]/30 text-[var(--primary)] dark:bg-violet-500/10 dark:border-violet-500/30 dark:text-violet-400'
+                    : 'bg-white dark:bg-slate-800/40 border-[#abadaf]/15 dark:border-slate-700/30 text-[#595c5e] dark:text-slate-300 hover:border-[var(--primary)]/20'
+                }`}
               >
-                <Plus className="w-5 h-5" />
-                <span className="text-[11px] font-bold">Crear Estrategia</span>
+                <p className="text-xs font-bold truncate max-w-[120px]">{s.nombre}</p>
+                <p className="text-[9px] opacity-60">{[s.msg1_active && 'M1', s.msg2_active && 'M2', s.msg3_active && 'M3'].filter(Boolean).join(' · ')}</p>
+                {estrategiaActiva?.id === s.id && <span className="text-[9px] font-black uppercase tracking-widest">Activa</span>}
               </button>
-            ) : (
-              /* Inline create form */
-              <div className="flex-shrink-0 min-w-[200px] flex flex-col gap-3 p-4 rounded-xl border border-violet-500/30 bg-violet-500/5">
-                <p className="text-[10px] font-bold text-violet-400 uppercase tracking-widest">Nueva estrategia</p>
-                <input
-                  ref={inputRef}
-                  value={newName}
-                  onChange={(e) => setNewName(e.target.value)}
-                  onKeyDown={(e) => { if (e.key === 'Enter') handleCreate(); if (e.key === 'Escape') { setShowCreate(false); setNewName(''); } }}
-                  placeholder="Nombre..."
-                  className="w-full bg-slate-800/80 border border-slate-700/50 rounded-lg px-3 py-2 text-xs text-white placeholder-slate-600 focus:outline-none focus:ring-1 focus:ring-violet-500/50"
-                />
-                <div className="flex gap-2">
-                  <button
-                    onClick={handleCreate}
-                    disabled={creating || !newName.trim()}
-                    className="flex-1 flex items-center justify-center gap-1 py-1.5 bg-violet-500 hover:bg-violet-400 text-white rounded-lg text-[10px] font-bold transition-all disabled:opacity-50"
-                  >
-                    {creating ? <Loader2 className="w-3 h-3 animate-spin" /> : <Check className="w-3 h-3" />}
-                    Guardar
-                  </button>
-                  <button
-                    onClick={() => { setShowCreate(false); setNewName(''); }}
-                    className="w-8 flex items-center justify-center py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-400 rounded-lg transition-all"
-                  >
-                    <X className="w-3 h-3" />
-                  </button>
-                </div>
+              <button
+                onClick={(e) => handleDelete(s, e)}
+                className="absolute -top-2 -right-2 w-5 h-5 rounded-full bg-white dark:bg-slate-700 border border-[#abadaf]/20 dark:border-slate-600 flex items-center justify-center text-[#595c5e] dark:text-slate-400 hover:bg-rose-50 hover:text-rose-500 hover:border-rose-200 dark:hover:bg-rose-500/80 dark:hover:text-white dark:hover:border-rose-500 transition-all opacity-0 group-hover/card:opacity-100 shadow-sm"
+              >
+                <X className="w-2.5 h-2.5" />
+              </button>
+            </div>
+          ))}
+          {/* Create strategy button */}
+          {!showCreate ? (
+            <button
+              onClick={() => { setShowCreate(true); setTimeout(() => inputRef.current?.focus(), 50); }}
+              className="flex-shrink-0 min-w-[140px] flex flex-col items-center justify-center gap-1.5 px-4 py-3 rounded-xl border border-dashed border-[#abadaf]/30 dark:border-slate-700 text-[#595c5e] dark:text-slate-500 hover:border-[var(--primary)]/30 hover:text-[var(--primary)] hover:bg-[var(--primary-subtle)] dark:hover:bg-violet-500/5 transition-all"
+            >
+              <Plus className="w-4 h-4" />
+              <span className="text-[11px] font-bold">Crear Estrategia</span>
+            </button>
+          ) : (
+            <div className="flex-shrink-0 min-w-[200px] flex flex-col gap-3 p-4 rounded-xl border border-[var(--primary)]/20 bg-[var(--primary-subtle)] dark:border-violet-500/30 dark:bg-violet-500/5">
+              <p className="text-[10px] font-bold text-[var(--primary)] dark:text-violet-400 uppercase tracking-widest">Nueva estrategia</p>
+              <input
+                ref={inputRef}
+                value={newName}
+                onChange={(e) => setNewName(e.target.value)}
+                onKeyDown={(e) => { if (e.key === 'Enter') handleCreate(); if (e.key === 'Escape') { setShowCreate(false); setNewName(''); } }}
+                placeholder="Nombre..."
+                className="w-full bg-white dark:bg-slate-800/80 border border-[#abadaf]/20 dark:border-slate-700/50 rounded-lg px-3 py-2 text-xs text-[#2c2f31] dark:text-white placeholder-[#abadaf] dark:placeholder-slate-600 focus:outline-none focus:ring-1 focus:ring-[var(--primary)]/30"
+              />
+              <div className="flex gap-2">
+                <button onClick={handleCreate} disabled={creating || !newName.trim()} className="flex-1 flex items-center justify-center gap-1 py-1.5 aurora-gradient hover:opacity-90 text-white rounded-lg text-[10px] font-bold transition-all disabled:opacity-50">
+                  {creating ? <Loader2 className="w-3 h-3 animate-spin" /> : <Check className="w-3 h-3" />}
+                  Guardar
+                </button>
+                <button onClick={() => { setShowCreate(false); setNewName(''); }} className="w-8 flex items-center justify-center py-1.5 bg-white dark:bg-slate-800 hover:bg-[#eef1f3] dark:hover:bg-slate-700 text-[#595c5e] dark:text-slate-400 rounded-lg border border-[#abadaf]/20 dark:border-transparent transition-all">
+                  <X className="w-3 h-3" />
+                </button>
               </div>
-            )}
-          </div>
+            </div>
+          )}
         </div>
 
-        {/* ── Message Cards ─── */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-8">
+        {/* 3 Message Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <MessageCard label="Mensaje 1" active={editorState.msg1_active} template={editorState.msg1_template} delay={editorState.msg1_delay_min} maxDelay={60} plantillas={plantillas}
             onToggle={() => update('msg1_active', !editorState.msg1_active)}
             onDelayChange={(v) => update('msg1_delay_min', v)}
@@ -676,15 +620,15 @@ export default function RecuperadorView() {
           />
         </div>
 
-        {/* ── Save Button ── */}
-        <div className="flex justify-center mb-10">
+        {/* Save button - right aligned, Stitch style */}
+        <div className="flex justify-end pt-2">
           <button
             onClick={handleSave}
             disabled={saving}
-            className={`w-full max-w-md py-4 font-bold rounded-xl shadow-lg transition-all flex items-center justify-center gap-2 active:scale-[0.98] ${
+            className={`flex items-center gap-2 px-8 py-4 rounded-xl font-bold transition-all active:scale-[0.98] ${
               saved
-                ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 shadow-emerald-500/10'
-                : 'bg-gradient-to-r from-violet-500 to-violet-600 text-white shadow-violet-500/20 hover:shadow-violet-500/30 hover:from-violet-400 hover:to-violet-500'
+                ? 'bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20'
+                : 'aurora-gradient text-white shadow-[0_10px_20px_-5px_rgba(139,92,246,0.35)] hover:opacity-90 hover:scale-[1.02]'
             }`}
           >
             {saving ? <><Loader2 className="w-4 h-4 animate-spin" /> Guardando...</>
@@ -693,32 +637,28 @@ export default function RecuperadorView() {
             }
           </button>
         </div>
+      </div>
 
-        {/* ── Añadir Plantillas ── */}
-        <div className="border-t border-slate-800/50 pt-8">
-          <div className="flex items-start gap-3 mb-1">
-            <div className="w-9 h-9 rounded-xl bg-slate-800/80 border border-slate-700/50 flex items-center justify-center shrink-0">
-              <FileText className="w-4 h-4 text-slate-400" />
-            </div>
-            <div>
-              <h3 className="text-base font-bold text-white">Añadir Plantillas</h3>
-              <p className="text-[11px] text-slate-500 mt-0.5">Copia y Pega el Nombre de la Plantilla APROBADA por Meta</p>
-            </div>
+      {/* 4. TEMPLATES SECTION - bg-[#eef1f3] container */}
+      <div className="bg-[#eef1f3] dark:bg-slate-900/40 rounded-2xl p-8 border border-white/40 dark:border-slate-800/30">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-8">
+          <div>
+            <h4 className="font-bold text-2xl text-[#2c2f31] dark:text-white">Añadir Plantillas</h4>
+            <p className="text-[#595c5e] dark:text-slate-400 text-sm mt-1">Copia y pega el nombre de la plantilla APROBADA por Meta para tu flujo.</p>
           </div>
-
-          {/* Input row */}
-          <div className="flex gap-2 mt-5">
+          {/* Search + idioma + add input */}
+          <div className="flex gap-2 w-full md:w-auto">
             <input
               value={newPlantillaNombre}
               onChange={(e) => setNewPlantillaNombre(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleAddPlantilla()}
-              placeholder="ej: recordatorio_carrito_es"
-              className="flex-1 bg-slate-800/60 border border-slate-700/50 rounded-xl px-4 py-2.5 text-sm text-slate-200 placeholder-slate-600 focus:outline-none focus:ring-1 focus:ring-violet-500/40"
+              placeholder="ej: recordatorio_carrito"
+              className="flex-1 md:w-52 pl-4 pr-4 py-3 bg-white dark:bg-slate-800/60 border-none dark:border dark:border-slate-700/50 rounded-xl text-sm text-[#2c2f31] dark:text-slate-200 placeholder-[#abadaf] dark:placeholder-slate-600 focus:ring-2 focus:ring-[var(--primary)]/20 shadow-sm"
             />
             <select
               value={newPlantillaIdioma}
               onChange={(e) => setNewPlantillaIdioma(e.target.value)}
-              className="bg-slate-800/60 border border-slate-700/50 rounded-xl px-3 py-2.5 text-xs text-slate-200 font-medium focus:outline-none focus:ring-1 focus:ring-violet-500/40 shrink-0"
+              className="bg-white dark:bg-slate-800/60 border-none dark:border dark:border-slate-700/50 rounded-xl px-3 py-3 text-xs text-[#2c2f31] dark:text-slate-200 font-medium focus:ring-2 focus:ring-[var(--primary)]/20 shadow-sm shrink-0"
               style={{ backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%2364748b' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")`, backgroundPosition: 'right 0.5rem center', backgroundRepeat: 'no-repeat', backgroundSize: '1.1em 1.1em', paddingRight: '2rem', appearance: 'none' }}
             >
               {IDIOMAS.map((lang) => <option key={lang} value={lang}>{lang}</option>)}
@@ -726,114 +666,94 @@ export default function RecuperadorView() {
             <button
               onClick={handleAddPlantilla}
               disabled={addingPlantilla || !newPlantillaNombre.trim()}
-              className="w-10 h-10 rounded-xl bg-violet-500 hover:bg-violet-400 text-white flex items-center justify-center transition-all disabled:opacity-40 shrink-0"
-              title="Añadir plantilla"
+              className="aurora-gradient hover:opacity-90 text-white px-5 py-3 rounded-xl font-bold text-sm flex items-center gap-2 shadow-lg shadow-[var(--primary)]/20 hover:scale-[1.02] active:scale-95 transition-all disabled:opacity-50"
             >
               {addingPlantilla ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
+              <span className="hidden md:inline">Crear Nueva Plantilla</span>
             </button>
           </div>
-
-          {/* Plantillas list */}
-          {plantillas.length > 0 && (
-            <div className="mt-4 flex flex-wrap gap-2">
-              {plantillas.map((p) => (
-                <div key={p.id} className="group/chip flex items-center gap-1.5 bg-slate-800/60 border border-slate-700/40 hover:border-slate-600 rounded-lg px-3 py-1.5 transition-all">
-                  <span className="text-xs font-medium text-slate-300">{p.nombre.split('|')[0]}</span>
-                  <span className="text-[9px] font-bold text-slate-500 bg-slate-700/50 rounded px-1.5 py-0.5">
-                    {p.nombre.includes('|') ? p.nombre.split('|')[1] : (p.idioma ?? '')}
-                  </span>
-                  <button
-                    onClick={() => handleDeletePlantilla(p.id)}
-                    className="ml-1 text-slate-600 hover:text-rose-400 transition-colors opacity-0 group-hover/chip:opacity-100"
-                    title="Eliminar plantilla"
-                  >
-                    <X className="w-3 h-3" />
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
         </div>
-      </section>
 
-      {/* ── Tabla en Tiempo Real ──────────────────────────── */}
-      <section className="glass-panel rounded-2xl overflow-hidden">
-        <div className="px-6 py-5 border-b border-slate-800/50 flex justify-between items-center">
-          <h3 className="text-lg font-bold text-white">Registro en Tiempo Real</h3>
-          <div className="flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-            <span className="text-xs font-medium text-slate-400">Escaneando carritos...</span>
+        {/* Existing plantillas as pill buttons */}
+        {plantillas.length > 0 && (
+          <div className="flex flex-wrap gap-3">
+            {plantillas.map((p) => (
+              <div key={p.id} className="group/chip flex items-center gap-2 bg-white dark:bg-slate-800/60 hover:bg-white rounded-full px-5 py-3 text-sm font-medium border border-transparent hover:border-[var(--primary)]/20 hover:shadow-md transition-all cursor-default">
+                <span className="w-2 h-2 rounded-full bg-[var(--primary)] opacity-60 shrink-0" />
+                <span className="text-[#595c5e] dark:text-slate-300 group-hover/chip:text-[var(--primary)]">{p.nombre.split('|')[0]}</span>
+                {p.nombre.includes('|') && (
+                  <span className="text-[9px] font-bold text-[#abadaf] dark:text-slate-500 bg-[#eef1f3] dark:bg-slate-700/50 rounded px-1.5 py-0.5">{p.nombre.split('|')[1]}</span>
+                )}
+                <button
+                  onClick={() => handleDeletePlantilla(p.id)}
+                  className="ml-1 text-[#abadaf] dark:text-slate-600 hover:text-rose-500 transition-colors opacity-0 group-hover/chip:opacity-100"
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* 5. REAL-TIME TABLE */}
+      <div className="bg-white dark:bg-slate-900/60 rounded-3xl overflow-hidden shadow-[0px_10px_40px_rgba(0,0,0,0.02)] dark:shadow-none border border-[#abadaf]/10 dark:border-slate-800/50">
+        <div className="px-8 py-6 border-b border-[#abadaf]/10 dark:border-slate-800/50 flex justify-between items-center">
+          <h3 className="text-xl font-bold text-[#2c2f31] dark:text-white">Registro en Tiempo Real</h3>
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+              <span className="text-xs font-medium text-[#595c5e] dark:text-slate-400">Escaneando carritos...</span>
+            </div>
           </div>
         </div>
-
-        <div className="overflow-x-auto relative">
-          <div className="max-h-[380px] overflow-y-auto scrollbar-thin scrollbar-thumb-slate-700">
-            <table className="text-left border-separate border-spacing-0" style={{ minWidth: '960px', width: '100%' }}>
-              <thead className="sticky top-0 z-20 bg-[#0f172a]">
-                <tr className="bg-slate-800/50">
-                  {['Nombre', 'Teléfono', 'Monto', 'Estado', 'Fuente', 'Mensaje 1', 'Mensaje 2', 'Mensaje 3'].map((h) => (
-                    <th key={h} className="px-5 py-4 text-[10px] uppercase font-black text-slate-500 tracking-widest whitespace-nowrap border-b border-slate-800/60">{h}</th>
+        <div className="overflow-x-auto">
+          <div className="max-h-[400px] overflow-y-auto">
+            <table className="w-full text-left" style={{ minWidth: '800px' }}>
+              <thead className="sticky top-0 z-20">
+                <tr className="bg-[#eef1f3] dark:bg-slate-800/50">
+                  {['Cliente', 'Teléfono', 'Monto', 'Estado', 'Fuente', 'Mensaje 1', 'Mensaje 2', 'Mensaje 3'].map((h) => (
+                    <th key={h} className="px-6 py-4 text-[0.6875rem] font-bold uppercase tracking-wider text-[#595c5e] dark:text-slate-500">{h}</th>
                   ))}
                 </tr>
               </thead>
-
-            <tbody className="divide-y divide-slate-800/40">
-              {tableRows.length === 0 ? (
-                <tr>
-                  <td colSpan={8} className="px-6 py-10 text-center text-sm text-slate-600">Sin registros todavía</td>
-                </tr>
-              ) : tableRows.map((row) => {
-                const st = statusStyle(row.status);
-                const initials = (row.buyer_name ?? '??').split(' ').map((w: string) => w[0]).join('').slice(0, 2).toUpperCase();
-                return (
-                  <tr key={row.commerce_order} className="hover:bg-slate-800/20 transition-colors">
-                    <td className="px-5 py-4">
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-lg bg-slate-800 border border-slate-700/50 flex items-center justify-center text-[10px] font-bold text-slate-300 shrink-0">
-                          {initials}
+              <tbody className="divide-y divide-[#abadaf]/8 dark:divide-slate-800/40">
+                {tableRows.length === 0 ? (
+                  <tr><td colSpan={8} className="px-6 py-12 text-center text-sm text-[#abadaf] dark:text-slate-600">Sin registros todavía</td></tr>
+                ) : tableRows.map((row) => {
+                  const st = statusStyle(row.status);
+                  const src = sourceStyle(row.source);
+                  const initials = (row.buyer_name ?? '??').split(' ').map((w: string) => w[0]).join('').slice(0, 2).toUpperCase();
+                  return (
+                    <tr key={row.commerce_order} className="hover:bg-[#eef1f3]/50 dark:hover:bg-slate-800/20 transition-colors">
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-full bg-[var(--primary-subtle)] dark:bg-slate-800 flex items-center justify-center text-[var(--primary)] dark:text-slate-300 text-xs font-bold shrink-0">{initials}</div>
+                          <span className="font-medium text-sm text-[#2c2f31] dark:text-slate-200 whitespace-nowrap">{row.buyer_name ?? '—'}</span>
                         </div>
-                        <span className="text-sm font-medium text-slate-200 whitespace-nowrap">{row.buyer_name ?? '—'}</span>
-                      </div>
-                    </td>
-                    <td className="px-5 py-4 text-xs text-slate-400 whitespace-nowrap">{row.buyer_phone ?? '—'}</td>
-                    <td className="px-5 py-4 text-sm font-bold text-white whitespace-nowrap">
-                      {row.amount != null ? formatCLP(Number(row.amount)) : '—'}
-                    </td>
-                    <td className="px-5 py-4">
-                      <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest whitespace-nowrap ${st.cls}`}>
-                        {st.label}
-                      </span>
-                    </td>
-                    <td className="px-5 py-4">
-                      {(() => {
-                        const src = sourceStyle(row.source);
-                        return (
-                          <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest whitespace-nowrap ${src.cls}`}>
-                            {src.label}
-                          </span>
-                        );
-                      })()}
-                    </td>
-                    <td className="px-5 py-4">{msgBadge(row.recipt_msj1)}</td>
-                    <td className="px-5 py-4">{msgBadge(row.recipt_msj2)}</td>
-                    <td className="px-5 py-4">{msgBadge(row.recipt_msj3)}</td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+                      </td>
+                      <td className="px-6 py-4 text-xs text-[#595c5e] dark:text-slate-400 whitespace-nowrap">{row.buyer_phone ?? '—'}</td>
+                      <td className="px-6 py-4 text-sm font-semibold text-[#2c2f31] dark:text-white whitespace-nowrap">{row.amount != null ? formatCLP(Number(row.amount)) : '—'}</td>
+                      <td className="px-6 py-4"><span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wide whitespace-nowrap ${st.cls}`}>{st.label}</span></td>
+                      <td className="px-6 py-4"><span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wide whitespace-nowrap ${src.cls}`}>{src.label}</span></td>
+                      <td className="px-6 py-4">{msgBadge(row.recipt_msj1)}</td>
+                      <td className="px-6 py-4">{msgBadge(row.recipt_msj2)}</td>
+                      <td className="px-6 py-4">{msgBadge(row.recipt_msj3)}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
           </div>
         </div>
-
-        <div className="p-4 bg-slate-800/20 text-center border-t border-slate-800/40">
-          <button className="text-xs font-bold text-violet-400 hover:underline transition-all">Ver historial completo de transacciones</button>
+        <div className="px-8 py-4 bg-[#eef1f3]/30 dark:bg-slate-800/20 border-t border-[#abadaf]/10 dark:border-slate-800/40 flex justify-center">
+          <button className="text-sm font-bold text-[var(--primary)] hover:text-[var(--primary)]/80 transition-colors flex items-center gap-1">
+            Ver historial completo de transacciones
+            <ChevronRight className="w-4 h-4" />
+          </button>
         </div>
-      </section>
+      </div>
 
-
-      {/* Decorative bleed */}
-      <div className="fixed top-0 right-0 -z-10 w-[500px] h-[500px] bg-violet-500/5 rounded-full blur-[120px] pointer-events-none" />
-      <div className="fixed bottom-0 left-64 -z-10 w-[350px] h-[350px] bg-emerald-500/5 rounded-full blur-[100px] pointer-events-none" />
     </div>
   );
 }

@@ -107,7 +107,7 @@ export default function LoginPage() {
           <button 
             type="submit" 
             disabled={loading}
-            className="w-full primary-gradient text-white font-bold py-3.5 rounded-xl hover:shadow-[0_0_20px_rgba(59,130,246,0.4)] disabled:opacity-50 disabled:shadow-none transition-all flex items-center justify-center gap-2"
+            className="w-full aurora-gradient text-white font-bold py-3.5 rounded-xl hover:opacity-90 hover:shadow-[0_0_24px_rgba(139,92,246,0.4)] disabled:opacity-50 disabled:shadow-none transition-all flex items-center justify-center gap-2"
           >
             {loading ? (
               <>

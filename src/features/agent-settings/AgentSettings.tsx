@@ -72,7 +72,7 @@ export default function AgentSettings() {
           <div className="p-3 rounded-2xl bg-primary/10 border border-primary/20">
             <Settings2 className="w-8 h-8 text-primary" />
           </div>
-          <span className="aurora-text">Configuración del Agente</span>
+          <span className="text-white">Configuración del Agente</span>
         </h1>
         <p className="text-lg text-slate-400 font-medium">Ajusta el comportamiento y la personalidad de tu agente de IA.</p>
       </header>
@@ -185,7 +185,7 @@ export default function AgentSettings() {
         <button 
           onClick={handleSave}
           disabled={saving}
-          className="w-full sm:w-auto flex items-center justify-center gap-3 px-10 py-4 rounded-2xl bg-primary text-white text-lg font-black hover:bg-violet-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-xl shadow-violet-500/20 active:scale-95 group overflow-hidden relative"
+          className="w-full sm:w-auto flex items-center justify-center gap-3 px-10 py-4 rounded-2xl aurora-gradient text-white text-lg font-black hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-xl shadow-violet-500/25 active:scale-95 group overflow-hidden relative"
         >
           <div className="absolute inset-0 bg-white/10 translate-y-full group-hover:translate-y-0 transition-transform duration-300" />
           <Save className={`w-5 h-5 relative z-10 ${saving ? 'animate-bounce' : ''}`} />
