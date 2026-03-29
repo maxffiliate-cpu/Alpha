@@ -114,7 +114,7 @@ function sourceStyle(s: string | null) {
   return SOURCE_MAP[norm] ?? { label: s ?? '—', cls: 'bg-[#eef1f3] text-[#595c5e] dark:bg-slate-700/30 dark:text-slate-400' };
 }
 
-const FALLBACK_ID = '00000000-0000-0000-0000-000000000001';
+// No FALLBACK_ID — the DB assigns real UUIDs via gen_random_uuid()
 
 // ─── Sub-components ──────────────────────────────────────────────────────────
 
@@ -237,16 +237,16 @@ export default function RecuperadorView() {
 
     if (pData) setPlantillas(pData);
       if (eData) {
-        const fb = eData.find((e) => e.id === FALLBACK_ID) ?? null;
-        const named = eData.filter((e) => e.id !== FALLBACK_ID && e.nombre !== null);
+        // fallback = la estrategia sin nombre (config base del tenant)
+        const fb = eData.find((e) => e.nombre === null) ?? null;
+        const named = eData.filter((e) => e.nombre !== null);
         setFallback(fb);
         setNamedStrategies(named);
 
-        // Si no existe configuración previa (como en un nuevo tenant),
-        // proporcionamos un estado inicial por defecto para evitar el bloqueo.
+        // Si no existe configuración previa (nuevo tenant), estado vacío sin ID falso.
         if (!fb && named.length === 0) {
           const initialState: Estrategia = {
-            id: FALLBACK_ID,
+            id: '',   // aún no guardado — la DB asignará UUID al hacer insert
             nombre: null,
             is_active: false,
             msg1_active: true,
@@ -320,17 +320,22 @@ export default function RecuperadorView() {
   // ── Select a strategy card (also toggles is_active in DB) ─────────────────
   async function handleSelectStrategy(s: Estrategia) {
     if (estrategiaActiva?.id === s.id) {
-      // Deselect → fallback becomes active
+      // Deselect → la config base (fallback) vuelve a ser activa
       setEstrategiaActiva(null);
       setEditorState(fallback);
-      await supabase.from('estrategia_recuperacion').update({ is_active: false }).neq('id', FALLBACK_ID).eq('tenant_id', tenantId);
-      await supabase.from('estrategia_recuperacion').update({ is_active: true }).eq('id', FALLBACK_ID).eq('tenant_id', tenantId);
+      const { error: e1 } = await supabase.from('estrategia_recuperacion').update({ is_active: false }).neq('id', fallback?.id ?? '').eq('tenant_id', tenantId);
+      if (e1) console.error('Supabase Error (deactivate named):', e1);
+      if (fallback?.id) {
+        const { error: e2 } = await supabase.from('estrategia_recuperacion').update({ is_active: true }).eq('id', fallback.id).eq('tenant_id', tenantId);
+        if (e2) console.error('Supabase Error (activate fallback):', e2);
+      }
     } else {
       setEstrategiaActiva(s);
       setEditorState(s);
-      // Set all inactive, then activate selected
-      await supabase.from('estrategia_recuperacion').update({ is_active: false }).neq('id', s.id).eq('tenant_id', tenantId);
-      await supabase.from('estrategia_recuperacion').update({ is_active: true }).eq('id', s.id).eq('tenant_id', tenantId);
+      const { error: e1 } = await supabase.from('estrategia_recuperacion').update({ is_active: false }).neq('id', s.id).eq('tenant_id', tenantId);
+      if (e1) console.error('Supabase Error (deactivate others):', e1);
+      const { error: e2 } = await supabase.from('estrategia_recuperacion').update({ is_active: true }).eq('id', s.id).eq('tenant_id', tenantId);
+      if (e2) console.error('Supabase Error (activate selected):', e2);
     }
     setSaved(false);
   }
@@ -344,20 +349,22 @@ export default function RecuperadorView() {
       .eq('id', s.id);
 
     if (error) {
-      console.error('Error al eliminar estrategia:', error.message);
-      return; // Do not touch UI if DB rejected the operation
+      console.error('Supabase Error (delete strategy):', error);
+      return;
     }
 
-    // Only update state after confirmed deletion
     setNamedStrategies((prev) => prev.filter((x) => x.id !== s.id));
     if (estrategiaActiva?.id === s.id) {
       setEstrategiaActiva(null);
       setEditorState(fallback);
-      await supabase
-        .from('estrategia_recuperacion')
-        .update({ is_active: true })
-        .eq('id', FALLBACK_ID)
-        .eq('tenant_id', tenantId);
+      if (fallback?.id) {
+        const { error: e2 } = await supabase
+          .from('estrategia_recuperacion')
+          .update({ is_active: true })
+          .eq('id', fallback.id)
+          .eq('tenant_id', tenantId);
+        if (e2) console.error('Supabase Error (activate fallback after delete):', e2);
+      }
     }
   }
 
@@ -396,13 +403,12 @@ export default function RecuperadorView() {
     if (!error) setPlantillas((prev) => prev.filter((p) => p.id !== id));
   }
 
-  // ── Save (upsert to the active strategy or fallback) ─────────────────────
+  // ── Save (update existing o insert nueva config base) ────────────────────
   async function handleSave() {
-    if (!editorState) return;
+    if (!editorState || !tenantId) return;
     setSaving(true);
-    const targetId = estrategiaActiva?.id ?? FALLBACK_ID;
-    await supabase.from('estrategia_recuperacion').upsert({
-      id:             targetId,
+
+    const payload = {
       nombre:         editorState.nombre,
       is_active:      editorState.is_active,
       msg1_active:    editorState.msg1_active,
@@ -414,8 +420,26 @@ export default function RecuperadorView() {
       msg3_active:    editorState.msg3_active,
       msg3_template:  editorState.msg3_template,
       msg3_delay_min: editorState.msg3_delay_min,
-    });
-    // Refresh named strategies list
+      tenant_id:      tenantId,
+    };
+
+    // Si hay un ID real (estrategia existente en DB) → update; si no → insert nueva config base
+    const targetId = estrategiaActiva?.id || fallback?.id;
+    if (targetId) {
+      const { error } = await supabase
+        .from('estrategia_recuperacion')
+        .update(payload)
+        .eq('id', targetId)
+        .eq('tenant_id', tenantId);
+      if (error) console.error('Supabase Error (save update):', error);
+    } else {
+      // Primer guardado del tenant: dejar que la DB genere el UUID
+      const { error } = await supabase
+        .from('estrategia_recuperacion')
+        .insert({ ...payload, nombre: null });
+      if (error) console.error('Supabase Error (save insert):', error);
+    }
+
     await loadData();
     setSaving(false);
     setSaved(true);
@@ -425,10 +449,11 @@ export default function RecuperadorView() {
   // ── Create new named strategy ────────────────────────────────────────────
   async function handleCreate() {
     const name = newName.trim();
-    if (!name || !editorState) return;
+    if (!name || !editorState || !tenantId) return;
     setCreating(true);
-    const { data } = await supabase.from('estrategia_recuperacion').insert({
+    const { data, error } = await supabase.from('estrategia_recuperacion').insert({
       nombre:         name,
+      tenant_id:      tenantId,
       is_active:      editorState.is_active,
       msg1_active:    editorState.msg1_active,
       msg1_template:  editorState.msg1_template,
@@ -441,7 +466,9 @@ export default function RecuperadorView() {
       msg3_delay_min: editorState.msg3_delay_min,
     }).select().single();
 
-    if (data) {
+    if (error) {
+      console.error('Supabase Error (create strategy):', error);
+    } else if (data) {
       setNamedStrategies((prev) => [...prev, data]);
       setEstrategiaActiva(data);
       setEditorState(data);
