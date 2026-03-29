@@ -27,7 +27,7 @@ export default function AgentSettings() {
       const { data: { user } } = await supabase.auth.getUser();
       const tenantId = user?.app_metadata?.tenant_id;
 
-      const { data, error } = await supabase
+      const { data } = await supabase
         .from('agent_config')
         .select('*')
         .eq('tenant_id', tenantId)
@@ -48,12 +48,15 @@ export default function AgentSettings() {
   const handleSave = async () => {
     setSaving(true);
     setStatus('idle');
+    const { data: { user } } = await supabase.auth.getUser();
+    const tenantId = user?.app_metadata?.tenant_id;
     const { error } = await supabase
       .from('agent_config')
-      .upsert({ 
-        id: config.id, 
+      .upsert({
+        id: config.id,
         system_prompt: config.system_prompt,
-        temperature: config.temperature
+        temperature: config.temperature,
+        tenant_id: tenantId
       });
     
     if (!error) {
