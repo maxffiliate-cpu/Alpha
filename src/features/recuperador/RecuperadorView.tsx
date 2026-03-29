@@ -461,7 +461,7 @@ export default function RecuperadorView() {
             <div className="p-2 rounded-xl bg-violet-500/10 border border-violet-500/20">
               <ShoppingCart className="w-6 h-6 text-violet-400" />
             </div>
-            <h1 className="text-3xl font-extrabold tracking-tight text-white">Recuperación de Carritos</h1>
+            <h1 className="text-3xl font-extrabold tracking-tight aurora-text">Recuperación de Carritos</h1>
           </div>
           <p className="text-slate-400 text-base leading-relaxed">
             Convierte el abandono en ingresos automáticos vía WhatsApp con inteligencia predictiva.

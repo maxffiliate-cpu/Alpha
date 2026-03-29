@@ -65,6 +65,68 @@ body {
   background: linear-gradient(135deg, #8B5CF6 0%, #06b6d4 50%, #10b981 100%);
 }
 
+/* ── Aurora Gradient Text ── */
+.aurora-text {
+  background: linear-gradient(135deg, #8B5CF6 0%, #06b6d4 60%, #10b981 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   Light Mode — Global Contrast Corrections
+   Target dark-mode hardcoded classes when .dark is absent
+   ═══════════════════════════════════════════════════════════ */
+
+/* Glass panel: white bg + subtle shadow */
+:root:not(.dark) .glass-panel {
+  background: rgba(255, 255, 255, 0.92) !important;
+  border: 1px solid rgba(15, 23, 42, 0.09) !important;
+  box-shadow: 0 2px 20px rgba(0, 0, 0, 0.06) !important;
+}
+
+/* text-white / light grays → readable dark text */
+:root:not(.dark) .text-white   { color: var(--foreground) !important; }
+:root:not(.dark) .text-slate-100,
+:root:not(.dark) .text-slate-200,
+:root:not(.dark) .text-slate-300 { color: #1e293b !important; }
+:root:not(.dark) .text-slate-400 { color: #475569 !important; }
+:root:not(.dark) .text-slate-500 { color: #64748b !important; }
+:root:not(.dark) .text-slate-600 { color: #64748b !important; }
+
+/* White-tinted borders → visible in light mode */
+:root:not(.dark) [class*="border-white"] {
+  border-color: rgba(15, 23, 42, 0.09) !important;
+}
+
+/* White-tinted dividers → visible separators */
+:root:not(.dark) [class*="divide-white"] > * + * {
+  border-color: rgba(15, 23, 42, 0.07) !important;
+}
+
+/* Hover bg overlay → subtle light surface */
+:root:not(.dark) .hover\:bg-white\/\[0\.02\]:hover {
+  background-color: rgba(15, 23, 42, 0.03) !important;
+}
+
+/* Dark slate borders → subtle light borders */
+:root:not(.dark) [class*="border-slate-8"],
+:root:not(.dark) [class*="border-slate-7"] {
+  border-color: rgba(15, 23, 42, 0.1) !important;
+}
+
+/* Dark icon/container backgrounds → light tint */
+:root:not(.dark) .bg-slate-800\/80,
+:root:not(.dark) .bg-slate-800\/40,
+:root:not(.dark) .bg-slate-800\/30 {
+  background-color: rgba(15, 23, 42, 0.06) !important;
+}
+
+/* Page-level dark backgrounds → use CSS var */
+:root:not(.dark) .bg-\[\#030711\] {
+  background-color: var(--background) !important;
+}
+
 /* ── Custom Scrollbar ── */
 ::-webkit-scrollbar {
   width: 6px;

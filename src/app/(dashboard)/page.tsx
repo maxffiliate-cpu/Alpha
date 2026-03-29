@@ -143,7 +143,7 @@ export default function DashboardPage() {
     <div className="p-8 md:p-10 max-w-7xl mx-auto space-y-8 animate-in fade-in duration-700">
       {/* ── Header ── */}
       <header className="flex flex-col gap-1.5">
-        <h1 className="text-3xl font-black tracking-tight text-white">
+        <h1 className="text-3xl font-black tracking-tight aurora-text">
           Panel de Control
         </h1>
         <p className="text-slate-400 font-medium">

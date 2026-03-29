@@ -68,11 +68,11 @@ export default function AgentSettings() {
   return (
     <div className="p-8 md:p-12 max-w-6xl mx-auto space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-1000">
       <header className="flex flex-col gap-3">
-        <h1 className="text-4xl font-black tracking-tight text-white flex items-center gap-4">
+        <h1 className="text-4xl font-black tracking-tight flex items-center gap-4">
           <div className="p-3 rounded-2xl bg-primary/10 border border-primary/20">
             <Settings2 className="w-8 h-8 text-primary" />
           </div>
-          Configuración del Agente
+          <span className="aurora-text">Configuración del Agente</span>
         </h1>
         <p className="text-lg text-slate-400 font-medium">Ajusta el comportamiento y la personalidad de tu agente de IA.</p>
       </header>

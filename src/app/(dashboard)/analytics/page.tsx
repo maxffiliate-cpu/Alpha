@@ -12,9 +12,9 @@ import {
 
 export default function AnalyticsPage() {
   return (
-    <div className="space-y-8 animate-in slide-in-from-bottom-4 duration-500">
+    <div className="p-8 md:p-10 max-w-7xl mx-auto space-y-8 animate-in slide-in-from-bottom-4 duration-500">
       <header className="flex flex-col gap-2">
-        <h1 className="text-3xl font-bold tracking-tight text-white">Analytics</h1>
+        <h1 className="text-3xl font-black tracking-tight aurora-text">Analytics</h1>
         <p className="text-slate-400">Deep insights into lead quality and conversion funnels.</p>
       </header>
 
