@@ -24,6 +24,15 @@ function ConversationsInner() {
   const [searchTerm,       setSearchTerm]      = useState('');
   const [loading,          setLoading]         = useState(true);
   const [isManualMode,     setIsManualMode]    = useState(false);
+  const [tenantId,         setTenantId]        = useState<string | null>(null);
+
+  // Resolve tenant_id once from the JWT session — single source of truth
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      const tid = session?.user?.app_metadata?.tenant_id ?? null;
+      setTenantId(tid);
+    });
+  }, []);
 
   const handleSelectSession = (id: string) => {
     setSelectedSession(id);
@@ -184,6 +193,7 @@ function ConversationsInner() {
           <ChatWindow
             sessionId={selectedSession}
             origin={origin}
+            tenantId={tenantId}
             isManualMode={isManualMode}
             setIsManualMode={setIsManualMode}
           />

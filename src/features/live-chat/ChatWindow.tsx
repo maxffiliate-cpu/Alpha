@@ -28,9 +28,10 @@ const formatMessageContent = (content: string) => {
   return formatted.trim();
 };
 
-export default function ChatWindow({ sessionId, origin = 'bot', isManualMode, setIsManualMode }: {
+export default function ChatWindow({ sessionId, origin = 'bot', tenantId, isManualMode, setIsManualMode }: {
   sessionId: string;
   origin?: 'bot' | 'support';
+  tenantId: string | null;
   isManualMode: boolean;
   setIsManualMode: (v: boolean) => void;
 }) {
@@ -42,18 +43,11 @@ export default function ChatWindow({ sessionId, origin = 'bot', isManualMode, se
   const [sending, setSending] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
   const [feedbackGiven, setFeedbackGiven] = useState<Record<string, number>>({});
-  const [tenantId, setTenantId] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
-
-  useEffect(() => {
-    supabase.auth.getUser().then(({ data: { user } }) => {
-      setTenantId(user?.app_metadata?.tenant_id ?? null);
-    });
-  }, []);
 
   useEffect(() => {
     async function fetchMessages() {
@@ -138,6 +132,10 @@ export default function ChatWindow({ sessionId, origin = 'bot', isManualMode, se
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!inputValue.trim() || sending) return;
+    if (!tenantId) {
+      console.error('[Alpha] tenant_id no disponible — insert abortado');
+      return;
+    }
 
     const messageContent = inputValue;
     setInputValue('');
@@ -152,18 +150,22 @@ export default function ChatWindow({ sessionId, origin = 'bot', isManualMode, se
     };
     setMessages(prev => [...prev, optimisticMessage]);
 
+    const payload = {
+      session_id: sessionId,
+      tenant_id: tenantId,
+      origin_type: origin,
+      message: {
+        type: origin === 'support' ? 'human' : 'human_manual',
+        content: messageContent,
+        additional_kwargs: { is_panic_intervention: origin !== 'support', source: 'alpha_frontend' },
+        response_metadata: {}
+      }
+    };
+    console.log('[Alpha] Enviando Payload:', payload);
+
     const { error } = await supabase
       .from('n8n_chat_clientes_historial')
-      .insert({
-        session_id: sessionId,
-        origin_type: origin,
-        message: {
-          type: 'human_manual',
-          content: messageContent,
-          additional_kwargs: { is_panic_intervention: true, source: 'alpha_frontend' },
-          response_metadata: {}
-        }
-      });
+      .insert(payload);
 
     if (error) {
       setMessages(prev => prev.filter(m => m.id !== tempId));
