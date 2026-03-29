@@ -60,12 +60,13 @@ export default function ChatWindow({ sessionId, origin = 'bot', tenantId, isManu
       if (!messagesError && messagesData) {
         setMessages(messagesData.map(m => {
           const mType = m.message?.type;
+          const isFromAlpha = m.message?.additional_kwargs?.source === 'alpha_frontend';
           return {
             id: m.id.toString(),
-            role: (mType === 'human' ? 'user' : 'assistant') as 'user' | 'assistant',
+            role: (mType === 'human' && !isFromAlpha ? 'user' : 'assistant') as 'user' | 'assistant',
             content: mType === 'human' ? (m.message?.content || '') : formatMessageContent(m.message?.content || ''),
             created_at: m.created_at || m.id.toString(),
-            is_manual: mType === 'human_manual' || m.message?.additional_kwargs?.is_panic_intervention
+            is_manual: mType === 'human_manual' || m.message?.additional_kwargs?.is_panic_intervention || isFromAlpha
           };
         }).filter(m => m.content && m.content.trim().length > 0));
       }
@@ -85,19 +86,35 @@ export default function ChatWindow({ sessionId, origin = 'bot', tenantId, isManu
       }, (payload) => {
         const message = payload.new.message;
         const type = message?.type;
-        setIsTyping(type === 'human');
+        const isFromAlpha = message?.additional_kwargs?.source === 'alpha_frontend';
+        setIsTyping(type === 'human' && !isFromAlpha);
 
         const newMessage: Message = {
           id: payload.new.id.toString(),
-          role: type === 'human' ? 'user' : 'assistant',
+          role: (type === 'human' && !isFromAlpha) ? 'user' : 'assistant',
           content: type === 'human' ? (message?.content || '') : formatMessageContent(message?.content || ''),
           created_at: payload.new.created_at || new Date().toISOString(),
-          is_manual: type === 'human_manual' || message?.additional_kwargs?.is_panic_intervention
+          is_manual: type === 'human_manual' || message?.additional_kwargs?.is_panic_intervention || isFromAlpha
         };
 
         if (newMessage.content && newMessage.content.trim().length > 0) {
           setMessages(prev => {
             if (prev.find(m => m.id === newMessage.id)) return prev;
+            
+            // Si el mensaje viene de Alpha, intentamos reemplazar el mensaje optimista temporal
+            if (isFromAlpha) {
+              const optimisticIdx = prev.findIndex(m => 
+                m.id.startsWith('temp-') && 
+                m.content.trim() === newMessage.content.trim()
+              );
+              
+              if (optimisticIdx !== -1) {
+                const newArr = [...prev];
+                newArr[optimisticIdx] = newMessage;
+                return newArr;
+              }
+            }
+            
             return [...prev, newMessage];
           });
         }
