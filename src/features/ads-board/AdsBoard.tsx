@@ -101,18 +101,31 @@ export default function AdsBoard() {
 
   useEffect(() => {
     async function loadData() {
-      const { data: { user } } = await client.auth.getUser();
-      const tid = user?.app_metadata?.tenant_id;
+      try {
+        setLoading(true);
+        const { data: { user } } = await client.auth.getUser();
+        const tid = user?.app_metadata?.tenant_id;
+        console.log('[AdsBoard] User tid from metadata:', tid);
 
-      if (tid) {
-        const { data: metrics, error } = await client
-          .from('meta_ads_metrics')
-          .select('*')
-          .eq('tenant_id', tid)
-          .order('date_start', { ascending: true });
-        
-        if (metrics) setData(metrics);
-        if (error) console.error('Error loading ads metrics:', error);
+        if (tid) {
+          const { data: metrics, error } = await client
+            .from('meta_ads_metrics')
+            .select('*')
+            .eq('tenant_id', tid)
+            .order('date_start', { ascending: true });
+          
+          if (error) {
+            console.error('[AdsBoard] Supabase Error:', error);
+          } else if (metrics) {
+            console.log('[AdsBoard] Metrics found:', metrics.length);
+            setData(metrics);
+          }
+        } else {
+          console.warn('[AdsBoard] No tenant_id found in user metadata');
+        }
+      } catch (e) {
+        console.error('[AdsBoard] Critical load error:', e);
+      } finally {
         setLoading(false);
       }
     }
@@ -254,7 +267,7 @@ export default function AdsBoard() {
             </div>
           </div>
           
-          <div className="h-[300px] w-full">
+          <div className="h-[300px] w-full min-h-[300px]">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={seriesData}>
                 <defs>
@@ -273,11 +286,14 @@ export default function AdsBoard() {
                   axisLine={false} 
                   tickLine={false} 
                   tick={{ fill: '#64748b', fontSize: 10 }}
-                  tickFormatter={(val) => new Date(val).toLocaleDateString()}
+                  tickFormatter={(val) => {
+                    try { return new Date(val).toLocaleDateString(); }
+                    catch(e) { return val; }
+                  }}
                 />
                 <YAxis hide />
                 <Tooltip 
-                  contentStyle={{ backgroundColor: '#0f172a', borderColor: '#1e293b', borderRadius: '12px' }}
+                  contentStyle={{ backgroundColor: '#0f172a', borderColor: '#1e293b', borderRadius: '12px', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.5)' }}
                   itemStyle={{ fontSize: '12px', fontWeight: 'bold' }}
                 />
                 <Area type="monotone" dataKey="spend" stroke="#3b82f6" fillOpacity={1} fill="url(#colorSpend)" name="Inversión" strokeWidth={3} />
@@ -293,7 +309,7 @@ export default function AdsBoard() {
             <h2 className="text-lg font-bold text-white tracking-tight">Top 5 Campañas (ROAS)</h2>
             <p className="text-xs text-slate-500">Rendimiento por ratio de retorno.</p>
           </div>
-          <div className="h-[300px] w-full">
+          <div className="h-[300px] w-full min-h-[300px]">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={campaignData} layout="vertical">
                 <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#1e293b" />
