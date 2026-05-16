@@ -72,6 +72,11 @@ export default function ChatWindow({ sessionId, origin = 'bot', tenantId, isManu
         .order('id', { ascending: true });
 
       if (!messagesError && messagesData) {
+        if (messagesData.length > 0) {
+          console.log('[Alpha][timestamp-debug] first row keys:', Object.keys(messagesData[0]));
+          console.log('[Alpha][timestamp-debug] first row created_at:', messagesData[0].created_at, '| type:', typeof messagesData[0].created_at);
+          console.log('[Alpha][timestamp-debug] first row id:', messagesData[0].id, '| type:', typeof messagesData[0].id);
+        }
         setMessages(messagesData.map(m => {
           const mType = m.message?.type;
           const isFromAlpha = m.message?.additional_kwargs?.source === 'alpha_frontend';
