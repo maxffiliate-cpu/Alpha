@@ -20,6 +20,20 @@ interface Message {
   is_manual?: boolean;
 }
 
+const formatTimestamp = (iso: string) => {
+  const date = new Date(iso);
+  if (isNaN(date.getTime())) return '';
+  const now = new Date();
+  const isToday =
+    date.getFullYear() === now.getFullYear() &&
+    date.getMonth() === now.getMonth() &&
+    date.getDate() === now.getDate();
+  const time = date.toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' });
+  if (isToday) return time;
+  const day = date.toLocaleDateString('es-CL', { day: 'numeric', month: 'short' });
+  return `${day} · ${time}`;
+};
+
 const formatMessageContent = (content: string) => {
   if (!content) return '';
   let formatted = content.replace(/\[Used tools:[\s\S]+?\][}\]\s,.-]*/g, '');
@@ -320,7 +334,7 @@ export default function ChatWindow({ sessionId, origin = 'bot', tenantId, isManu
                     </div>
 
                     <div className="flex items-center gap-2 px-1">
-                      <span className="text-[9px] text-[var(--text-muted)] font-medium uppercase tracking-wide">Ahora</span>
+                      <span className="text-[9px] text-[var(--text-muted)] font-medium uppercase tracking-wide">{formatTimestamp(message.created_at)}</span>
                       {message.role === 'assistant' && !message.id.startsWith('temp-') && (
                         <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                           <button
