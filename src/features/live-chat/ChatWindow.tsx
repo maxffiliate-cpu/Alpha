@@ -16,11 +16,12 @@ interface Message {
   id: string;
   role: 'user' | 'assistant';
   content: string;
-  created_at: string;
+  created_at: string | null;
   is_manual?: boolean;
 }
 
-const formatTimestamp = (iso: string) => {
+const formatTimestamp = (iso: string | null) => {
+  if (!iso) return '';
   const date = new Date(iso);
   if (isNaN(date.getTime())) return '';
   const now = new Date();
@@ -72,11 +73,6 @@ export default function ChatWindow({ sessionId, origin = 'bot', tenantId, isManu
         .order('id', { ascending: true });
 
       if (!messagesError && messagesData) {
-        if (messagesData.length > 0) {
-          console.log('[Alpha][timestamp-debug] first row keys:', Object.keys(messagesData[0]));
-          console.log('[Alpha][timestamp-debug] first row created_at:', messagesData[0].created_at, '| type:', typeof messagesData[0].created_at);
-          console.log('[Alpha][timestamp-debug] first row id:', messagesData[0].id, '| type:', typeof messagesData[0].id);
-        }
         setMessages(messagesData.map(m => {
           const mType = m.message?.type;
           const isFromAlpha = m.message?.additional_kwargs?.source === 'alpha_frontend';
@@ -84,7 +80,7 @@ export default function ChatWindow({ sessionId, origin = 'bot', tenantId, isManu
             id: m.id.toString(),
             role: (mType === 'human' && !isFromAlpha ? 'user' : 'assistant') as 'user' | 'assistant',
             content: mType === 'human' ? (m.message?.content || '') : formatMessageContent(m.message?.content || ''),
-            created_at: m.created_at || m.id.toString(),
+            created_at: m.created_at ?? null,
             is_manual: mType === 'human_manual' || m.message?.additional_kwargs?.is_panic_intervention || isFromAlpha
           };
         }).filter(m => m.content && m.content.trim().length > 0));
